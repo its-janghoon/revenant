@@ -7,15 +7,17 @@ import { and, eq, inArray } from "drizzle-orm";
 import type { RunMode, RunStatus } from "@/lib/contracts";
 import { db, schema } from "@/lib/db/client";
 import { env } from "@/lib/env";
+import { deployPreview } from "@/lib/deploy";
 import { policy, roleName, trust } from "@/runner/role";
 import { account, codebuild, iam, names, partition, region, s3 } from "./aws";
 import type { User } from "./auth";
 import { HttpError, busy } from "./http";
 import { kiroFor } from "./keys";
-import { getSettings, sqlAllowedFor, type ProjectRow, type RunRow } from "./store";
+import { head } from "./repo";
+import { getSettings, sqlAllowedFor, toProject, workBranch, type ProjectRow, type RunRow } from "./store";
 import { event, putEvents } from "./timeline";
 
-const { runs, projects, previews } = schema;
+const { runs, projects } = schema;
 
 const roleArn = (app: string) => `arn:${partition}:iam::${account}:role/${roleName(app)}`;
 
@@ -72,6 +74,13 @@ export const UPLOADS = "runs/_uploads/";
 
 const ACTIVE: RunStatus[] = ["queued", "running"];
 
+/** 409 busy while a run of this project is going. Call before reserving a preview branch. */
+export async function assertIdle(projectId: string): Promise<void> {
+  await syncRuns(projectId);
+  const [going] = await db.select({ id: runs.id }).from(runs).where(and(eq(runs.projectId, projectId), inArray(runs.status, ACTIVE)));
+  if (going) throw busy(`/p/${projectId}`);
+}
+
 export interface StartInput {
   project: ProjectRow;
   user: User;
@@ -85,9 +94,7 @@ export interface StartInput {
 export async function startRun(i: StartInput): Promise<RunRow> {
   const { project: p, user: u } = i;
   if (!p.repo) throw new HttpError(409, "This app has no repository yet", "no_repo");
-  await syncRuns(p.id);
-  const [going] = await db.select({ id: runs.id }).from(runs).where(and(eq(runs.projectId, p.id), inArray(runs.status, ACTIVE)));
-  if (going) throw busy(`/p/${p.id}`);
+  await assertIdle(p.id);
 
   const s = await getSettings();
   const kiro = await kiroFor(u, s);
@@ -119,13 +126,6 @@ export async function startRun(i: StartInput): Promise<RunRow> {
     }));
     const [started] = await db.update(runs).set({ codebuildId: r.build?.id ?? null, status: "running" }).where(eq(runs.id, run.id)).returning();
     if (i.mode !== "spec") await db.update(projects).set({ status: "building" }).where(eq(projects.id, p.id));
-    if (i.branch.startsWith("preview/")) {
-      const [has] = await db.select({ id: previews.id }).from(previews).where(and(eq(previews.projectId, p.id), eq(previews.branch, i.branch)));
-      if (!has) {
-        await db.insert(previews).values({ projectId: p.id, branch: i.branch });
-        await putEvents([event(p.id, "preview_created", { branch: i.branch })]);
-      }
-    }
     return started ?? run;
   } catch (e) {
     await db.update(runs).set({ status: "failed", endedAt: new Date().toISOString() }).where(eq(runs.id, run.id));
@@ -175,10 +175,33 @@ export async function endRun(run: RunRow, status: RunStatus, at?: string, extra:
   }
   if (run.mode === "build" || run.mode === "change") {
     // Only move a project that is still "building": repair (L4) and deploy (L2) own the other states.
-    const next = status === "succeeded" ? "preview" : status === "stopped" || status === "timeout" ? "stopped" : "dead";
-    await db.update(projects).set({ status: next }).where(and(eq(projects.id, run.projectId), eq(projects.status, "building")));
+    // A good run stays "building" while its preview deploys; settle() then makes it preview or dead.
+    if (status !== "succeeded") {
+      const next = status === "stopped" || status === "timeout" ? "stopped" : "dead";
+      await db.update(projects).set({ status: next }).where(and(eq(projects.id, run.projectId), eq(projects.status, "building")));
+    } else {
+      await deployAfter(run, extra.commit ?? run.commit);
+    }
   }
   await putEvents([event(run.projectId, "run_done", { run: run.id, mode: run.mode, status, credits: extra.credits ?? null })]);
+}
+
+/** The runner pushed the newest preview branch: hand it to the deploy lane. */
+async function deployAfter(run: RunRow, commit: string | null): Promise<void> {
+  const [p] = await db.select().from(projects).where(eq(projects.id, run.projectId));
+  if (!p?.repo) return;
+  const branch = await workBranch(p.id);
+  if (!branch.startsWith("preview/")) return;
+  const sha = commit ?? (await head(p.repo, branch));
+  if (!sha) return;
+  const [known] = await db.select({ id: schema.deploys.id }).from(schema.deploys)
+    .where(and(eq(schema.deploys.projectId, p.id), eq(schema.deploys.branch, branch), eq(schema.deploys.commit, sha)));
+  if (known) return;
+  try {
+    await deployPreview(toProject(p), branch, sha);
+  } catch (e) {
+    console.error("preview deploy failed to start", (e as Error).name);
+  }
 }
 
 export async function stopRun(run: RunRow): Promise<void> {

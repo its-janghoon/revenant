@@ -61,10 +61,6 @@ export async function needMachine(req: Request): Promise<void> {
   if (!(await isMachine(req))) throw new HttpError(401, "Missing or wrong x-rv-key", "key");
 }
 
-export async function appKeyHeader(): Promise<Record<string, string>> {
-  return { "x-rv-key": await key() };
-}
-
 // ---------- Kiro Crew tokens ----------
 // Stored in the settings table (no migration): key "crew:<sha256 of token>", value below.
 // The token itself is shown once and never stored.

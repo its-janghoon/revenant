@@ -82,16 +82,27 @@ export async function commit(repo: string, branch: string, parent: string, messa
 
 export const specPath = (app: string, file: "requirements" | "design" | "tasks") => `.kiro/specs/${app}/${file}.md`;
 
-export interface ParsedTask { number: number; title: string; state: TaskState }
+export interface ParsedTask { number: string; title: string; state: TaskState }
 
-/** `- [ ] 1. Title`, `- [-] 2. Title`, `- [x] 3. Title`; subtasks (1.1) are skipped. */
+/** `- [ ] 1. Title`, `- [-] 2. Title`, `- [x] 3. Title`, and subtasks `- [ ] 3.1 Title`. */
 export function parseTasks(md: string): ParsedTask[] {
   const out: ParsedTask[] = [];
   for (const line of md.split("\n")) {
-    const m = /^\s*[-*]\s+\[([ xX-])\]\s+(\d+)\.?\s+(.+?)\s*$/.exec(line);
-    if (!m) continue; // subtasks "1.1 Title" do not match: the number must be followed by "." and a space
+    const m = /^\s*[-*]\s+\[([ xX-])\]\s+(\d+(?:\.\d+)*)\.?\s+(.+?)\s*$/.exec(line);
+    if (!m) continue;
     const mark = m[1]!;
-    out.push({ number: Number(m[2]), title: m[3]!.replace(/\*\*/g, ""), state: mark === "-" ? "running" : mark === " " ? "todo" : "done" });
+    out.push({ number: m[2]!, title: m[3]!.replace(/\*\*/g, ""), state: mark === "-" ? "running" : mark === " " ? "todo" : "done" });
   }
   return out;
+}
+
+/** "2" < "3" < "3.1" < "10" */
+export function byNumber(a: { number: string }, b: { number: string }): number {
+  const x = a.number.split(".").map(Number);
+  const y = b.number.split(".").map(Number);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) {
+    const d = (x[i] ?? -1) - (y[i] ?? -1);
+    if (d) return d;
+  }
+  return 0;
 }

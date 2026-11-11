@@ -4,11 +4,12 @@ import { and, eq, inArray } from "drizzle-orm";
 import type { z } from "zod";
 import type { Deploy, Preview, Repair, Run, Task, createProjectBody } from "@/lib/contracts";
 import { db, schema } from "@/lib/db/client";
+import { settleAll } from "@/lib/deploy";
 import { region } from "./aws";
 import type { User } from "./auth";
 import { readEvent, lastAgentText } from "./events";
 import { HttpError } from "./http";
-import { createRepo, head, parseTasks, readFile, specPath } from "./repo";
+import { byNumber, createRepo, head, parseTasks, readFile, specPath } from "./repo";
 import { ensureRunnerRole, startRun, stopRun, syncRuns } from "./runs";
 import { parseParts, summarize } from "./spec";
 import {
@@ -71,7 +72,7 @@ export const previewUrl = (appId: string | null, branch: string) =>
 
 /** tasks.md on the work branch is the truth; the tasks table follows it. */
 export async function syncTasks(p: ProjectRow, branch: string): Promise<Task[]> {
-  const have = await db.select().from(tasks).where(eq(tasks.projectId, p.id)).orderBy(tasks.number);
+  const have = (await db.select().from(tasks).where(eq(tasks.projectId, p.id))).sort(byNumber);
   if (!p.repo) return have;
   const f = await readFile(p.repo, branch, specPath(p.name, "tasks"));
   if (!f) return have;
@@ -84,11 +85,12 @@ export async function syncTasks(p: ProjectRow, branch: string): Promise<Task[]> 
   }
   const keep = new Set(parsed.map((t) => t.number));
   for (const t of have) if (!keep.has(t.number)) await db.delete(tasks).where(eq(tasks.id, t.id));
-  return db.select().from(tasks).where(eq(tasks.projectId, p.id)).orderBy(tasks.number);
+  return (await db.select().from(tasks).where(eq(tasks.projectId, p.id))).sort(byNumber);
 }
 
 export async function detail(u: User, p: ProjectRow): Promise<Detail> {
   await syncRuns(p.id);
+  await settleAll(toProject(p)).catch(() => undefined);
   const [fresh] = await db.select().from(projects).where(eq(projects.id, p.id));
   const proj = fresh ?? p;
   const branch = await workBranch(p.id);

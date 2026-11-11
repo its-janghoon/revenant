@@ -2,9 +2,11 @@
 import "server-only";
 import { and, desc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 import type { Project, Settings } from "@/lib/contracts";
+import { nextPreview } from "@/lib/deploy";
 import { getSettings as policySettings, isSqlAllowed } from "@/lib/policy";
 import { db, schema } from "@/lib/db/client";
 import type { User } from "./auth";
+import { byNumber } from "./repo";
 import { notFound } from "./http";
 
 const { projects, runs, tasks, deploys, repairs, previews, costs, settings } = schema;
@@ -77,7 +79,7 @@ export async function projectRuns(id: string, limit = 50) {
   return db.select().from(runs).where(eq(runs.projectId, id)).orderBy(desc(runs.startedAt)).limit(limit);
 }
 export async function projectTasks(id: string) {
-  return db.select().from(tasks).where(eq(tasks.projectId, id)).orderBy(tasks.number);
+  return (await db.select().from(tasks).where(eq(tasks.projectId, id))).sort(byNumber);
 }
 export async function projectDeploys(id: string, limit = 30) {
   return db.select().from(deploys).where(eq(deploys.projectId, id)).orderBy(desc(deploys.createdAt)).limit(limit);
@@ -101,10 +103,9 @@ export async function livePreviews(id: string) {
 /** "preview/12" -> 12 */
 export const previewNumber = (branch: string) => Number(/^preview\/(\d+)$/.exec(branch)?.[1] ?? 0);
 
-export async function nextPreviewBranch(id: string): Promise<string> {
-  const all = await projectPreviews(id);
-  const n = all.reduce((m, p) => Math.max(m, previewNumber(p.branch)), 0);
-  return `preview/${n + 1}`;
+/** Reserves the next preview/<n> through the deploy lane (row, event, SQL preview database). */
+export async function nextPreviewBranch(p: ProjectRow): Promise<string> {
+  return (await nextPreview(toProject(p))).branch;
 }
 
 /** The branch the agent and the Code tab work on: newest live preview, else the spec branch. */
