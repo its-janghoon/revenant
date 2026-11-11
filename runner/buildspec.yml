@@ -1,0 +1,12 @@
+# CodeBuild buildspec for the shared runner project (image: runner/Dockerfile, ARM, medium).
+# Revenant starts each run with StartBuild: serviceRoleOverride = rv-<app>-runner (runner/role.ts),
+# timeoutInMinutesOverride = TIME_LIMIT_MIN + 5, and the inputs below as environmentVariablesOverride.
+version: 0.2
+
+env:
+  shell: bash
+
+phases:
+  build:
+    commands:
+      - node /opt/revenant/runner/run.ts

@@ -1,0 +1,6 @@
+{
+  "name": "@revenant/runner",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24" }
+}
