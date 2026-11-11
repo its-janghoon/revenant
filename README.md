@@ -26,7 +26,31 @@ experience inside their own account.
 - **Fixes itself.** Failed builds and deploys are repaired by the agent, with the cause,
   the fix and the time to recover on record.
 
-<!-- Install section: written by the wave 0 lane. -->
+## Install
+
+Both ways deploy the same template, [infra/install.yaml](infra/install.yaml). It asks for a Kiro API key,
+an admin email and a monthly budget. We recommend a dedicated AWS Organizations member account.
+
+1. One click: [Launch the install stack](https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate?stackName=revenant&templateURL=https://its-janghoon-revenant.s3.amazonaws.com/install.yaml)
+   (needs the template published to that URL; until then use way 2).
+2. AWS CloudShell, one line:
+
+```
+curl -fsSLo install.yaml https://raw.githubusercontent.com/its-janghoon/revenant/main/infra/install.yaml && aws cloudformation deploy --template-file install.yaml --stack-name revenant --capabilities CAPABILITY_NAMED_IAM --parameter-overrides KiroApiKey=YOUR_KIRO_KEY AdminEmail=you@example.com Budget=100
+```
+
+The stack copies this repository into CodeCommit in your account, bootstraps CDK, and starts
+the first Amplify build (about 15 minutes). The `RevenantUrl` output is your Revenant; the admin
+gets a Cognito invite email. To update later, run the `UpdateCommand` output.
+
+- Spec: [.kiro/specs/revenant](.kiro/specs/revenant)
+- Mockups: [design/mockups](design/mockups) (open `flow.html` for every screen, `live.html` for the theme)
+- Host your own, public or private: [docs/self-host.md](docs/self-host.md)
+- Hosting for outside customers: [docs/platforms.md](docs/platforms.md)
+- How we used Kiro: [docs/kiro-usage.md](docs/kiro-usage.md)
+- Kiro credits per turn: [docs/credits.md](docs/credits.md)
+- Demo video storyboard: [docs/storyboard.md](docs/storyboard.md)
+
 
 ## How it works
 
@@ -67,31 +91,6 @@ Request: "Build me a contract signing site where an AI flags toxic clauses befor
 The result is **FinePrint** (subtitled "Blood Oath" in Haunted).
 
 ## Docs
-
-## Install
-
-Both ways deploy the same template, [infra/install.yaml](infra/install.yaml). It asks for a Kiro API key,
-an admin email and a monthly budget. We recommend a dedicated AWS Organizations member account.
-
-1. One click: [Launch the install stack](https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate?stackName=revenant&templateURL=https://its-janghoon-revenant.s3.amazonaws.com/install.yaml)
-   (needs the template published to that URL; until then use way 2).
-2. AWS CloudShell, one line:
-
-```
-curl -fsSLo install.yaml https://raw.githubusercontent.com/its-janghoon/revenant/main/infra/install.yaml && aws cloudformation deploy --template-file install.yaml --stack-name revenant --capabilities CAPABILITY_NAMED_IAM --parameter-overrides KiroApiKey=YOUR_KIRO_KEY AdminEmail=you@example.com Budget=100
-```
-
-The stack copies this repository into CodeCommit in your account, bootstraps CDK, and starts
-the first Amplify build (about 15 minutes). The `RevenantUrl` output is your Revenant; the admin
-gets a Cognito invite email. To update later, run the `UpdateCommand` output.
-
-- Spec: [.kiro/specs/revenant](.kiro/specs/revenant)
-- Mockups: [design/mockups](design/mockups) (open `flow.html` for every screen, `live.html` for the theme)
-- Host your own, public or private: [docs/self-host.md](docs/self-host.md)
-- Hosting for outside customers: [docs/platforms.md](docs/platforms.md)
-- How we used Kiro: [docs/kiro-usage.md](docs/kiro-usage.md)
-- Kiro credits per turn: [docs/credits.md](docs/credits.md)
-- Demo video storyboard: [docs/storyboard.md](docs/storyboard.md)
 
 ## License
 
