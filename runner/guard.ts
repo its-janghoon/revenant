@@ -24,7 +24,7 @@ const { values } = parseArgs({
 
 const cdkOut = values['cdk-out'];
 if (!cdkOut) {
-  emit('error', { step: 'guard', text: '--cdk-out is required' });
+  emit({ t: 'error', step: 'guard', text: '--cdk-out is required' });
   process.exit(2);
 }
 
@@ -37,12 +37,13 @@ try {
 }
 // Fail closed: no guard, no push.
 if (typeof check !== 'function') {
-  emit('error', { step: 'guard', text: 'lib/guard.ts is missing or exports no check(); refusing to continue' });
+  emit({ t: 'error', step: 'guard', text: 'lib/guard.ts is missing or exports no check(); refusing to continue' });
   process.exit(2);
 }
 
 const r = await check({ cdkOut: resolve(cdkOut), repo: resolve(values.repo ?? '.'), base: values.base });
 for (const f of r.findings) {
-  emit(r.ok ? 'message' : 'error', { from: 'guard', step: 'guard', rule: f.rule, resource: f.resource, text: f.message });
+  const at = { rule: f.rule, ...(f.resource ? { resource: f.resource } : {}), text: f.message };
+  emit(r.ok ? { t: 'message', from: 'guard', ...at } : { t: 'error', step: 'guard', ...at });
 }
 process.exit(r.ok ? 0 : 1);

@@ -7,10 +7,11 @@ import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import { read } from './kiro.ts';
-import { emit } from './log.ts';
+import { change, emit, relay, run, RUNNER_PREFIX, type ErrorStep } from './log.ts';
 import { committed, parse, started, type Task } from './tasks.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
+const t0 = Date.now();
 const home = join(here, '..');
 const env = process.env;
 
@@ -29,9 +30,9 @@ const MODES = ['spec', 'build', 'change', 'repair'] as const;
 type Mode = (typeof MODES)[number];
 
 class Step extends Error {
-  step: string;
+  step: ErrorStep;
   code: number;
-  constructor(step: string, text: string, code = 1) {
+  constructor(step: ErrorStep, text: string, code = 1) {
     super(text);
     this.step = step;
     this.code = code;
@@ -50,10 +51,10 @@ function num(name: string, fallback: number): number {
 }
 
 const tail = (s: string, n = 40) => s.trim().split('\n').slice(-n).join('\n');
-const safe = (s: string) => s.replace(/[^A-Za-z0-9._-]/g, '-');
 
 // ---- inputs ----
 
+need('RV_PROJECT_ID');
 const mode = need('MODE') as Mode;
 if (!MODES.includes(mode)) fail(new Step('input', `MODE must be one of ${MODES.join(', ')}`, 2));
 const app = need('APP');
@@ -63,9 +64,8 @@ const branch = need('BRANCH');
 if (branch === 'main') fail(new Step('input', 'runs never push main; publish does', 2));
 const base = env.BASE_BRANCH?.trim() || 'main';
 const region = need('AWS_REGION');
-const run = safe(env.RUN_ID?.trim() || env.CODEBUILD_BUILD_ID?.split(':').pop() || String(Date.now()));
 const model = (env.MODEL?.trim() || 'auto').toLowerCase() === 'auto' ? 'auto' : env.MODEL!.trim();
-const payer = env.KIRO_PAYER?.trim() || 'company';
+const payer = env.KIRO_PAYER?.trim() === 'own' ? 'own' : 'company';
 const creditsLimit = num('CREDITS_LIMIT', 0);
 const totalMs = num('TIME_LIMIT_MIN', 45) * 60_000;
 const reserveMs = Math.min(10 * 60_000, totalMs / 3);
@@ -125,12 +125,12 @@ function sh(cmd: string, args: string[], opts: { cwd?: string; env?: NodeJS.Proc
 
 const git = (...args: string[]) => sh('git', args);
 
-function must(r: Out, step: string): string {
+function must(r: Out, step: ErrorStep): string {
   if (!r.ok) throw new Step(step, tail(r.err || r.out));
   return r.out;
 }
 
-const say = (text: string, extra: Record<string, unknown> = {}) => emit('message', { from: 'runner', text, ...extra });
+const say = (text: string) => emit({ t: 'message', from: 'runner', text });
 
 const head = () => git('rev-parse', '-q', '--verify', 'HEAD').out;
 const dirty = () => git('status', '--porcelain').out !== '';
@@ -155,11 +155,27 @@ function save(): void {
     // keep going: pushing what is committed matters more
   }
   pushHold();
-  if (held) say(`work saved on ${hold}`, { branch: hold, commit: head() });
+  if (held) say(`work saved on ${hold} at ${head()}`);
 }
 
 function credits(): void {
-  emit('credits', { used, limit: creditsLimit || null, payer, model });
+  emit({ t: 'credits', used, limit: creditsLimit || null, payer, model });
+}
+
+// The last line of every run, then exit. See the exit codes in runner/README.md.
+function finish(code: number): never {
+  const status = code === 0 ? 'succeeded' : code === 3 ? 'timeout' : code === 143 ? 'stopped' : 'failed';
+  const commit = ready && cloned ? head() || null : null;
+  emit({
+    t: 'run_done',
+    status,
+    code,
+    credits: used,
+    commit,
+    branch: code === 0 ? branch : held ? hold : null,
+    seconds: Math.round((Date.now() - t0) / 1000),
+  });
+  process.exit(code);
 }
 
 // ---- steps ----
@@ -262,7 +278,7 @@ function stopChild(): void {
   setTimeout(() => c.exitCode === null && c.kill('SIGKILL'), 15_000).unref();
 }
 
-// Runs kiro-cli headless and turns its stream into RV lines. Resolves with the limit hit, if any.
+// Runs kiro-cli headless and turns its stream into runner lines. Resolves with the limit hit, if any.
 function kiro(text: string, key: string, deadline: number): Promise<'time' | 'credits' | null> {
   const args = ['chat', '--v3', '--no-interactive', '--trust-all-tools', '--output-format', 'stream-json', '--model', model];
   const c = spawn('kiro-cli', args, { cwd: work, env: bare({ KIRO_API_KEY: key }), stdio: ['pipe', 'pipe', 'pipe'] });
@@ -280,7 +296,7 @@ function kiro(text: string, key: string, deadline: number): Promise<'time' | 'cr
   const hit = (why: 'time' | 'credits') => {
     if (limit) return;
     limit = why;
-    emit('error', { step: 'limit', text: why === 'time' ? 'time limit reached' : `credits limit reached (${creditsLimit})` });
+    emit({ t: 'error', step: 'limit', text: why === 'time' ? 'time limit reached' : `credits limit reached (${creditsLimit})` });
     stopChild();
   };
   const timer = setTimeout(() => hit('time'), Math.max(0, deadline - Date.now()));
@@ -290,7 +306,7 @@ function kiro(text: string, key: string, deadline: number): Promise<'time' | 'cr
     buf = '';
     if (!t) return;
     const cause = /^Cause:\s*(.+)$/m.exec(t)?.[1]?.trim();
-    emit('message', { from: 'agent', text: t, ...(cause ? { cause } : {}) });
+    emit({ t: 'message', from: 'agent', text: t, ...(cause ? { cause } : {}) });
   };
 
   const after = () => {
@@ -300,10 +316,10 @@ function kiro(text: string, key: string, deadline: number): Promise<'time' | 'cr
       const path = line.slice(3).split(' -> ').pop()!.replace(/^"|"$/g, '');
       if (seen.has(path)) continue;
       seen.add(path);
-      emit('file_changed', { path, op: code.includes('?') || code.includes('A') ? 'add' : code.includes('D') ? 'delete' : 'edit' });
+      emit({ t: 'file_changed', path, change: code.includes('?') || code.includes('A') ? 'add' : code.includes('D') ? 'delete' : 'modify' });
     }
     const now = readTasks();
-    for (const t of started(before, now)) emit('task_started', { number: t.number, title: t.title });
+    for (const t of started(before, now)) emit({ t: 'task_started', task: t.number, title: t.title });
     before = now;
     const h = head();
     if (h && h !== last) {
@@ -314,7 +330,7 @@ function kiro(text: string, key: string, deadline: number): Promise<'time' | 'cr
         if (task && !done.has(task.number)) {
           done.add(task.number);
           const title = now.find((t) => t.number === task.number)?.title ?? task.title;
-          emit('task_done', { number: task.number, title, commit: sha });
+          emit({ t: 'task_done', task: task.number, title, commit: sha });
         }
       }
       last = h;
@@ -331,7 +347,7 @@ function kiro(text: string, key: string, deadline: number): Promise<'time' | 'cr
       else if (e.type === 'file') {
         if (e.path.startsWith('.git/')) continue;
         seen.add(e.path);
-        emit('file_changed', { path: e.path, op: e.op });
+        emit({ t: 'file_changed', path: e.path, change: change(e.op) });
       } else if (e.type === 'done') {
         flush();
         after();
@@ -371,15 +387,16 @@ function checks(): Promise<void> {
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   child = c;
-  let step = 'install';
+  let step: ErrorStep = 'install';
   let out = '';
   const keep = (line: string) => {
     if (line.startsWith('RV-STEP ')) {
-      step = line.slice(8).trim();
+      step = line.slice(8).trim() as ErrorStep;
       say(`check: ${step}`);
       return;
     }
-    process.stdout.write(`${line}\n`);
+    process.stdout.write(`${relay(line)}\n`);
+    if (line.startsWith(RUNNER_PREFIX)) return;
     out = tail(`${out}\n${line}`, 40);
   };
   createInterface({ input: c.stdout }).on('line', keep);
@@ -417,14 +434,14 @@ async function main(): Promise<void> {
   const startedAt = Date.now();
   const end = startedAt + totalMs;
   const watchdog = setTimeout(() => {
-    emit('error', { step: 'limit', text: 'time limit reached' });
+    emit({ t: 'error', step: 'limit', text: 'time limit reached' });
     stopChild();
     save();
     credits();
-    process.exit(3);
+    finish(3);
   }, totalMs);
 
-  say(`run ${run}: ${mode} on ${branch}`, { mode, branch, model, payer });
+  say(`run ${run}: ${mode} on ${branch}, model ${model}, ${payer} key`);
   const key = secret(need('KIRO_SECRET_ARN'));
   const text = request();
   clone();
@@ -441,13 +458,13 @@ async function main(): Promise<void> {
   for (const t of readTasks()) {
     if (t.state === 'done' && was.get(t.number) !== 'done' && !done.has(t.number)) {
       done.add(t.number);
-      emit('task_done', { number: t.number, title: t.title, commit: head() });
+      emit({ t: 'task_done', task: t.number, title: t.title, commit: head() });
     }
   }
   if (limit) {
     save();
     credits();
-    process.exit(3);
+    finish(3);
   }
 
   if (mode === 'spec') specOnly(start);
@@ -457,26 +474,27 @@ async function main(): Promise<void> {
 
   clearTimeout(watchdog);
   credits();
-  say(`pushed to ${branch}`, { branch, commit: head(), status: 'ok', seconds: Math.round((Date.now() - startedAt) / 1000) });
+  say(`pushed to ${branch}`);
+  finish(0);
 }
 
 function fail(e: unknown): never {
   const s = e instanceof Step ? e : new Step('runner', e instanceof Error ? e.message : String(e));
-  emit('error', { step: s.step, text: s.message });
+  emit({ t: 'error', step: s.step, text: s.message });
   if (ready) {
     stopChild();
     save();
     credits();
   }
-  process.exit(s.code);
+  finish(s.code);
 }
 
 process.on('SIGTERM', () => {
-  emit('error', { step: 'stopped', text: 'run stopped' });
+  emit({ t: 'error', step: 'stopped', text: 'run stopped' });
   stopChild();
   save();
   credits();
-  process.exit(143);
+  finish(143);
 });
 
 ready = true;

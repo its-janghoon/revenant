@@ -115,6 +115,7 @@ export const TIMELINE_KINDS = [
   "task_started", "task_done", "file_changed", "message", "run_done",
   "deploy_started", "deploy_failed", "deploy_live", "approval_needed",
   "repair_started", "repair_done", "preview_created", "preview_deleted", "published",
+  "error", "credits",
 ] as const;
 export type TimelineKind = (typeof TIMELINE_KINDS)[number];
 
@@ -128,23 +129,62 @@ export interface TimelineEvent {
 // ---------- runner log lines ----------
 // The runner prints one line per event to stdout. CodeBuild sends it to CloudWatch,
 // a log subscription parses lines that start with RUNNER_PREFIX and writes timeline events.
-// Format: `rv: {"v":1,"t":"task_done","project":"...","run":"...","at":"...", ...}`
+// Format: `rv: {"v":1,"t":"task_done","project":"...","run":"...","build":"...","at":"...", ...}`
+
+// `run` is RUN_ID (Revenant passes runs.id) or, without it, the CodeBuild build id. `build` is the
+// CodeBuild build id (runs.codebuild_id), null outside CodeBuild. `at` is strictly increasing
+// within a run, so (project, at) is unique. Strings are cut to 4000 characters.
+// The runner (runner/log.ts) cannot import zod; it builds these objects typed as RunnerLine.
 
 export const RUNNER_PREFIX = "rv: ";
 
-const lineBase = { v: z.literal(1), project: z.string().min(1), run: z.string().min(1), at: z.string().datetime() };
+const lineBase = {
+  v: z.literal(1),
+  project: z.string().min(1),
+  run: z.string().min(1),
+  build: z.string().nullable(),
+  at: z.string().datetime(),
+};
+const taskNumber = z.string().regex(/^\d+(\.\d+)*$/); // "3" or "3.1", as in tasks.md
+const finding = { rule: z.string().optional(), resource: z.string().optional() };
+
+export const ERROR_STEPS = [
+  "input", "secret", "prompt", "clone", "seed", "commit", "kiro", "spec", "check", "install", "lint",
+  "synth", "cfnlint", "guard", "push", "limit", "stopped", "runner",
+] as const;
 
 export const runnerLine = z.discriminatedUnion("t", [
-  z.object({ ...lineBase, t: z.literal("task_started"), task: z.number().int().positive(), title: z.string() }),
-  z.object({ ...lineBase, t: z.literal("task_done"), task: z.number().int().positive(), commit: z.string() }),
+  z.object({ ...lineBase, t: z.literal("task_started"), task: taskNumber, title: z.string() }),
+  z.object({ ...lineBase, t: z.literal("task_done"), task: taskNumber, title: z.string(), commit: z.string() }),
   z.object({ ...lineBase, t: z.literal("file_changed"), path: z.string(), change: z.enum(["add", "modify", "delete"]) }),
-  z.object({ ...lineBase, t: z.literal("message"), text: z.string() }),
+  z.object({
+    ...lineBase,
+    t: z.literal("message"),
+    from: z.enum(["agent", "runner", "guard"]),
+    text: z.string(),
+    cause: z.string().optional(), // repair runs: the agent's one-sentence cause
+    ...finding, // guard warnings
+  }),
+  z.object({ ...lineBase, t: z.literal("error"), step: z.enum(ERROR_STEPS), text: z.string(), ...finding }),
+  z.object({
+    ...lineBase,
+    t: z.literal("credits"),
+    used: z.number().nonnegative(), // session total so far
+    limit: z.number().positive().nullable(),
+    payer: z.enum(["company", "own"]),
+    model: z.string(),
+  }),
+  // Last line of every run. code: 0 pushed, 1 a step failed, 2 bad input,
+  // 3 time or credits limit (status "timeout"; never start a repair for it), 143 stopped.
   z.object({
     ...lineBase,
     t: z.literal("run_done"),
     status: z.enum(["succeeded", "failed", "stopped", "timeout"]),
+    code: z.number().int(),
     credits: z.number().nonnegative(),
     commit: z.string().nullable(),
+    branch: z.string().nullable(), // BRANCH on success, rv/run-<run> when work was saved, else null
+    seconds: z.number().nonnegative(),
   }),
 ]);
 export type RunnerLine = z.infer<typeof runnerLine>;
