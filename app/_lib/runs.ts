@@ -3,7 +3,7 @@ import "server-only";
 import { FilterLogEventsCommand } from "@aws-sdk/client-cloudwatch-logs";
 import { BatchGetBuildsCommand, StopBuildCommand, type Build } from "@aws-sdk/client-codebuild";
 import { CopyObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, ne } from "drizzle-orm";
 import { parseLine, type RunMode, type RunStatus } from "@/lib/contracts";
 import { broker } from "@/lib/broker/client";
 import { db, schema } from "@/lib/db/client";
@@ -209,19 +209,25 @@ async function firstDeploy(projectId: string): Promise<void> {
   if (!p?.repo || p.amplifyAppId || p.status !== "preview") return;
   const [last] = await projectRuns(p.id, 1);
   if (last?.mode !== "repair" || last.status !== "succeeded") return;
-  // Every page poll lands here and CreateApp is rate limited: one caller at a time, once a minute.
-  const now = Date.now();
-  if (now - (firstTried.get(p.id) ?? 0) < 60_000) return;
-  firstTried.set(p.id, now);
+  // Every page poll on every server instance lands here, and Amplify allows 25 app creations an
+  // hour: claim the project atomically, and after a failed start wait 10 minutes (a failed
+  // deploy row on the branch marks the attempt).
+  const branch = await workBranch(p.id);
+  const since = new Date(Date.now() - 10 * 60_000).toISOString();
+  const [recent] = await db.select({ id: schema.deploys.id }).from(schema.deploys)
+    .where(and(eq(schema.deploys.projectId, p.id), eq(schema.deploys.branch, branch), eq(schema.deploys.status, "failed"), gte(schema.deploys.createdAt, since)));
+  if (recent) return;
   const [claimed] = await db.update(projects).set({ status: "building" })
     .where(and(eq(projects.id, p.id), eq(projects.status, "preview"), isNull(projects.amplifyAppId))).returning({ id: projects.id });
   if (!claimed) return;
   await deployAfter(last, null);
-  // deployAfter logs a failed start; give it back so a later poll tries again.
   const [after] = await db.select({ app: projects.amplifyAppId }).from(projects).where(eq(projects.id, p.id));
-  if (!after?.app) await db.update(projects).set({ status: "preview" }).where(and(eq(projects.id, p.id), eq(projects.status, "building")));
+  if (!after?.app) {
+    const sha = (await head(p.repo, branch)) ?? "unknown";
+    await db.insert(schema.deploys).values({ projectId: p.id, branch, commit: sha, status: "failed" });
+    await db.update(projects).set({ status: "preview" }).where(and(eq(projects.id, p.id), eq(projects.status, "building")));
+  }
 }
-const firstTried = new Map<string, number>();
 
 /** The runner pushed the newest preview branch: hand it to the deploy lane. */
 async function deployAfter(run: RunRow, commit: string | null): Promise<void> {
@@ -232,7 +238,7 @@ async function deployAfter(run: RunRow, commit: string | null): Promise<void> {
   const sha = commit ?? (await head(p.repo, branch));
   if (!sha) return;
   const [known] = await db.select({ id: schema.deploys.id }).from(schema.deploys)
-    .where(and(eq(schema.deploys.projectId, p.id), eq(schema.deploys.branch, branch), eq(schema.deploys.commit, sha)));
+    .where(and(eq(schema.deploys.projectId, p.id), eq(schema.deploys.branch, branch), eq(schema.deploys.commit, sha), ne(schema.deploys.status, "failed")));
   if (known) return;
   try {
     await deployPreview(toProject(p), branch, sha);
