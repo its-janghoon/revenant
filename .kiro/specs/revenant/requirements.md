@@ -31,6 +31,7 @@ plus one demo install for judges.
 5. The install SHALL create an AWS Budgets alarm at the chosen monthly budget.
 6. WHEN Revenant is uninstalled THEN every generated app SHALL keep running (separate Amplify apps, repos and databases).
 7. The default install SHALL be public (Amplify Hosting, Cognito sign-in).
+8. WHEN the admin signs in for the first time THEN Revenant SHALL run onboarding: check the AWS account and the Kiro key, confirm the budget, pick Light or Haunted, and offer a first example request.
 
 ## Requirement 2: Ask
 
@@ -55,7 +56,7 @@ plus one demo install for judges.
 
 **User story:** As a user, I want to watch the app being built, so that I trust it.
 
-1. WHEN the user presses "Build it" THEN Revenant SHALL start a run of Kiro CLI headless in CodeBuild on the project repo.
+1. WHEN the user presses "Build it" THEN Revenant SHALL start a run of Kiro CLI headless in CodeBuild (ARM, medium) on the project repo, with the model the admin picked (default Auto).
 2. WHILE a run is going THE workspace SHALL stream the agent's messages, the task list with each task's state, and changed files.
 3. WHEN a task finishes THEN the agent SHALL commit it with the task number in the message.
 4. WHEN the run finishes THEN the push SHALL start an Amplify preview build (Requirement 5) and the workspace SHALL show the preview.
@@ -78,15 +79,29 @@ plus one demo install for judges.
 
 **User story:** As a user, I want my app's data to stay correct while the agent keeps changing the app.
 
-1. The source of truth for Revenant and for every generated app SHALL be Aurora Serverless v2 Postgres (minimum 0 ACU) with the Data API, defined in `backend.ts`.
-2. Code SHALL reach the database through the Data API with Drizzle. There SHALL be no public database, no VPC Lambda and no NAT gateway.
-3. Every table change SHALL ship as a Drizzle migration file in the same commit. Migrations SHALL run in the Amplify build.
-4. Append-only timeline events MAY live in Amplify Data (DynamoDB) for realtime subscriptions. Nothing else SHALL.
-5. Each app SHALL have a dev database and a prod database. Previews SHALL use dev data; only the published app SHALL use prod.
-6. Each preview SHALL get its own database copied from dev (`CREATE DATABASE <app>_pv<n> TEMPLATE <app>_dev`) inside one preview cluster per app.
-7. WHEN the user presses Publish THEN Revenant SHALL show the SQL migration diff, take a prod snapshot, and only then apply the migration to prod.
-8. The runner SHALL have access to dev and preview databases only. Only the publish step SHALL write to prod.
-9. A user SHALL be able to export any app's data with `pg_dump`.
+Revenant's own data:
+
+1. Revenant SHALL keep its own records in Aurora Serverless v2 Postgres (minimum 0 ACU) with the Data API and Drizzle migrations. Its append-only timeline MAY live in Amplify Data for realtime.
+
+Generated apps, default (**Amplify Data**):
+
+2. A generated app SHALL use Amplify Data (DynamoDB through AppSync) and deploy nothing else for data.
+3. Each Amplify branch SHALL get its own backend, so every preview has its own tables. The agent SHALL write a seed script that fills preview tables with sample data.
+4. The agent SHALL NOT change a model's identifier (it replaces the table and loses data).
+5. A new field SHALL be optional or come with a backfill function in the same commit.
+6. Renaming or removing a field or model SHALL wait for the user's approval, with the number of records affected.
+
+Generated apps, only WHERE the admin allows SQL (**Aurora Postgres**):
+
+7. The app SHALL get Aurora Serverless v2 Postgres with the Data API from `blocks/db`, and Drizzle migrations in the same commit as every table change.
+8. The app SHALL have a dev database and a prod database; each preview SHALL get its own database copied from dev (`CREATE DATABASE <app>_pv<n> TEMPLATE <app>_dev`) in one preview cluster per app.
+9. WHEN the user presses Publish THEN Revenant SHALL show the SQL migration diff, take a prod snapshot, and only then apply it.
+10. The runner SHALL reach dev and preview databases only; only the publish step SHALL write to prod.
+11. A user SHALL be able to export the app's data with `pg_dump`.
+
+Both:
+
+12. There SHALL be no public database, no VPC Lambda and no NAT gateway.
 
 ## Requirement 7: Fix itself
 
@@ -107,6 +122,8 @@ plus one demo install for judges.
 1. The home screen SHALL show AWS credits left (when Cost Explorer reports credits), month-to-date spend and forecast.
 2. Each project SHALL show its own month-to-date cost from its tags.
 3. WHEN forecast spend passes the budget THEN Revenant SHALL warn on every screen.
+4. Each run SHALL record the Kiro credits it used; the timeline and the admin dashboard SHALL show them.
+5. To save credits: a request that matches an example app SHALL copy that app's repo instead of building it again; new apps SHALL start from a starter template with `blocks/`; lint, synth, migrations and guardrail checks SHALL run as scripts, not as agent turns; common failures (for example a missing env var) SHALL be fixed by rules before calling the agent; steering files SHALL stay short; every run SHALL have a time limit.
 
 ## Requirement 9: Kiro Crew app
 
@@ -155,16 +172,28 @@ plus one demo install for judges.
     6. **Breath**: a very quiet breath plays when the failure log line appears.
 12. Lightning SHALL light the whole screen for its flash, past the flashlight.
 
-## Requirement 13: Demo install for judges
+## Requirement 13: Admin
+
+**User story:** As the admin, I want to set the rules for everyone in one place.
+
+1. Revenant SHALL have an admin dashboard at `/admin`, visible only to admins.
+2. The admin SHALL be able to turn SQL databases (Aurora) on or off for the whole install, and per user. Default: off.
+3. The admin SHALL be able to pick the Kiro model for runs. Default: **Auto**.
+4. The admin SHALL be able to set the monthly budget and an auto-delete period for apps (default: off).
+5. The admin SHALL see every user, every app, and each app's AWS cost and Kiro credits, and SHALL be able to invite, disable or delete users and delete apps.
+6. Every admin change SHALL be written to an audit log shown on the dashboard.
+
+## Requirement 14: Demo install for judges
 
 1. A demo Revenant SHALL run in a dedicated AWS account owned by Janghoon, installed with the same one-step install as customers.
 2. FinePrint SHALL be built in advance on the demo install, so judges can open it at once; judges MAY also build their own app.
+7. On the demo install, SQL SHALL be off, so judge apps use Amplify Data only.
 3. Each judge SHALL get an account and see only their own projects.
-4. Apps built by judges SHALL be deleted automatically 24 hours after creation.
+4. Apps built by judges SHALL be deleted automatically 24 hours after creation (the admin auto-delete period).
 5. The demo account SHALL have a Budgets alarm.
 6. The demo install SHALL stay up until the results are announced (2027-02-04 KST) and SHALL then be deleted by removing its stacks.
 
-## Requirement 14: Demo video
+## Requirement 15: Demo video
 
 1. The video SHALL show the one-step install into a fresh AWS account within 30 seconds.
 2. The demo SHALL build FinePrint from the request: "Build me a contract signing site where an AI flags toxic clauses before you sign." In Haunted mode FinePrint is subtitled "Blood Oath".
@@ -172,7 +201,7 @@ plus one demo install for judges.
 4. The video SHALL be under 3 minutes, show the differences from Lovable in the first 20 seconds, and contain no unlicensed trademarks or music. Storm sound is rendered by the app itself.
 5. The storyboard SHALL be approved by Janghoon before rendering.
 
-## Requirement 15: Submission
+## Requirement 16: Submission
 
 1. Revenant's own repository SHALL be public on GitHub with an OSI license in the About section, and `/.kiro` committed.
 2. `docs/kiro-usage.md` SHALL cover Kiro CLI headless, Kiro Crew (subagents, crons, monitors, memory), specs, steering, hooks, MCP and property-based tests.

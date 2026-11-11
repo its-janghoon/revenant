@@ -60,7 +60,8 @@ TypeScript functions the agent calls from `backend.ts`:
 
 | Block | Adds |
 |---|---|
-| `db` | Aurora Serverless v2 (min 0, auto-pause), Data API, managed secret, `<app>_prod` and `<app>_dev`; preview cluster with `<app>_pv<n>` databases |
+| `data` | Amplify Data models and a seed script (default) |
+| `db` | only when SQL is allowed: Aurora Serverless v2 (min 0), Data API, `<app>_prod` and `<app>_dev`, preview cluster with `<app>_pv<n>` databases |
 | `files` | S3 private bucket, presigned upload |
 | `mail` | SES sender identity (sandbox, verified address) |
 | `ai` | Bedrock invoke permission on the compute role |
@@ -85,17 +86,26 @@ gathered logs. Max 3 runs per failure.
 
 ## Data
 
+Generated apps use Amplify Data by default (DynamoDB per branch, so previews are isolated
+for free; a seed script fills them). The guardrail check also diffs `amplify/data/resource.ts`
+against `main`: an identifier change is rejected, a required new field without a backfill is
+rejected, a rename or removal needs approval. Aurora (`blocks/db`) is added only when the
+admin allows SQL for the owner.
+
 Revenant's own tables (Drizzle, Aurora):
 
 | Table | Key columns |
 |---|---|
 | `projects` | id, owner, name, request, repo, amplify_app_id, prod_url, status, created_at, expires_at |
-| `runs` | id, project_id, mode, commit, codebuild_id, status, started_at, ended_at |
+| `runs` | id, project_id, mode, model, commit, codebuild_id, status, credits, started_at, ended_at |
 | `tasks` | id, project_id, number, title, state |
 | `deploys` | id, project_id, branch, commit, status, url |
 | `repairs` | id, deploy_id or run_id, attempt, cause, branch, check_status, outcome, recovered_s |
 | `previews` | id, project_id, branch, db_name, created_at, deleted_at |
 | `costs` | project_id, day, usage_usd, credit_usd |
+| `settings` | key, value, updated_by, updated_at (sql_allowed, model, budget_usd, auto_delete_hours) |
+| `user_policies` | user_id, sql_allowed |
+| `audit` | id, actor, action, detail, at |
 
 Timeline (Amplify Data, DynamoDB, append-only, realtime): `event(project_id, at, kind, text)`.
 
@@ -113,8 +123,10 @@ with `RecordType` filters for Usage and Credit; the home screen also shows `GetC
 
 ## UI
 
-Routes: `/` (ask + credits), `/p/:id/spec`, `/p/:id` (workspace: chat and tasks on the
-left, preview on the right, heartbeat on top), `/p/:id/timeline`, `/p/:id/publish`, `/settings`.
+Routes: `/welcome` (onboarding), `/` (ask + credits), `/p/:id/spec`, `/p/:id` (workspace:
+chat and tasks on the left, preview on the right, heartbeat on top), `/p/:id/timeline`,
+`/p/:id/publish`, `/p/:id/app` (live app: URL, domain, cost), `/cost`, `/settings`, and admin:
+`/admin`, `/admin/users`, `/admin/apps`, `/admin/policy`, `/admin/audit`. Screens: `design/mockups/flow.html`.
 
 Themes: `data-mode="light|haunted"`, `data-calm="on|off"`, `data-snd="on|off"` on
 `<html>`, a head script sets them before first paint, one copy map for words. Effects and
