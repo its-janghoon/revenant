@@ -3,8 +3,7 @@
 import { associateWebAuthnCredential, deleteWebAuthnCredential, listWebAuthnCredentials } from "aws-amplify/auth";
 import { Bot, Brain, Copy, KeyRound, Loader, Palette, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import type { CrewToken } from "@/app/_lib/auth";
-import type { SettingsView } from "@/app/_lib/types";
+import type { CrewToken, SettingsView } from "@/app/_lib/types";
 import { ThemeSwitch } from "@/lib/theme";
 import { api, since } from "./api";
 import { W } from "./words";

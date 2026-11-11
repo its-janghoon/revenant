@@ -29,6 +29,9 @@ export interface Detail {
 
 export interface Me { sub: string; email: string; name: string; admin: boolean; onboarded: boolean }
 
+/** A Kiro Crew API token as Settings lists it. The token itself is shown once and never stored. */
+export interface CrewToken { id: string; owner: string; email: string; label: string; createdAt: string; lastUsedAt: string | null }
+
 export interface SettingsView {
   settings: Settings;
   sqlAllowed: boolean;
