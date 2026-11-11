@@ -12,7 +12,7 @@ import { LambdaDestination } from "aws-cdk-lib/aws-logs-destinations";
 import { AuroraPostgresEngineVersion, ClusterInstance, Credentials, DatabaseCluster, DatabaseClusterEngine } from "aws-cdk-lib/aws-rds";
 import { BlockPublicAccess, Bucket, BucketEncryption } from "aws-cdk-lib/aws-s3";
 import { Secret } from "aws-cdk-lib/aws-secretsmanager";
-import { CfnApplication, CfnResourceAssociation } from "aws-cdk-lib/aws-servicecatalogappregistry";
+import { CfnGroup } from "aws-cdk-lib/aws-resourcegroups";
 import { AwsCustomResource, AwsCustomResourcePolicy, PhysicalResourceId } from "aws-cdk-lib/custom-resources";
 import { auth } from "./auth/resource";
 import { data } from "./data/resource";
@@ -93,17 +93,21 @@ new SubscriptionFilter(Stack.of(backend.timeline.resources.lambda), "RunnerLines
   filterPattern: FilterPattern.literal(`"${RUNNER_PREFIX.trim()}"`),
 });
 
-// ---------- AppRegistry: Revenant itself in myApplications ----------
-const application = new CfnApplication(backend.stack, "Application", {
+// ---------- Resource group: Revenant itself, by its revenant:* tags ----------
+// AppRegistry is closed to new accounts since 2026-07-30; AWS points to tag-based groups.
+const application = new CfnGroup(backend.stack, "Application", {
   name,
   description: "Revenant, the app builder (this install)",
-});
-// A stack tag must be plain text, and the ARN is only known at deploy time, so
-// associate the stack instead; AppRegistry then adds the awsApplication tag itself.
-new CfnResourceAssociation(backend.stack, "ApplicationStack", {
-  application: application.attrId,
-  resource: backend.stack.stackId,
-  resourceType: "CFN_STACK",
+  resourceQuery: {
+    type: "TAG_FILTERS_1_0",
+    query: {
+      resourceTypeFilters: ["AWS::AllSupported"],
+      tagFilters: [
+        { key: "revenant:app", values: ["revenant"] },
+        { key: "revenant:env", values: [envName] },
+      ],
+    },
+  },
 });
 
 // ---------- runner: the shared CodeBuild project every run uses (runner/) ----------
