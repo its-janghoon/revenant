@@ -48,7 +48,7 @@ https://github.com/its-janghoon/revenant (public, MIT in the About section, `/.k
 
 kiro, kiro-cli, kiro-crew, aws, aws-amplify, amplify-gen-2, aws-cloudformation, aws-cdk,
 aws-codebuild, aws-codecommit, amazon-cognito, amazon-eventbridge, aws-lambda,
-amazon-aurora, aws-secrets-manager, aws-cost-explorer, aws-appregistry, next.js, react,
+amazon-aurora, aws-secrets-manager, aws-cost-explorer, aws-resource-groups, next.js, react,
 typescript, drizzle, zod, fast-check, python, mcp
 
 ## About the project
@@ -114,7 +114,17 @@ four modes (spec, build, change, repair) and Revenant's own steering copied into
 
 - A one-step install into a fresh AWS account, with no GitHub token and no mail domain.
 - A repair loop with the cause, the fix and the time to recover on record.
-  Time to recover on the planted breaks: `TTR_RESULTS`.
+  Time to recover on the planted breaks (FinePrint preview, 2026-11-11, measured from the
+  failed deploy or check to the live redeploy):
+
+  | Planted break | Fixed by | Time to recover | Kiro credits |
+  |---|---|---|---|
+  | Required env var `RV_APP` removed from the Amplify app | rule (no agent) | 342 s | 0 |
+  | Lambda pinned to Node 16, a runtime AWS retired | Kiro repair run | 478 s | 0.9 |
+  | Code tab commit adds a required field to an existing model with no backfill | guard stopped it before deploy, Kiro repair run made it optional | 579 s | 0.6 |
+
+  The first FinePrint deploy also failed on its own (the seed step had no table access);
+  repair found and fixed that unprompted in 847 s.
 - A Haunted theme built from horror-film grammar instead of Halloween clip art.
 
 ### What we learned
@@ -140,7 +150,7 @@ pushed branch, not its report, caught the joins that did not fit.
      the time to recover.
   3. Switch the header from **Light** to **Haunted** (turn Sound on for rain and thunder).
   4. Build your own: on Home, ask for a small app, read the spec, press **Build it**. A build
-     takes about `BUILD_MINUTES` minutes.
+     takes about 15 minutes (FinePrint: 13 tasks, 15 minutes, 18 Kiro credits).
   5. In the studio, turn on **Select** and click an element to see its file and line.
 - Limits on this install: SQL is off (Amplify Data only), you see only your own projects,
   and apps you build are deleted automatically 24 hours after creation.

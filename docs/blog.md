@@ -36,7 +36,8 @@ Then:
    a resource waits for your approval.
 5. **When a deploy dies, it fixes itself.** EventBridge catches the failure, a repair run reads
    the logs, states the cause in one sentence, fixes it on a `revenant/fix-<n>` branch, checks
-   it and redeploys. Time to recover on our planted breaks: TODO (AWS run).
+   it and redeploys. Time to recover on our planted breaks: 342 s (missing env var, fixed by a
+   rule), 478 s (retired Node 16 runtime) and 579 s (required field with no backfill).
 
 Every generated app is a plain Amplify Gen 2 app. Uninstall Revenant and the apps keep running.
 
@@ -94,7 +95,8 @@ By 17:36 KST on 2026-11-11, the first day, `develop` had 81 commits, and buildin
 ## What is next
 
 - The first end-to-end run on a dedicated AWS account: install, FinePrint built from the
-  request, three planted breaks repaired. TODO (AWS run): credits per build, time to recover.
+  request, three planted breaks repaired. One FinePrint build: 13 tasks, 15 minutes, 18 Kiro
+  credits; each repair run under 1 credit; recovery in 342-579 s.
 - A judge install where each judge gets an account and their apps delete themselves after 24 hours.
 
 Revenant is open source under MIT: https://github.com/its-janghoon/revenant
