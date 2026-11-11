@@ -4,6 +4,6 @@ import { defineFunction } from "@aws-amplify/backend";
 export const broker = defineFunction({
   name: "broker",
   entry: "./handler.ts",
-  timeoutSeconds: 60,
+  timeoutSeconds: 120,
   memoryMB: 256,
 });

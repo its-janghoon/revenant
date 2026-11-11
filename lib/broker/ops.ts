@@ -92,14 +92,25 @@ export async function run(op: Op, c: Config): Promise<unknown> {
     case "role":
       return ensureRole(op.app, op.owner, c);
     case "build": {
-      const r = await new CodeBuildClient({ region: c.region }).send(new StartBuildCommand({
+      const input = {
         projectName: c.runnerProject,
         serviceRoleOverride: `arn:${c.partition}:iam::${c.account}:role/${roleName(op.app)}`,
         ...(op.minutes ? { timeoutInMinutesOverride: op.minutes } : {}),
-        environmentVariablesOverride: Object.entries(op.vars).map(([name, value]) => ({ name, value, type: "PLAINTEXT" })),
-        logsConfigOverride: { cloudWatchLogs: { status: "ENABLED", groupName: c.runnerLogGroup } },
-      }));
-      return { id: r.build?.id ?? null };
+        environmentVariablesOverride: Object.entries(op.vars).map(([name, value]) => ({ name, value, type: "PLAINTEXT" as const })),
+        logsConfigOverride: { cloudWatchLogs: { status: "ENABLED" as const, groupName: c.runnerLogGroup } },
+      };
+      const cb = new CodeBuildClient({ region: c.region });
+      // A role made seconds ago is not yet usable by CodeBuild (IAM is eventually consistent).
+      for (let i = 1; ; i++) {
+        try {
+          const r = await cb.send(new StartBuildCommand(input));
+          return { id: r.build?.id ?? null };
+        } catch (e) {
+          // The server's request has about 30 s in total, so wait at most 20 s here.
+          if (i >= 5 || !/sts:AssumeRole/.test((e as Error).message ?? "")) throw e;
+          await new Promise((r) => setTimeout(r, 5_000));
+        }
+      }
     }
     case "createApp":
       return strip(await new AmplifyClient({ region: c.region }).send(new CreateAppCommand(op.input)));

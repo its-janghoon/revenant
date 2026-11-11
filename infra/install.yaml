@@ -97,8 +97,11 @@ Resources:
                 Resource: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:rv-revenant-*-db-*
               # Server (SSR) logs: Amplify writes them with this role.
               - Effect: Allow
-                Action: [logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents, logs:DescribeLogGroups]
+                Action: [logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents]
                 Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/amplify/*
+              - Effect: Allow
+                Action: logs:DescribeLogGroups
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:*
   # Compute role: what the Revenant server (Next.js SSR) may do. Lanes list what they need; lane X adds it here.
   ComputeRole:
     Type: AWS::IAM::Role
@@ -319,8 +322,11 @@ Resources:
                 Resource: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:rv-*-db-*
               # Server (SSR) logs of generated apps.
               - Effect: Allow
-                Action: [logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents, logs:DescribeLogGroups]
+                Action: [logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents]
                 Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/amplify/*
+              - Effect: Allow
+                Action: logs:DescribeLogGroups
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:*
               - Effect: Deny
                 Action: [rds-data:*, secretsmanager:*, codecommit:*]
                 Resource:
