@@ -1,6 +1,6 @@
 "use client";
 // One-screen onboarding (flow2.js S.welcome): pick a look, start with FinePrint or a blank prompt.
-import { ArrowRight, CheckCircle2, CircleAlert, FileSignature, Ghost, Loader, Sun } from "lucide-react";
+import { ArrowRight, CheckCircle2, CircleAlert, FileSignature, Loader, Moon, Sun } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import type { Project } from "@/lib/contracts";
@@ -55,7 +55,7 @@ export function Welcome(p: WelcomeProps) {
           </button>
           <button type="button" role="radio" aria-checked={t.mode === "haunted"} className={t.mode === "haunted" ? "on" : ""} onClick={() => setMode("haunted")}>
             <div className="pv" style={{ background: "radial-gradient(circle at 30% 30%,#2a2522,#060607 70%)", borderBottom: "1px solid #241f1b", padding: 14, color: "#e9e2d2", font: "italic 700 20px var(--serif)" }}>It has risen.</div>
-            <div className="tx"><b><Ghost size={15} aria-hidden /> Haunted</b><div className="muted">Rain, thunder, deploys that die and rise.</div></div>
+            <div className="tx"><b><Moon size={15} aria-hidden /> Haunted</b><div className="muted">Rain, thunder, deploys that die and rise.</div></div>
           </button>
         </div>
         <div className="label" style={{ textAlign: "left" }}>Start with</div>

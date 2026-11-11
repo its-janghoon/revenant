@@ -30,22 +30,4 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
   return data as T;
 }
 
-export const usd = (n: number | null | undefined, digits = 2) =>
-  n === null || n === undefined ? "--" : `$${n.toLocaleString("en-US", { minimumFractionDigits: n >= 1000 ? 0 : digits, maximumFractionDigits: n >= 1000 ? 0 : digits })}`;
-
-export function ago(iso: string | null | undefined): string {
-  if (!iso) return "";
-  const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000);
-  if (s < 60) return "now";
-  if (s < 3600) return `${Math.floor(s / 60)} min`;
-  if (s < 86400) return `${Math.floor(s / 3600)} h`;
-  return `${Math.floor(s / 86400)} d`;
-}
-
-export const clock = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
-export function dur(s: number | null | undefined): string {
-  if (s === null || s === undefined) return "--";
-  const m = Math.floor(s / 60);
-  return m ? `${m}m ${Math.round(s % 60)}s` : `${Math.round(s)}s`;
-}
+export { ago, clock, dur, since, usd } from "./format";

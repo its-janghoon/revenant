@@ -1,7 +1,7 @@
 // One app on the home and apps screens: name, status, cost this month, what it is doing.
 import Link from "next/link";
 import type { ProjectCard } from "@/app/_lib/types";
-import { usd } from "./api";
+import { usd } from "./format";
 import { StatusChip } from "./words";
 
 function line(p: ProjectCard): string {
