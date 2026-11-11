@@ -14,7 +14,8 @@ Built for Kiroween 2026 (Frankenstein category). Work in progress.
 Demo request: "Build me a contract signing site where an AI flags toxic clauses before you sign."
 
 - Spec: [.kiro/specs/revenant](.kiro/specs/revenant)
-- Mockups: [design/mockups](design/mockups)
+- Mockups: [design/mockups](design/mockups) (open `live.html`, toggle Halloween)
+- Host your own on AWS: [docs/self-host.md](docs/self-host.md)
 - Kiro usage log: [docs/kiro-usage.md](docs/kiro-usage.md)
 - Kiro credits per message: [docs/credits.md](docs/credits.md)
 

@@ -16,6 +16,7 @@ user's AWS credits.
 3. WHEN the stack finishes THEN the output SHALL be the Revenant URL and the admin SHALL get a sign-in email.
 4. The install stack SHALL create an AWS Budgets alarm at the chosen monthly budget.
 5. WHEN Revenant is uninstalled THEN every generated app SHALL keep running (separate stacks and repos).
+6. The default install SHALL be public (Amplify Hosting, email sign-in). `docs/self-host.md` SHALL describe the private layout (ECS Fargate, internal ALB, Route 53 private zone, Verified Access or Client VPN).
 
 ## Requirement 2: Ask
 

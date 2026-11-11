@@ -1,0 +1,313 @@
+<!doctype html>
+<html data-scheme="dark" data-mode="normal">
+<head>
+<meta charset="utf-8">
+<title>Revenant · workspace</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500;1,700&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+/* ---------------- tokens: 2 schemes x 2 modes ---------------- */
+:root{
+  --r:8px; --head:Inter,sans-serif; --headstyle:normal; --headw:600; --body:Inter,sans-serif; --mono:"JetBrains Mono",monospace;
+  --track:-.01em; --capcase:none;
+}
+[data-scheme=light][data-mode=normal]{ --bg:#fbfbfa; --panel:#ffffff; --sunk:#f4f4f2; --fg:#141414; --muted:#6c6c68; --line:#e7e6e2; --accent:#141414; --onaccent:#fff; --bad:#d4351c; --ok:#127a45; --warn:#9a6400; --ecg:#127a45; }
+[data-scheme=dark][data-mode=normal]{ --bg:#0c0c0d; --panel:#121214; --sunk:#0a0a0b; --fg:#ececea; --muted:#8b8b88; --line:#232326; --accent:#ececea; --onaccent:#0c0c0d; --bad:#ff5f45; --ok:#3ddc84; --warn:#f0b443; --ecg:#3ddc84; }
+/* spooky: no purple, no orange. bone, soot, one blood red. */
+[data-mode=spooky]{ --r:2px; --head:"Cormorant Garamond",serif; --headstyle:italic; --headw:700; --track:.01em; --capcase:uppercase; }
+[data-scheme=dark][data-mode=spooky]{ --bg:#060607; --panel:#0c0b0b; --sunk:#050505; --fg:#e9e2d2; --muted:#7f776b; --line:#211d1a; --accent:#b3121c; --onaccent:#f3ebdb; --bad:#e3202c; --ok:#c9c1ad; --warn:#9c8a6a; --ecg:#d8d0bc; }
+[data-scheme=light][data-mode=spooky]{ --bg:#d9d2c3; --panel:#e6dfd0; --sunk:#cfc7b6; --fg:#1a1412; --muted:#5f554b; --line:#b8ad99; --accent:#7d0a10; --onaccent:#efe8d8; --bad:#8f0b12; --ok:#2b2622; --warn:#5b4a2e; --ecg:#2b2622; }
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font:13px/1.45 var(--body);overflow:hidden;transition:background .6s,color .6s}
+.mono{font-family:var(--mono);font-size:11.5px}
+.muted{color:var(--muted)}
+.h{font-family:var(--head);font-style:var(--headstyle);font-weight:var(--headw);letter-spacing:var(--track)}
+
+header{height:52px;display:flex;align-items:center;gap:14px;padding:0 20px;border-bottom:1px solid var(--line);position:relative;z-index:3}
+.logo{font:700 15px var(--body);letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
+[data-mode=spooky] .logo{font:700 20px/1 "Cormorant Garamond",serif;font-style:italic;letter-spacing:.02em}
+.logo i{width:16px;height:16px;border:2px solid var(--fg);border-radius:50% 50% 2px 2px;display:inline-block}
+.crumb{color:var(--muted)} .crumb b{color:var(--fg);font-weight:500}
+.sp{flex:1}
+.credits{font:500 11.5px var(--mono);color:var(--muted)} .credits b{color:var(--fg)}
+.seg{display:flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.seg button{all:unset;cursor:pointer;padding:5px 10px;font-size:11.5px;color:var(--muted)}
+.seg button.on{background:var(--fg);color:var(--bg)}
+[data-mode=spooky] .seg.mode button.on{background:var(--accent);color:var(--onaccent)}
+
+main{display:grid;grid-template-columns:380px 1fr;height:calc(100% - 52px);position:relative;z-index:2}
+aside{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.sec{padding:16px 18px;border-bottom:1px solid var(--line)}
+.label{font:600 10.5px var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px}
+[data-mode=spooky] .label{font:400 11px "Special Elite",monospace;letter-spacing:.12em}
+.task{display:flex;align-items:center;gap:10px;padding:4px 0;font-size:12.5px;color:var(--muted);transition:color .3s}
+.task .b{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--line);flex:none;position:relative;transition:all .3s}
+.task.run{color:var(--fg)} .task.run .b{border-color:var(--warn);animation:spin 1s linear infinite;border-radius:50%;border-top-color:transparent}
+.task.done{color:var(--fg)} .task.done .b{background:var(--ok);border-color:var(--ok)}
+.task.done .b::after{content:"";position:absolute;left:4px;top:1px;width:3px;height:7px;border:solid var(--bg);border-width:0 2px 2px 0;transform:rotate(45deg)}
+[data-mode=spooky] .task.done .b{background:none;border-color:var(--muted)}
+[data-mode=spooky] .task.done .b::after{border-color:var(--fg);border-width:0 0 0 0}
+[data-mode=spooky] .task.done .b::before{content:"✝";position:absolute;inset:-3px 0 0 1px;font-size:12px;color:var(--fg)}
+[data-mode=spooky] .task.done{text-decoration:line-through;text-decoration-color:var(--accent);text-decoration-thickness:1px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.log{flex:1;overflow:hidden;padding:14px 18px;font:12px/1.65 var(--mono);display:flex;flex-direction:column;justify-content:flex-end;gap:2px}
+.log .ln{opacity:0;transform:translateY(4px);animation:in .35s forwards}
+.log .who{color:var(--muted)} .log .bad{color:var(--bad)} .log .ok{color:var(--ok)} .log .add{color:var(--ok)} .log .del{color:var(--bad)}
+[data-mode=spooky] .log .ln.agent{font:italic 500 15px/1.4 "Cormorant Garamond",serif}
+@keyframes in{to{opacity:1;transform:none}}
+.ask{margin:0 18px 18px;border:1px solid var(--line);border-radius:calc(var(--r) + 2px);padding:11px 12px;color:var(--muted);background:var(--panel)}
+
+.right{display:grid;grid-template-rows:auto 1fr;min-height:0}
+.vitals{display:grid;grid-template-columns:260px 1fr 200px;align-items:center;gap:20px;padding:18px 24px;border-bottom:1px solid var(--line);position:relative;overflow:hidden}
+.state{font:700 34px/1 var(--body);letter-spacing:-.03em;position:relative}
+[data-mode=spooky] .state{font:italic 700 46px/1 "Cormorant Garamond",serif;letter-spacing:0}
+.state small{display:block;font:500 11.5px var(--mono);color:var(--muted);letter-spacing:0;margin-top:8px;font-style:normal}
+canvas#ecg{width:100%;height:70px;display:block}
+.kpi{text-align:right} .kpi .n{font:600 22px var(--body)} .kpi .t{font:500 11px var(--mono);color:var(--muted)}
+[data-mode=spooky] .kpi .n{font:italic 700 28px "Cormorant Garamond",serif}
+
+.body{display:grid;grid-template-columns:1fr 340px;min-height:0}
+.preview{padding:20px 24px;display:flex;flex-direction:column;min-height:0}
+.frame{flex:1;border:1px solid var(--line);border-radius:calc(var(--r) + 2px);overflow:hidden;display:flex;flex-direction:column;background:var(--panel);position:relative}
+.url{padding:7px 12px;border-bottom:1px solid var(--line);font:11px var(--mono);color:var(--muted);display:flex;gap:8px}
+.url .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);margin-top:4px;transition:background .3s}
+.site{flex:1;background:#f7f5f0;color:#1b1a17;padding:30px 36px;font:13px Inter;transition:filter .6s,opacity .6s}
+.site h2{font:600 26px/1.1 "Cormorant Garamond",serif;margin-bottom:6px}
+.site .doc{background:#fff;border:1px solid #ddd8cc;padding:16px 18px;margin-top:16px;font:12px/1.7 "Cormorant Garamond",serif;max-width:520px}
+.site mark{background:#f6d6d0;color:inherit;box-shadow:0 0 0 1px #c0392b inset}
+.site .btn{display:inline-block;background:#9b1b1b;color:#fff;padding:9px 16px;border-radius:4px;margin-top:16px;font-weight:600}
+.frame.dead .site{filter:grayscale(1) contrast(.8) brightness(.55);opacity:.5}
+.tomb{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;opacity:0}
+.frame.dead .tomb{opacity:1}
+.tomb .card{background:var(--panel);border:1px solid var(--bad);padding:14px 18px;font:12px var(--mono);color:var(--bad);border-radius:var(--r)}
+[data-mode=spooky] .tomb .card{border:none;background:none;text-align:center;color:var(--fg)}
+[data-mode=spooky] .tomb .stone{width:120px;height:140px;margin:0 auto 10px;background:linear-gradient(#3a3532,#1c1917);border-radius:60px 60px 4px 4px;display:grid;place-items:center;font:italic 700 18px "Cormorant Garamond",serif;color:#cfc6b3;box-shadow:0 30px 40px -20px #000;transform:translateY(60px);animation:rise 1.4s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes rise{to{transform:none}}
+.stone{display:none} [data-mode=spooky] .stone{display:grid}
+
+.timeline{border-left:1px solid var(--line);padding:20px 22px;overflow:hidden}
+.ev{position:relative;padding:0 0 16px 20px;opacity:0;animation:in .4s forwards}
+.ev::before{content:"";position:absolute;left:0;top:5px;width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.ev::after{content:"";position:absolute;left:3.5px;top:16px;bottom:2px;width:1px;background:var(--line)}
+.ev.bad::before{background:var(--bad)} .ev.ok::before{background:var(--ok)} .ev.fix::before{background:var(--warn)}
+.ev b{font-weight:600} .ev .mono{display:block;color:var(--muted);margin-top:2px}
+[data-mode=spooky] .ev b{font:italic 700 16px "Cormorant Garamond",serif}
+[data-mode=spooky] .ev.bad::before{border-radius:4px 4px 1px 1px;width:8px;height:10px}
+
+/* ---------------- effects (spooky only) ---------------- */
+#grain,#dark,#flash{position:fixed;inset:0;pointer-events:none;z-index:10;display:none}
+[data-mode=spooky] #grain,[data-mode=spooky] #dark,[data-mode=spooky] #flash{display:block}
+#grain{opacity:.07;mix-blend-mode:overlay;width:100%;height:100%;image-rendering:pixelated}
+[data-scheme=light][data-mode=spooky] #grain{opacity:.06;mix-blend-mode:multiply}
+#dark{background:radial-gradient(circle 420px at var(--x,70%) var(--y,30%),transparent 0,rgba(0,0,0,.18) 45%,rgba(0,0,0,.62) 100%);transition:background .05s}
+[data-scheme=light][data-mode=spooky] #dark{background:radial-gradient(circle 340px at var(--x,70%) var(--y,30%),transparent 0,rgba(40,20,10,.18) 50%,rgba(30,15,8,.55) 100%)}
+#flash{background:var(--bad);opacity:0}
+body.dying #flash{animation:flash 1.2s ease-out}
+@keyframes flash{0%{opacity:.55}8%{opacity:0}14%{opacity:.35}100%{opacity:0}}
+[data-mode=spooky] main{animation:flicker 7s infinite steps(1)}
+@keyframes flicker{0%,100%{opacity:1}41%{opacity:1}41.4%{opacity:.82}41.8%{opacity:1}42.6%{opacity:.9}43%{opacity:1}77%{opacity:1}77.3%{opacity:.86}77.6%{opacity:1}}
+[data-mode=spooky] body.dying main{animation:shake .5s cubic-bezier(.36,.07,.19,.97) both}
+@keyframes shake{10%,90%{transform:translate(-1px,0)}20%,80%{transform:translate(3px,-1px)}30%,50%,70%{transform:translate(-6px,2px)}40%,60%{transform:translate(6px,-2px)}}
+[data-mode=spooky] body.dying .state,[data-mode=spooky].dying .state{animation:glitch .9s steps(2) 2}
+.glitch{animation:glitch .9s steps(2) 2}
+@keyframes glitch{
+  0%{text-shadow:2px 0 #ff003c,-2px 0 #00e5ff;clip-path:inset(0 0 60% 0);transform:translate(-3px)}
+  20%{text-shadow:-3px 0 #ff003c,3px 0 #00e5ff;clip-path:inset(40% 0 20% 0);transform:translate(4px)}
+  40%{text-shadow:3px 0 #ff003c,-1px 0 #00e5ff;clip-path:inset(70% 0 0 0);transform:translate(-2px)}
+  60%{text-shadow:-2px 0 #ff003c,2px 0 #00e5ff;clip-path:inset(10% 0 50% 0);transform:translate(2px)}
+  80%{text-shadow:none;clip-path:inset(0);transform:none}100%{text-shadow:none;clip-path:inset(0);transform:none}}
+.bleed{filter:url(#bleed)}
+.risen{animation:risen 1.6s cubic-bezier(.2,.8,.2,1)}
+@keyframes risen{0%{filter:blur(14px);opacity:0;letter-spacing:.3em}100%{filter:blur(0);opacity:1}}
+[data-mode=spooky] .vitals.alive::before{content:"";position:absolute;inset:-40%;background:radial-gradient(circle at 18% 50%,rgba(233,226,210,.16),transparent 40%);animation:bloom 2.4s ease-out}
+@keyframes bloom{0%{opacity:0}20%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><filter id="bleed"><feTurbulence id="turb" type="fractalNoise" baseFrequency="0.02 0.09" numOctaves="2" seed="3"/><feDisplacementMap in="SourceGraphic" scale="9"/></filter></svg>
+<canvas id="grain" width="720" height="440"></canvas><div id="dark"></div><div id="flash"></div>
+
+<header>
+  <div class="logo"><i></i><span>Revenant</span></div>
+  <div class="crumb">/ <b>bloodoath</b></div>
+  <div class="sp"></div>
+  <div class="credits" data-t="credits"></div>
+  <div class="seg scheme"><button data-scheme="light">Light</button><button data-scheme="dark">Dark</button></div>
+  <div class="seg mode"><button data-mode="normal">Normal</button><button data-mode="spooky" data-t="spookyBtn"></button></div>
+</header>
+
+<main>
+  <aside>
+    <div class="sec"><div class="label" data-t="tasks"></div><div id="tasks"></div></div>
+    <div class="log" id="log"></div>
+    <div class="ask" data-t="ask"></div>
+  </aside>
+  <section class="right">
+    <div class="vitals" id="vitals">
+      <div class="state" id="state"></div>
+      <canvas id="ecg" width="1400" height="140"></canvas>
+      <div class="kpi"><div class="n" id="ttr">--</div><div class="t" data-t="ttr"></div></div>
+    </div>
+    <div class="body">
+      <div class="preview">
+        <div class="label" data-t="preview"></div>
+        <div class="frame" id="frame">
+          <div class="url"><span class="dot" id="dot"></span><span>bloodoath.d3x9k.amplifyapp.com</span></div>
+          <div class="site">
+            <div style="font:600 11px Inter;letter-spacing:.1em;color:#8a857a">BLOODOATH</div>
+            <h2>Read it before you sign it.</h2>
+            <div style="color:#6b675e">lease-2026.pdf · 1 toxic clause · 1 to watch</div>
+            <div class="doc"><b>12. Liability.</b> <mark>Tenant shall indemnify Landlord against any and all claims, without limit, including those caused by Landlord's own negligence.</mark><br><b>13. Repairs.</b> Landlord shall keep the roof and structure in good repair.</div>
+            <span class="btn">Sign document</span>
+          </div>
+          <div class="tomb"><div class="card"><div class="stone">#14</div><div id="tombtxt"></div></div></div>
+        </div>
+      </div>
+      <div class="timeline"><div class="label" data-t="timeline"></div><div id="tl"></div></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const root = document.documentElement;
+const q = new URLSearchParams(location.search);
+root.dataset.scheme = q.get("scheme") || "dark";
+root.dataset.mode = q.get("mode") || "normal";
+
+/* ---------------- one copy map, keyed by mode ---------------- */
+const COPY = {
+  normal: { credits: 'AWS credits <b>$4,812</b> · $38 this month', spookyBtn: "Halloween", tasks: "Tasks · 7", ask: "Ask for a change…", ttr: "time to recover", preview: "Preview", timeline: "Timeline",
+    building: "Building", deploying: "Deploying", dead: "Failed", repair: "Repairing", alive: "Live",
+    sub: { building: "task {n} / 7 · kiro-cli", deploying: "deploy #14 · CloudFormation", dead: "deploy #14 · CREATE_FAILED", repair: "repair 1 / 3 · kiro-cli", alive: "deploy #15 · 200 OK" },
+    tomb: "Deploy #14 failed", evFail: "Deploy #14 failed", evFix: "Repair 1", evOk: "Check passed", evLive: "Deploy #15 live", agent: "kiro" },
+  spooky: { credits: 'Credits in the crypt <b>$4,812</b> · $38 bled', spookyBtn: "Haunted", tasks: "The incantation · 7", ask: "Whisper a change…", ttr: "time in the grave", preview: "The vessel", timeline: "The chronicle",
+    building: "Summoning", deploying: "Descending", dead: "It died.", repair: "The ritual", alive: "It has risen.",
+    sub: { building: "verse {n} of 7 · kiro-cli", deploying: "deploy #14 · into the stack", dead: "deploy #14 · CREATE_FAILED", repair: "ritual 1 of 3 · kiro-cli", alive: "deploy #15 · heartbeat found" },
+    tomb: "here lies deploy #14", evFail: "Deploy #14 died", evFix: "Ritual 1", evOk: "The seal held", evLive: "Risen", agent: "kiro" },
+};
+const C = () => COPY[root.dataset.mode];
+function paintCopy() {
+  document.querySelectorAll("[data-t]").forEach((el) => (el.innerHTML = C()[el.dataset.t]));
+  document.querySelectorAll(".seg button").forEach((b) => b.classList.toggle("on", root.dataset[b.dataset.scheme ? "scheme" : "mode"] === (b.dataset.scheme || b.dataset.mode)));
+  renderState(false);
+}
+document.querySelectorAll(".seg button").forEach((b) => b.onclick = () => { if (b.dataset.scheme) root.dataset.scheme = b.dataset.scheme; else root.dataset.mode = b.dataset.mode; paintCopy(); });
+
+/* ---------------- ECG: the app's heartbeat ---------------- */
+const cv = $("#ecg"), g = cv.getContext("2d");
+let ecgState = "building", buf = new Array(700).fill(0), t = 0;
+function beat(p) { // one PQRST complex, p in [0,1)
+  const k = (c, w, h) => h * Math.exp(-((p - c) ** 2) / w);
+  return k(.18, .0012, .12) - k(.30, .00012, .18) + k(.33, .00018, 1) - k(.37, .00015, .32) + k(.6, .004, .22);
+}
+function ecgSample() {
+  t++;
+  if (ecgState === "dead") return (Math.random() - .5) * .015;
+  if (ecgState === "alive") return beat((t % 70) / 70);
+  if (ecgState === "repair") return beat((t % 34) / 34) * .45 + (Math.random() - .5) * .04;
+  return beat((t % 110) / 110) * .3 + (Math.random() - .5) * .03;
+}
+function drawEcg() {
+  for (let i = 0; i < 4; i++) { buf.shift(); buf.push(ecgSample()); }
+  const W = cv.width, H = cv.height, col = getComputedStyle(root).getPropertyValue(ecgState === "dead" ? "--bad" : "--ecg").trim();
+  g.clearRect(0, 0, W, H);
+  g.strokeStyle = getComputedStyle(root).getPropertyValue("--line"); g.lineWidth = 1;
+  for (let x = 0; x < W; x += 40) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+  g.strokeStyle = col; g.lineWidth = root.dataset.mode === "spooky" ? 2.6 : 2; g.shadowColor = col; g.shadowBlur = root.dataset.mode === "spooky" ? 10 : 0;
+  g.beginPath();
+  buf.forEach((v, i) => { const x = i / (buf.length - 1) * W, y = H * .62 - v * H * .55; i ? g.lineTo(x, y) : g.moveTo(x, y); });
+  g.stroke(); g.shadowBlur = 0;
+  const lx = W - 2, ly = H * .62 - buf[buf.length - 1] * H * .55;
+  g.fillStyle = col; g.beginPath(); g.arc(lx, ly, 4, 0, 7); g.fill();
+}
+
+/* ---------------- film grain ---------------- */
+const gc = $("#grain"), gg = gc.getContext("2d"), img = gg.createImageData(gc.width, gc.height);
+function grain() { const d = img.data; for (let i = 0; i < d.length; i += 4) { const v = Math.random() * 255 | 0; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; } gg.putImageData(img, 0, 0); }
+
+/* ---------------- flashlight follows the cursor, else the action ---------------- */
+let mx = null, my = null, lastMove = 0, fx = innerWidth * .7, fy = innerHeight * .25, target = "#state";
+addEventListener("mousemove", (e) => { mx = e.clientX; my = e.clientY; lastMove = performance.now(); });
+function light() {
+  let tx, ty;
+  if (mx !== null && performance.now() - lastMove < 2500) { tx = mx; ty = my; }
+  else { const r = $(target).getBoundingClientRect(); tx = r.left + r.width / 2; ty = r.top + r.height / 2; }
+  fx += (tx - fx) * .08; fy += (ty - fy) * .08;
+  $("#dark").style.setProperty("--x", fx + "px"); $("#dark").style.setProperty("--y", fy + "px");
+}
+
+let frame = 0;
+(function loop() { frame++; drawEcg(); if (root.dataset.mode === "spooky") { if (frame % 3 === 0) grain(); light(); } requestAnimationFrame(loop); })();
+
+/* ---------------- the scripted run: build -> die -> ritual -> risen ---------------- */
+const TASKS = ["Skeleton and theme", "Upload and preview", "Review agent", "Fields and sending", "Signing", "Final PDF and seal", "Verify page"];
+let state = "building", n = 1;
+function renderState(anim) {
+  window.__state = state; const el = $("#state");
+  el.innerHTML = C()[state] + `<small>${C().sub[state].replace("{n}", n)}</small>`;
+  el.classList.remove("glitch", "risen", "bleed");
+  if (anim === "die" && root.dataset.mode === "spooky") { void el.offsetWidth; el.classList.add("glitch", "bleed"); }
+  if (anim === "rise") { void el.offsetWidth; el.classList.add("risen"); }
+  if (state === "dead" && root.dataset.mode === "spooky") el.classList.add("bleed");
+  $("#tombtxt").textContent = C().tomb;
+}
+const log = (html, cls = "") => { const d = document.createElement("div"); d.className = "ln " + cls; d.innerHTML = html; $("#log").append(d); while ($("#log").children.length > 14) $("#log").firstChild.remove(); };
+const ev = (cls, title, sub) => { const d = document.createElement("div"); d.className = "ev " + cls; d.innerHTML = `<b>${title}</b><span class="mono">${sub}</span>`; $("#tl").append(d); };
+const agent = (txt) => log(`<span class="who">${C().agent} ›</span> ${txt}`, "agent");
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function run() {
+  $("#log").innerHTML = ""; $("#tl").innerHTML = ""; $("#ttr").textContent = "--"; $("#frame").classList.remove("dead"); $("#vitals").classList.remove("alive");
+  state = "building"; ecgState = "building"; target = "#tasks";
+  $("#tasks").innerHTML = TASKS.map((x, i) => `<div class="task" id="t${i}"><span class="b"></span>${i + 1}. ${x}</div>`).join("");
+  for (let i = 0; i < TASKS.length; i++) {
+    n = i + 1; renderState(); $("#t" + i).className = "task run";
+    if (i === 0) agent("reading .kiro/specs/bloodoath, 7 tasks");
+    if (i === 2) log('<span class="add">+ lib/review.ts</span>  <span class="add">+ lib/rubric.ts</span>');
+    if (i === 5) log('<span class="add">+ lib/seal.ts</span>  <span class="muted">~ app/sign/[token]/page.tsx</span>');
+    await wait(520);
+    $("#t" + i).className = "task done";
+  }
+  agent("all 7 tasks committed. deploying.");
+  state = "deploying"; renderState(); target = "#state";
+  log('<span class="muted">CREATE_IN_PROGRESS  Db  AWS::RDS::DBCluster</span>');
+  await wait(1500);
+
+  // death
+  const died = performance.now();
+  state = "dead"; ecgState = "dead"; renderState("die");
+  document.body.classList.remove("dying"); void document.body.offsetWidth; document.body.classList.add("dying");
+  $("#frame").classList.add("dead"); $("#dot").style.background = "var(--bad)";
+  log('<span class="bad">CREATE_FAILED  Db: EngineVersion 13.4 does not support MinCapacity 0</span>');
+  ev("bad", C().evFail, "12:41 · CREATE_FAILED Db");
+  await wait(2600); document.body.classList.remove("dying");
+
+  // ritual
+  state = "repair"; ecgState = "repair"; renderState(); target = "#log";
+  agent("the Aurora version is too old to pause at zero.");
+  await wait(900);
+  log('<span class="muted">infra/stack.yaml</span>'); log('<span class="del">-   EngineVersion: "13.4"</span>'); log('<span class="add">+   EngineVersion: "16.6"</span>');
+  ev("fix", C().evFix, "12:42 · kiro-cli · infra/stack.yaml");
+  await wait(1100);
+  log('<span class="ok">cfn-lint ✓  validate-template ✓  npm run build ✓</span>');
+  ev("ok", C().evOk, "12:43 · PR #31 merged");
+  await wait(1200);
+
+  // risen
+  state = "alive"; ecgState = "alive"; renderState("rise"); target = "#state";
+  $("#vitals").classList.remove("alive"); void $("#vitals").offsetWidth; $("#vitals").classList.add("alive");
+  $("#frame").classList.remove("dead"); $("#dot").style.background = "var(--ok)";
+  const s = ((performance.now() - died) / 1000) * 30 | 0; // demo clock: 1s = 30s
+  $("#ttr").textContent = `${s / 60 | 0}m ${String(s % 60).padStart(2, "0")}s`;
+  ev("ok", C().evLive, "12:44 · 200 OK");
+  agent("deploy #15 is live.");
+  await wait(4200);
+  if (!q.has("once")) run();
+}
+paintCopy(); run();
+</script>
+</body>
+</html>
