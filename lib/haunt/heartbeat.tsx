@@ -67,7 +67,7 @@ export function Heartbeat({ state, className }: { state: Pulse; className?: stri
       g.shadowBlur = 0;
       g.fillStyle = col;
       g.beginPath();
-      g.arc(W - 2, H * 0.62 - b[b.length - 1] * H * 0.55, 4, 0, 7);
+      g.arc(W - 2, H * 0.62 - (b[b.length - 1] ?? 0) * H * 0.55, 4, 0, 7);
       g.fill();
     };
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) {

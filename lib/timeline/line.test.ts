@@ -13,12 +13,12 @@ const id = fc.string({ minLength: 1, maxLength: 40 });
 const text = fc.string({ maxLength: 200 });
 const task = fc.array(fc.integer({ min: 1, max: 99 }), { minLength: 1, maxLength: 3 }).map((a) => a.join("."));
 
-const line: fc.Arbitrary<RunnerLine> = fc.record({ v: fc.constant(1 as const), project: id, run: id, at }).chain((b) =>
+const line: fc.Arbitrary<RunnerLine> = fc.record({ v: fc.constant(1 as const), project: id, run: id, build: fc.option(id, { nil: null }), at }).chain((b) =>
   fc.oneof(
     fc.record({ t: fc.constant("task_started" as const), task, title: text }).map((x) => ({ ...b, ...x })),
     fc.record({ t: fc.constant("task_done" as const), task, title: text, commit: text }).map((x) => ({ ...b, ...x })),
     fc.record({ t: fc.constant("file_changed" as const), path: text, change: fc.constantFrom("add" as const, "modify" as const, "delete" as const) }).map((x) => ({ ...b, ...x })),
-    fc.record({ t: fc.constant("message" as const), text }).map((x) => ({ ...b, ...x })),
+    fc.record({ t: fc.constant("message" as const), from: fc.constantFrom("agent" as const, "runner" as const, "guard" as const), text }).map((x) => ({ ...b, ...x })),
   ),
 ) as fc.Arbitrary<RunnerLine>;
 

@@ -1,6 +1,6 @@
 // Route handler helpers: one error type, zod bodies, JSON answers.
 import "server-only";
-import { ZodError, type ZodType } from "zod";
+import { ZodError, type ZodType, type ZodTypeDef } from "zod";
 
 export class HttpError extends Error {
   constructor(public status: number, message: string, public code?: string, public url?: string) {
@@ -12,7 +12,7 @@ export const bad = (msg: string, code?: string) => new HttpError(400, msg, code)
 export const notFound = (what = "Not found") => new HttpError(404, what, "not_found");
 export const busy = (url?: string) => new HttpError(409, "A run is already going for this app", "busy", url);
 
-export async function body<T>(req: Request, schema: ZodType<T>): Promise<T> {
+export async function body<T>(req: Request, schema: ZodType<T, ZodTypeDef, unknown>): Promise<T> {
   let raw: unknown;
   try {
     raw = await req.json();
@@ -23,7 +23,7 @@ export async function body<T>(req: Request, schema: ZodType<T>): Promise<T> {
 }
 
 /** Like body(), but an empty body counts as {}. */
-export async function optionalBody<T>(req: Request, schema: ZodType<T>): Promise<T> {
+export async function optionalBody<T>(req: Request, schema: ZodType<T, ZodTypeDef, unknown>): Promise<T> {
   const text = await req.text();
   if (!text.trim()) return schema.parse({});
   let raw: unknown;

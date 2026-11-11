@@ -277,7 +277,7 @@ type Params<P extends string> = P extends `${string}:${infer K}/${infer R}`
 
 /** href("project", { id }) -> "/api/projects/<id>" */
 export function href<N extends RouteName>(name: N, params: Params<(typeof ROUTES)[N]["path"]>): string {
-  return ROUTES[name].path.replace(/:(\w+)/g, (_, k: string) => encodeURIComponent((params as Record<string, string>)[k]));
+  return ROUTES[name].path.replace(/:(\w+)/g, (_, k: string) => encodeURIComponent((params as Record<string, string>)[k] ?? ""));
 }
 
 // ---------- request bodies (validate with .parse at the route boundary) ----------

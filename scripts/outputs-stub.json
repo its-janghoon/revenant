@@ -1,0 +1,35 @@
+{
+  "version": "1.4",
+  "auth": {
+    "aws_region": "us-east-1",
+    "user_pool_id": "us-east-1_EXAMPLE",
+    "user_pool_client_id": "exampleclientid",
+    "identity_pool_id": "us-east-1:00000000-0000-0000-0000-000000000000"
+  },
+  "data": {
+    "url": "https://example.appsync-api.us-east-1.amazonaws.com/graphql",
+    "aws_region": "us-east-1",
+    "default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
+    "authorization_types": [],
+    "model_introspection": { "version": 1, "models": {}, "enums": {}, "nonModels": {} }
+  },
+  "custom": {
+    "name": "rv-revenant-dev",
+    "db": {
+      "clusterArn": "arn:aws:rds:us-east-1:111122223333:cluster:rv-revenant-dev",
+      "secretArn": "arn:aws:secretsmanager:us-east-1:111122223333:secret:rv-revenant-dev-db",
+      "database": "revenant"
+    },
+    "runnerLogGroup": "/rv/revenant/dev/runner",
+    "timelineFunction": "arn:aws:lambda:us-east-1:111122223333:function:rv-revenant-dev-timeline",
+    "application": "arn:aws:servicecatalog:us-east-1:111122223333:/applications/example",
+    "runner": {
+      "project": "rv-runner",
+      "imageProject": "rv-runner-image",
+      "image": "111122223333.dkr.ecr.us-east-1.amazonaws.com/rv-runner:latest",
+      "promptBucket": "rv-revenant-dev-prompts",
+      "basePolicyArn": "arn:aws:iam::111122223333:policy/rv-runner-base",
+      "boundaryArn": "arn:aws:iam::111122223333:policy/rv-runner-boundary"
+    }
+  }
+}
