@@ -11,6 +11,9 @@ out=.amplify/artifacts/cdk.out
 
 echo "RV-STEP install"
 if [ -f package-lock.json ]; then
+  # Agents often add packages with an npm that writes a slightly different lock, and npm ci
+  # then refuses ("not in sync"). Resync the lock only (no install); run.ts commits it.
+  npm install --package-lock-only --no-audit --no-fund --ignore-scripts >/dev/null
   npm ci --no-audit --no-fund
 else
   npm install --no-audit --no-fund

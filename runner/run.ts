@@ -490,7 +490,14 @@ async function main(): Promise<void> {
   }
 
   if (mode === 'spec') specOnly(start);
-  else await checks();
+  else {
+    await checks();
+    // check.sh resyncs package-lock.json when the agent left it behind package.json.
+    if (git('status', '--porcelain', 'package-lock.json').out) {
+      must(git('add', 'package-lock.json'), 'commit');
+      must(git('commit', '-q', '--no-verify', '-m', 'chore: sync package-lock.json'), 'commit');
+    }
+  }
   await push();
   if (held) git('push', '-q', 'origin', '--delete', hold);
 
