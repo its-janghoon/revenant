@@ -17,7 +17,7 @@ const initials = (email: string) =>
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const v = await viewer();
-  if (!v) redirect("/");
+  if (!v) redirect("/signin?next=/admin");
   if (!v.admin) notFound();
   const [days, settings] = await Promise.all([spendByDay(monthStart()), getSettings()]);
   const spent = days.reduce((a, d) => a + d.v, 0);
