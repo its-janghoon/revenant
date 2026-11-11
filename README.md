@@ -1,23 +1,80 @@
 # Revenant
 
-Lovable on your own AWS account. Say what you want, a Kiro agent writes the spec,
-builds the app, and deploys it into your AWS account, paid with your AWS credits.
-When a build or deploy dies, the agent reads the logs, fixes it, and brings it back.
+**Logo: Pulse.** A flat line that beats once, drawn on a rounded square: dark ink in Light,
+blood red `#b3121c` in Haunted. It is the same heartbeat Revenant draws for every app:
+beating while live, flat when a deploy dies, beating again when it is fixed.
+See option A in [design/mockups/logos.html](design/mockups/logos.html).
 
-Built for Kiroween 2026 (Frankenstein category). Work in progress.
+Lovable on your own AWS account. Say what you want, a Kiro agent writes the spec, builds
+the app on Amplify Gen 2, and deploys it into your AWS account, paid with your AWS
+credits. When a build or deploy dies, the agent reads the logs, fixes it, and brings it back.
 
-- You own everything: code in CodeCommit, one Amplify Gen 2 app per app, data in Aurora Postgres. Nothing leaves AWS.
-- Paid by your AWS credits, with cost per app on screen.
-- Spec first: requirements, design and tasks before any code.
-- Fixes itself: failed builds and deploys are repaired with the cause on record.
+Built for Kiroween 2026 (Frankenstein category). Open source, MIT. Work in progress.
 
-Demo request: "Build me a contract signing site where an AI flags toxic clauses before you sign."
+## Why
+
+Companies that want everything on AWS pay per seat for hosted builders, and hand those
+vendors their code, data and infrastructure. Revenant gives them the same build-and-ship
+experience inside their own account.
+
+- **You own everything.** Code in CodeCommit, one Amplify Gen 2 app per app, data in your
+  account. Uninstalling Revenant leaves every app running.
+- **No seats.** You pay your own AWS bill, and spend your AWS credits if you have them.
+  Every screen shows credits left and what each app costs.
+- **Spec first.** Kiro writes requirements, design and tasks before any code. You edit the
+  spec, and nothing is built until you press "Build it".
+- **Fixes itself.** Failed builds and deploys are repaired by the agent, with the cause,
+  the fix and the time to recover on record.
+
+<!-- Install section: written by the wave 0 lane. -->
+
+## How it works
+
+1. **Sign in** with an email code (Amazon Cognito, no password, invite only).
+2. **Ask** in plain words. Revenant creates a CodeCommit repo for the project.
+3. **Spec.** Kiro writes `.kiro/specs/<app>/` with the AWS parts and the estimated monthly cost.
+4. **Build.** Kiro CLI runs headless in CodeBuild, one commit per task, and the push starts
+   an Amplify preview with its own URL and its own data.
+5. **Edit** like Lovable or v0: chat, **Select** an element in the preview to see its file
+   and line, or edit and commit in the **Code** tab.
+6. **Publish** merges to `main` and deploys production. A replace or delete waits for your approval.
+7. **Repair.** When a run, build, deploy or health check fails, a repair run fixes it on
+   `revenant/fix-<n>`, checks it, merges and redeploys (up to 3 tries).
+
+## Data
+
+- **Amplify Data by default.** Every preview branch has its own tables with seeded sample data.
+- **SQL when the admin allows it.** Aurora Serverless v2 Postgres with dev, prod and a
+  database per preview; Publish shows the migration and snapshots prod first.
+- No public database, no VPC Lambda, no NAT gateway.
+
+## Admin
+
+`/admin` sets the rules for the install: SQL on or off (for everyone or per user), the Kiro
+model (Auto by default), who pays for Kiro (company key, **bring your own Kiro**, or both),
+the monthly budget and an auto-delete period. Every change goes to the audit log.
+
+## Light and Haunted
+
+One switch in the header. **Light** is plain with no effects. **Haunted** is dark: deploys
+die under a tombstone, repairs are rituals, live apps have risen, with a flashlight, rain
+and thunder made in the browser. **Calm** keeps the dark look and turns every effect off.
+The theme never changes behaviour.
+
+## Demo
+
+Request: "Build me a contract signing site where an AI flags toxic clauses before you sign."
+The result is **FinePrint** (subtitled "Blood Oath" in Haunted).
+
+## Docs
 
 - Spec: [.kiro/specs/revenant](.kiro/specs/revenant)
-- Mockups: [design/mockups](design/mockups) (open `live.html`, toggle Halloween)
-- Host your own on AWS: [docs/self-host.md](docs/self-host.md)
-- Kiro usage log: [docs/kiro-usage.md](docs/kiro-usage.md)
-- Kiro credits per message: [docs/credits.md](docs/credits.md)
+- Mockups: [design/mockups](design/mockups) (open `flow.html` for every screen, `live.html` for the theme)
+- Host your own, public or private: [docs/self-host.md](docs/self-host.md)
+- Hosting for outside customers: [docs/platforms.md](docs/platforms.md)
+- How we used Kiro: [docs/kiro-usage.md](docs/kiro-usage.md)
+- Kiro credits per turn: [docs/credits.md](docs/credits.md)
+- Demo video storyboard: [docs/storyboard.md](docs/storyboard.md)
 
 ## License
 
