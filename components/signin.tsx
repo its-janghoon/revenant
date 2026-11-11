@@ -41,7 +41,7 @@ export function SignIn() {
     const n = (e as Error).name;
     const m = (e as Error).message ?? "";
     setErr(
-      n === "NotAuthorizedException" && /session/i.test(m) ? "This sign-in timed out (3 minutes). Send a new code."
+      n === "NotAuthorizedException" && /session/i.test(m) ? "This sign-in timed out (15 minutes). Send a new code."
         : n === "UserNotFoundException" || n === "NotAuthorizedException" ? "No invite for this email. Revenant is invite only: ask your admin."
         : n === "CodeMismatchException" ? "That code is wrong. Check the latest email."
         : n === "ExpiredCodeException" ? "That code expired. Send a new one."
@@ -100,7 +100,7 @@ export function SignIn() {
           ) : (
             <form onSubmit={confirm}>
               <div className="muted" style={{ marginBottom: 18 }}>
-                {stage === "code" ? <>We sent a 6-digit code to <b>{email}</b>.</> : "Your invite came with a temporary password. Choose a new one; after this you sign in with a code."}
+                {stage === "code" ? <>We sent an 8-digit code to <b>{email}</b>.</> : "Your invite came with a temporary password. Choose a new one; after this you sign in with a code."}
               </div>
               {stage === "code" ? (
                 <>

@@ -4,7 +4,7 @@ import type { ProjectStatus } from "@/lib/contracts";
 
 export const WORDS = {
   signin: ["Sign in", "Enter the crypt"],
-  signinSub: ["We email you a 6-digit code. No password.", "We send a 6-digit code by raven. No password."],
+  signinSub: ["We email you an 8-digit code. No password.", "We send an 8-digit code by raven. No password."],
   sendCode: ["Email me a code", "Send the raven"],
   welcome: ["You're in. Let's make your first app.", "You're in. Let's raise your first app."],
   buildThis: ["Build this", "Raise this"],

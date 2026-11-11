@@ -31,8 +31,10 @@ Tags.of(backend.stack).add("revenant:app", "revenant");
 Tags.of(backend.stack).add("revenant:env", envName);
 
 // ---------- auth: invite only, admin from the install parameter ----------
-const { cfnUserPool } = backend.auth.resources.cfnResources;
+const { cfnUserPool, cfnUserPoolClient } = backend.auth.resources.cfnResources;
 cfnUserPool.adminCreateUserConfig = { allowAdminCreateUserOnly: true };
+// Minutes between "email me a code" and entering it (Cognito default 3, max 15).
+cfnUserPoolClient.authSessionValidity = 15;
 
 const adminEmail = process.env.ADMIN_EMAIL;
 if (adminEmail && envName === "prod") {
