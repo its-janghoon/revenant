@@ -97,7 +97,7 @@ new SubscriptionFilter(Stack.of(backend.timeline.resources.lambda), "RunnerLines
 // AppRegistry is closed to new accounts since 2026-07-30; AWS points to tag-based groups.
 const application = new CfnGroup(backend.stack, "Application", {
   name,
-  description: "Revenant, the app builder (this install)",
+  description: "Revenant app builder - this install",
   resourceQuery: {
     type: "TAG_FILTERS_1_0",
     query: {
