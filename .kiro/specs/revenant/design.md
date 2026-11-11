@@ -1,9 +1,9 @@
-# Design: Lazarus
+# Design: Revenant
 
 ## Overview
 
 ```
-GitHub push --> Lazarus API --> change set --> CloudFormation (user's account)
+GitHub push --> Revenant API --> change set --> CloudFormation (user's account)
                     |                               |
                     |                    Amplify build / app health
                     |                               | fail
@@ -13,25 +13,25 @@ GitHub push --> Lazarus API --> change set --> CloudFormation (user's account)
               timeline UI  /  Kiro Crew app (MCP)
 ```
 
-Lazarus runs as a second Next.js app in this repo (`apps/lazarus`), deployed by its own
+Revenant runs as a second Next.js app in this repo (`apps/revenant`), deployed by its own
 stack the same way. BloodOath moves to `apps/sign`. Shared theme and UI in `packages/ui`.
 
 ## Parts
 
 | Part | Where | What |
 |---|---|---|
-| Connect stack | `lazarus/connect.yaml` | IAM role with external id, Budgets alarm |
-| GitHub App | Lazarus API | webhooks for push and PR merge, repo read, branch and PR write |
-| Detector | `lazarus/detect.ts` | reads `package.json`, `next.config.*`, `process.env.*` uses, imports (`@aws-sdk/*`, `drizzle-orm`, `pdf-lib`...) |
+| Connect stack | `revenant/connect.yaml` | IAM role with external id, Budgets alarm |
+| GitHub App | Revenant API | webhooks for push and PR merge, repo read, branch and PR write |
+| Detector | `revenant/detect.ts` | reads `package.json`, `next.config.*`, `process.env.*` uses, imports (`@aws-sdk/*`, `drizzle-orm`, `pdf-lib`...) |
 | Stack writer | agent + templates | starts from tested building blocks (hosting, db, files, mail, ai, cron), agent fills and joins them |
 | Deployer | Step Functions | change set -> approve if destructive -> execute -> wait -> Amplify job -> health check |
 | Watcher | EventBridge | stack status changes and Amplify job state changes trigger a repair run |
 | Repair agent | CodeBuild job | clone, read logs, fix, build, validate, push branch, open PR |
-| Timeline | Lazarus UI | server-sent events from a `events` table |
+| Timeline | Revenant UI | server-sent events from a `events` table |
 
 ## Repair agent
 
-Runs in CodeBuild in Lazarus's own account, with a short-lived session into the user's
+Runs in CodeBuild in Revenant's own account, with a short-lived session into the user's
 role (read logs only) and a GitHub token scoped to the repo.
 
 Loop (max 3 runs per failure, max 20 tool calls per run):

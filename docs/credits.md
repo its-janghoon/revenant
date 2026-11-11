@@ -10,5 +10,6 @@ One row per message to Kiro Crew. Rebuilt by `scripts/credits.py`.
 | 4 | 2026-11-11 12:49 | claude-opus-5.5 | 18.19 | 29.75 | 508s |
 | 5 | 2026-11-11 13:01 | claude-opus-5.5 | 3.68 | 33.43 | 151s |
 | 6 | 2026-11-11 13:05 | claude-opus-5.5 | 6.55 | 39.98 | 136s |
+| 7 | 2026-11-11 13:07 | claude-opus-5.5 | 1.54 | 41.52 | 29s |
 
-**Total: 39.98 credits over 6 messages.**
+**Total: 41.52 credits over 7 messages.**

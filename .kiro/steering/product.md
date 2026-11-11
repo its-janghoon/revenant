@@ -15,15 +15,15 @@ stitched on:
    through OpenTimestamps. Anyone can later prove the file existed, unchanged, at that
    time. No wallet, no token, no fees for the user.
 
-This repo also holds **Lazarus** (working name), the second half of the Frankenstein:
+This repo also holds **Revenant**, the second half of the Frankenstein:
 an open, self-hosted "Vercel for your own AWS account". An agent reads a repo, writes the
 CloudFormation stack, deploys it, watches the build and the running app, and **fixes
 failures by itself** (reads the logs, patches the code or the stack, redeploys). BloodOath
-is Lazarus's first app (the PoC): Lazarus deploys BloodOath, and BloodOath is the proof.
+is Revenant's first app (the PoC): Revenant deploys BloodOath, and BloodOath is the proof.
 
 Theme: Halloween is a **toggle**, like dark/light. Normal mode is a clean light/dark UI
 that follows the system setting. Halloween mode: signing is "swearing a blood oath",
-candle-lit, wax seals, blood-red ink; in Lazarus, failed deploys "die" and the agent
+candle-lit, wax seals, blood-red ink; in Revenant, failed deploys "die" and the agent
 "resurrects" them. The spooky layer must make the real function clearer, never hide it.
 
 ## Hackathon

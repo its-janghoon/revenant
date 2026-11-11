@@ -7,7 +7,7 @@ Description: >
 Parameters:
   GitHubRepo:
     Type: String
-    Default: https://github.com/its-janghoon/blood-oath
+    Default: https://github.com/its-janghoon/revenant
   Branch:
     Type: String
     Default: main

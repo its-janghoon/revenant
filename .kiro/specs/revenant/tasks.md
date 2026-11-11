@@ -1,6 +1,6 @@
-# Tasks: Lazarus
+# Tasks: Revenant
 
-- [ ] 1. Monorepo: move BloodOath to `apps/sign`, add `apps/lazarus`, shared `packages/ui` with the theme toggles
+- [ ] 1. Monorepo: move BloodOath to `apps/sign`, add `apps/revenant`, shared `packages/ui` with the theme toggles
 - [ ] 2. Repair agent first (the part that wins)
   - [ ] 2.1 Decide engine: Kiro CLI headless in CodeBuild vs Bedrock tool loop
   - [ ] 2.2 Gather step: stack events, Amplify job log, CloudWatch tail
