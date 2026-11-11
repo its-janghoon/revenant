@@ -3,12 +3,13 @@
 // rv/* hold branches (and any other branch) never build; only preview/<n> and main are deployed.
 import "server-only";
 import {
-  CreateAppCommand, CreateBranchCommand, GetAppCommand, GetBranchCommand, ListJobsCommand, NotFoundException,
+  CreateBranchCommand, GetAppCommand, GetBranchCommand, ListJobsCommand, NotFoundException,
   StartJobCommand, UpdateAppCommand, UpdateBranchCommand, type JobSummary, type Stage,
 } from "@aws-sdk/client-amplify";
 import { eq } from "drizzle-orm";
 import type { Project } from "../contracts";
 import { db, schema } from "../db/client";
+import { broker } from "../broker/client";
 import { envOf } from "../console/name";
 import { amplify, region } from "./aws";
 import { deployEnv } from "./env";
@@ -47,13 +48,13 @@ export async function ensureApp(project: Project): Promise<string> {
   if (project.amplifyAppId) {
     try {
       const { app } = await amplify.send(new GetAppCommand({ appId: project.amplifyAppId }));
-      await amplify.send(new UpdateAppCommand({
+      await broker({ op: "updateApp", input: {
         appId: project.amplifyAppId,
         environmentVariables: { ...(app?.environmentVariables ?? {}), ...(await vars(project, project.amplifyAppId)) },
         enableBranchAutoBuild: false,
         enableAutoBranchCreation: false,
         ...(compute ? { computeRoleArn: compute } : {}),
-      }));
+      } });
       return project.amplifyAppId;
     } catch (e) {
       if (!notFound(e)) throw e;
@@ -61,7 +62,8 @@ export async function ensureApp(project: Project): Promise<string> {
   }
   const role = deployEnv.RV_APPS_SERVICE_ROLE_ARN;
   if (!role) throw new Error("RV_APPS_SERVICE_ROLE_ARN is not set; the install creates it");
-  const { app } = await amplify.send(new CreateAppCommand({
+  // Passing the service and compute roles needs IAM, which the SSR session lacks: use the broker.
+  const { app } = await broker<{ app?: { appId?: string } }>({ op: "createApp", input: {
     name: `rv-${project.name}`,
     repository: `https://git-codecommit.${region}.amazonaws.com/v1/repos/${project.repo}`,
     iamServiceRoleArn: role,
@@ -71,7 +73,7 @@ export async function ensureApp(project: Project): Promise<string> {
     environmentVariables: await vars(project),
     ...(compute ? { computeRoleArn: compute } : {}),
     tags: { "revenant:app": project.name, "revenant:project": project.id },
-  }));
+  } });
   const appId = app!.appId!;
   await amplify.send(new UpdateAppCommand({ appId, environmentVariables: await vars(project, appId) }));
   await db.update(schema.projects).set({ amplifyAppId: appId }).where(eq(schema.projects.id, project.id));

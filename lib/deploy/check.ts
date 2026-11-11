@@ -4,9 +4,9 @@
 // guard; no Kiro, no push). settle() follows the check build: passed -> the preview deploy
 // starts; failed -> the deploy is failed with the step that broke. The live preview stays.
 import "server-only";
-import { BatchGetBuildsCommand, CodeBuildClient, ListBuildsForProjectCommand, StartBuildCommand, type Build } from "@aws-sdk/client-codebuild";
+import { BatchGetBuildsCommand, CodeBuildClient, ListBuildsForProjectCommand, type Build } from "@aws-sdk/client-codebuild";
 import { and, eq } from "drizzle-orm";
-import { roleName } from "../../runner/role";
+import { broker } from "../broker/client";
 import type { Deploy, Project } from "../contracts";
 import { outputs } from "../amplify";
 import { db, schema } from "../db/client";
@@ -21,9 +21,6 @@ const codebuild = new CodeBuildClient({ region });
 interface Custom { name?: string; runnerLogGroup?: string; runner?: { project?: string } }
 const custom = (outputs as { custom?: Custom }).custom ?? {};
 const runnerProject = process.env.RV_RUNNER_PROJECT ?? custom.runner?.project ?? `${custom.name ?? "rv-revenant-dev"}-runner`;
-const logGroup = custom.runnerLogGroup ?? `/rv/${custom.name ?? "rv-revenant-dev"}/runner`;
-// arn:<partition>:secretsmanager:<region>:<account>:secret:...
-const [, partition = "aws", , , account = ""] = env.RV_KIRO_SECRET_ARN.split(":");
 
 const CHECK_MIN = 20;
 /** RUN_ID of the check build of a deploy; the runner's log lines carry it as `run`. */
@@ -44,13 +41,8 @@ export async function checkCommit(project: Project, branch: string, commit: stri
     ...(project.amplifyAppId ? { RV_AMPLIFY_APP_ID: project.amplifyAppId } : {}),
   };
   try {
-    await codebuild.send(new StartBuildCommand({
-      projectName: runnerProject,
-      serviceRoleOverride: `arn:${partition}:iam::${account}:role/${roleName(project.name)}`,
-      timeoutInMinutesOverride: CHECK_MIN + 5,
-      environmentVariablesOverride: Object.entries(vars).map(([name, value]) => ({ name, value, type: "PLAINTEXT" })),
-      logsConfigOverride: { cloudWatchLogs: { status: "ENABLED", groupName: logGroup } },
-    }));
+    // Passing the runner role needs IAM, which the SSR session lacks: the broker starts it.
+    await broker({ op: "build", app: project.name, vars, minutes: CHECK_MIN + 5 });
   } catch (e) {
     return fail(project, deploy, "start", (e as Error).message);
   }

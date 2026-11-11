@@ -95,7 +95,10 @@ Resources:
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:rv-revenant-*-db-*
-
+              # Server (SSR) logs: Amplify writes them with this role.
+              - Effect: Allow
+                Action: [logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents, logs:DescribeLogGroups]
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/amplify/*
   # Compute role: what the Revenant server (Next.js SSR) may do. Lanes list what they need; lane X adds it here.
   ComputeRole:
     Type: AWS::IAM::Role
@@ -128,7 +131,10 @@ Resources:
               - Sid: Timeline
                 Effect: Allow
                 Action: lambda:InvokeFunction
-                Resource: !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:rv-revenant-*-timeline
+                Resource:
+                  - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:rv-revenant-*-timeline
+                  # IAM work the SSR session may not do (lib/broker).
+                  - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:rv-revenant-*-broker
               - Sid: AppRepos
                 Effect: Allow
                 Action: [codecommit:CreateRepository, codecommit:GetRepository, codecommit:GetBranch, codecommit:GetFile, codecommit:GetFolder, codecommit:CreateCommit, codecommit:CreateBranch, codecommit:GetDifferences, codecommit:MergeBranchesByFastForward, codecommit:MergeBranchesBySquash, codecommit:TagResource, codecommit:GetCommit, codecommit:GetMergeOptions, codecommit:DeleteRepository]
@@ -311,6 +317,10 @@ Resources:
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:rv-*-db-*
+              # Server (SSR) logs of generated apps.
+              - Effect: Allow
+                Action: [logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents, logs:DescribeLogGroups]
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/amplify/*
               - Effect: Deny
                 Action: [rds-data:*, secretsmanager:*, codecommit:*]
                 Resource:

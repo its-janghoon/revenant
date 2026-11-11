@@ -15,7 +15,7 @@
     "sandbox": "ampx sandbox",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx lib/db/migrate.ts",
-    "test": "node --import tsx --test lib/guard/*.test.ts lib/timeline/*.test.ts",
+    "test": "node --import tsx --test lib/guard/*.test.ts lib/timeline/*.test.ts lib/broker/*.test.ts",
     "check:local": "cp -n scripts/outputs-stub.json amplify_outputs.json; tsc --noEmit && npm test && RV_KIRO_SECRET_ARN=arn:aws:secretsmanager:us-east-1:111122223333:secret:rv-kiro RV_APP_SECRET_ARN=arn:aws:secretsmanager:us-east-1:111122223333:secret:rv-app AWS_REGION=us-east-1 next build"
   },
   "dependencies": {

@@ -18,10 +18,11 @@ import { auth } from "./auth/resource";
 import { data } from "./data/resource";
 import { timeline } from "./functions/timeline/resource";
 import { repair } from "./functions/repair/resource";
+import { broker } from "./functions/broker/resource";
 import { RUNNER_PREFIX } from "../lib/contracts";
 import { RepairRules } from "../lib/repair/construct";
 
-const backend = defineBackend({ auth, data, timeline, repair });
+const backend = defineBackend({ auth, data, timeline, repair, broker });
 
 // rv-revenant-<env>: "prod" on main, the branch name elsewhere, "dev" in a sandbox.
 const branch = process.env.AWS_BRANCH;
@@ -271,12 +272,82 @@ new RepairRules(backend.createStack("repair"), "Repair", {
   db: { clusterArn: cluster.clusterArn, secretArn: cluster.secret!.secretArn },
 });
 
+// ---------- broker: IAM work the SSR session may not do (lib/broker) ----------
+// Amplify Hosting gives the Revenant server a session policy that denies IAM, so the server
+// asks this function to create runner roles and to pass roles to CodeBuild, Amplify and
+// CloudFormation. lib/broker/ops.ts checks each request against these fixed names.
+{
+  const fn = backend.broker.resources.lambda as import("aws-cdk-lib/aws-lambda").Function;
+  backend.broker.resources.cfnResources.cfnFunction.functionName = `${name}-broker`;
+  const s = Stack.of(fn);
+  const at = (service: string, resource: string) => `arn:${s.partition}:${service}:${s.region}:${s.account}:${resource}`;
+  const role = (r: string) => `arn:${s.partition}:iam::${s.account}:role/${r}`;
+  const boundary = `arn:${s.partition}:iam::${s.account}:policy/${name}-runner-boundary`;
+  const base = `arn:${s.partition}:iam::${s.account}:policy/${name}-runner-base`;
+  const appsService = process.env.RV_APPS_SERVICE_ROLE_ARN;
+  const appsCompute = process.env.RV_APPS_COMPUTE_ROLE_ARN;
+  const dbStack = process.env.RV_DB_STACK_ROLE_ARN;
+  const env: Record<string, string | undefined> = {
+    RV_RUNNER_PROJECT: `${name}-runner`,
+    RV_RUNNER_LOG_GROUP: `/rv/${name}/runner`,
+    RV_PROMPT_BUCKET: `${name}-prompts-${s.account}-${s.region}`,
+    RV_KIRO_SECRET_ARN: kiroSecretArn,
+    RV_RUNNER_BOUNDARY: boundary,
+    RV_RUNNER_BASE_POLICY: base,
+    RV_APPS_SERVICE_ROLE_ARN: appsService,
+    RV_APPS_COMPUTE_ROLE_ARN: appsCompute,
+    RV_DB_STACK_ROLE_ARN: dbStack,
+    RV_OWN_APP_ID: process.env.AWS_APP_ID,
+  };
+  for (const [k, v] of Object.entries(env)) if (v) fn.addEnvironment(k, v);
+
+  const runnerRoles = role("rv-*-runner");
+  fn.addToRolePolicy(new PolicyStatement({ actions: ["iam:GetRole", "iam:PutRolePolicy", "iam:TagRole"], resources: [runnerRoles] }));
+  fn.addToRolePolicy(new PolicyStatement({
+    actions: ["iam:CreateRole"], resources: [runnerRoles],
+    conditions: { StringEquals: { "iam:PermissionsBoundary": boundary } },
+  }));
+  fn.addToRolePolicy(new PolicyStatement({
+    actions: ["iam:AttachRolePolicy"], resources: [runnerRoles],
+    conditions: { ArnEquals: { "iam:PolicyARN": base } },
+  }));
+  fn.addToRolePolicy(new PolicyStatement({
+    actions: ["iam:PassRole"], resources: [runnerRoles],
+    conditions: { StringEquals: { "iam:PassedToService": "codebuild.amazonaws.com" } },
+  }));
+  fn.addToRolePolicy(new PolicyStatement({ actions: ["codebuild:StartBuild"], resources: [at("codebuild", `project/${name}-runner`)] }));
+
+  const apps = [appsService, appsCompute].filter((r): r is string => !!r);
+  if (apps.length) {
+    fn.addToRolePolicy(new PolicyStatement({
+      actions: ["iam:PassRole"], resources: apps,
+      conditions: { StringEquals: { "iam:PassedToService": "amplify.amazonaws.com" } },
+    }));
+  }
+  fn.addToRolePolicy(new PolicyStatement({
+    actions: ["amplify:CreateApp", "amplify:UpdateApp", "amplify:TagResource"], resources: [at("amplify", "apps/*")],
+  }));
+  fn.addToRolePolicy(new PolicyStatement({
+    actions: ["codecommit:GetRepository", "codecommit:GitPull"], resources: [at("codecommit", "rv-*")],
+  }));
+  if (dbStack) {
+    fn.addToRolePolicy(new PolicyStatement({
+      actions: ["iam:PassRole"], resources: [dbStack],
+      conditions: { StringEquals: { "iam:PassedToService": "cloudformation.amazonaws.com" } },
+    }));
+  }
+  fn.addToRolePolicy(new PolicyStatement({
+    actions: ["cloudformation:CreateStack", "cloudformation:UpdateStack", "cloudformation:TagResource"],
+    resources: [at("cloudformation", "stack/rv-*/*")],
+  }));
+}
 backend.addOutput({
   custom: {
     name,
     db: { clusterArn: cluster.clusterArn, secretArn: cluster.secret!.secretArn, database: "revenant" },
     runnerLogGroup: runnerLogs.logGroupName,
     timelineFunction: backend.timeline.resources.lambda.functionArn,
+    broker: `${name}-broker`,
     application: application.attrArn,
     runner: {
       project: runner.ref,

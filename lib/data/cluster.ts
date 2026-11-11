@@ -7,9 +7,10 @@
 // when both are ready, sets appEnv() on the Amplify app. createPreview() calls ready("dev").
 import "server-only";
 import {
-  CloudFormationClient, CreateStackCommand, DescribeStacksCommand, UpdateStackCommand, type Stack,
+  CloudFormationClient, DescribeStacksCommand, type Stack,
 } from "@aws-sdk/client-cloudformation";
 import { template } from "../../blocks/db/cluster";
+import { broker } from "../broker/client";
 import { clusterName, DUMP_USER, dbName, stackName, type Cluster } from "./names";
 import { exec, lit, type Target } from "./sql";
 
@@ -74,13 +75,14 @@ export async function ensure(app: string, c: Cluster, tags: Record<string, strin
     // Optional install-provided role that CloudFormation uses to create the stack.
     RoleARN: process.env.RV_DB_STACK_ROLE_ARN || undefined,
   };
+  // RoleARN means CloudFormation passes a role, which the SSR session may not do: use the broker.
   if (now === "missing") {
-    await client().send(new CreateStackCommand({ ...common, EnableTerminationProtection: c === "prod" }));
+    await broker({ op: "createStack", input: { ...common, EnableTerminationProtection: c === "prod" } });
     return "creating";
   }
   if (now === "ready") {
     try {
-      await client().send(new UpdateStackCommand(common));
+      await broker({ op: "updateStack", input: common });
       return "creating";
     } catch (e) {
       if (/No updates are to be performed/.test((e as Error).message ?? "")) return "ready";

@@ -1,15 +1,13 @@
 // Start, follow and stop runner runs (CodeBuild, runner/README.md).
 import "server-only";
-import { BatchGetBuildsCommand, StartBuildCommand, StopBuildCommand, type Build } from "@aws-sdk/client-codebuild";
-import { AttachRolePolicyCommand, CreateRoleCommand, GetRoleCommand, PutRolePolicyCommand } from "@aws-sdk/client-iam";
+import { BatchGetBuildsCommand, StopBuildCommand, type Build } from "@aws-sdk/client-codebuild";
 import { CopyObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { and, eq, inArray } from "drizzle-orm";
 import type { RunMode, RunStatus } from "@/lib/contracts";
+import { broker } from "@/lib/broker/client";
 import { db, schema } from "@/lib/db/client";
-import { env } from "@/lib/env";
 import { deployPreview } from "@/lib/deploy";
-import { policy, roleName, trust } from "@/runner/role";
-import { account, codebuild, iam, names, partition, region, s3 } from "./aws";
+import { codebuild, names, s3 } from "./aws";
 import type { User } from "./auth";
 import { HttpError, busy } from "./http";
 import { kiroFor } from "./keys";
@@ -19,36 +17,9 @@ import { event, putEvents } from "./timeline";
 
 const { runs, projects } = schema;
 
-const roleArn = (app: string) => `arn:${partition}:iam::${account}:role/${roleName(app)}`;
-
-/** The per-app runner role (runner/role.ts), created once per app. */
+/** The per-app runner role (runner/role.ts), created once per app by the broker Lambda. */
 export async function ensureRunnerRole(app: string, owner: string): Promise<void> {
-  const name = roleName(app);
-  try {
-    await iam.send(new GetRoleCommand({ RoleName: name }));
-    return;
-  } catch (e) {
-    if ((e as Error).name !== "NoSuchEntityException") throw e;
-  }
-  if (!names.runnerBoundary) throw new HttpError(503, "The runner boundary policy is missing from amplify_outputs.json", "no_runner");
-  await iam.send(new CreateRoleCommand({
-    RoleName: name,
-    AssumeRolePolicyDocument: JSON.stringify(trust(account)),
-    PermissionsBoundary: names.runnerBoundary,
-    Description: `Revenant runner for ${app}`,
-    Tags: [{ Key: "revenant:project", Value: app }, { Key: "revenant:app", Value: "revenant" }],
-  }));
-  await iam.send(new PutRolePolicyCommand({
-    RoleName: name,
-    PolicyName: "runner",
-    PolicyDocument: JSON.stringify(policy({
-      partition, region, account, app, repo: names.repo(app), owner,
-      companySecretArn: env.RV_KIRO_SECRET_ARN,
-      promptBucket: names.promptBucket,
-      logGroup: names.runnerLogGroup,
-    })),
-  }));
-  if (names.runnerBasePolicy) await iam.send(new AttachRolePolicyCommand({ RoleName: name, PolicyArn: names.runnerBasePolicy }));
+  await broker({ op: "role", app, owner });
 }
 
 function needBucket(): string {
@@ -118,13 +89,8 @@ export async function startRun(i: StartInput): Promise<RunRow> {
       const attach = await copyAttachments(p.name, run.id, u, i.attachments ?? []);
       if (attach) vars.ATTACH_S3_PREFIX = attach;
     }
-    const r = await codebuild.send(new StartBuildCommand({
-      projectName: names.runnerProject,
-      serviceRoleOverride: roleArn(p.name),
-      environmentVariablesOverride: Object.entries(vars).map(([name, value]) => ({ name, value, type: "PLAINTEXT" })),
-      logsConfigOverride: { cloudWatchLogs: { status: "ENABLED", groupName: names.runnerLogGroup } },
-    }));
-    const [started] = await db.update(runs).set({ codebuildId: r.build?.id ?? null, status: "running" }).where(eq(runs.id, run.id)).returning();
+    const r = await broker<{ id: string | null }>({ op: "build", app: p.name, vars });
+    const [started] = await db.update(runs).set({ codebuildId: r.id, status: "running" }).where(eq(runs.id, run.id)).returning();
     if (i.mode !== "spec") await db.update(projects).set({ status: "building" }).where(eq(projects.id, p.id));
     return started ?? run;
   } catch (e) {
