@@ -1,0 +1,288 @@
+<!doctype html>
+<html data-mode="light">
+<head>
+<meta charset="utf-8">
+<title>Revenant · screens</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500;1,700&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+:root{--r:8px;--head:Inter,sans-serif;--hs:normal;--hw:650;--track:-.02em}
+[data-mode=light]{--bg:#fbfbfa;--panel:#fff;--sunk:#f4f4f2;--fg:#141414;--muted:#6c6c68;--line:#e7e6e2;--accent:#141414;--onaccent:#fff;--bad:#d4351c;--ok:#127a45;--warn:#9a6400;--badbg:#fdecea;--okbg:#e6f4ec;--warnbg:#fbf1dc;--link:#1f5fd1}
+[data-mode=haunted]{--r:3px;--head:"Cormorant Garamond",serif;--hs:italic;--hw:700;--track:0;--bg:#060607;--panel:#0d0c0c;--sunk:#080707;--fg:#e9e2d2;--muted:#8a8172;--line:#241f1b;--accent:#b3121c;--onaccent:#f3ebdb;--bad:#e3202c;--ok:#cfc7b3;--warn:#a8946e;--badbg:#2a0a0c;--okbg:#17150f;--warnbg:#1d1810;--link:#d8cdb6}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font:13px/1.5 Inter,sans-serif;overflow:hidden}
+.mono{font-family:"JetBrains Mono",monospace;font-size:11.5px}
+.muted{color:var(--muted)}
+.h{font-family:var(--head);font-style:var(--hs);font-weight:var(--hw);letter-spacing:var(--track)}
+.sp{flex:1}
+header{height:52px;display:flex;align-items:center;gap:14px;padding:0 22px;border-bottom:1px solid var(--line);background:var(--bg)}
+.logo{display:flex;gap:8px;align-items:center;font:700 15px Inter;letter-spacing:-.02em}
+[data-mode=haunted] .logo{font:italic 700 20px "Cormorant Garamond",serif}
+.logo i{width:16px;height:16px;border:2px solid var(--fg);border-radius:50% 50% 2px 2px}
+nav{display:flex;gap:4px;margin-left:10px}
+nav a{padding:6px 10px;border-radius:var(--r);color:var(--muted);text-decoration:none;font-weight:500}
+nav a.on{color:var(--fg);background:var(--sunk)}
+.seg{display:flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.seg span{padding:5px 10px;font-size:11.5px;color:var(--muted)}
+.seg span.on{background:var(--fg);color:var(--bg)}
+[data-mode=haunted] .seg span.on{background:var(--accent);color:var(--onaccent)}
+.credits{font:500 11.5px "JetBrains Mono";color:var(--muted)} .credits b{color:var(--fg)}
+.avatar{width:28px;height:28px;border-radius:50%;background:var(--sunk);border:1px solid var(--line);display:grid;place-items:center;font-weight:600;font-size:11px}
+main{height:calc(100% - 52px);overflow:hidden}
+.wrap{max-width:1180px;margin:0 auto;padding:30px 28px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:calc(var(--r) + 2px);padding:18px 20px}
+.label{font:600 10.5px Inter;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+[data-mode=haunted] .label{font:400 11px "Special Elite",monospace;letter-spacing:.12em}
+.btn{display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:var(--onaccent);padding:9px 16px;border-radius:var(--r);font-weight:600;font-size:13px}
+.ghost{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);padding:8px 14px;border-radius:var(--r);font-weight:500;background:var(--panel)}
+.chip{display:inline-block;font:600 10.5px "JetBrains Mono";padding:2px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.03em}
+.c-ok{background:var(--okbg);color:var(--ok)} .c-bad{background:var(--badbg);color:var(--bad)} .c-warn{background:var(--warnbg);color:var(--warn)} .c-n{background:var(--sunk);color:var(--muted)}
+table{width:100%;border-collapse:collapse}
+th{font:600 10.5px Inter;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.kpi .n{font:650 26px Inter;letter-spacing:-.02em} [data-mode=haunted] .kpi .n{font:italic 700 32px "Cormorant Garamond"}
+.kpi .t{font:500 11px "JetBrains Mono";color:var(--muted)}
+.toggle{width:36px;height:20px;border-radius:99px;background:var(--line);position:relative;flex:none}
+.toggle::after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:var(--panel);box-shadow:0 1px 2px #0003}
+.toggle.on{background:var(--ok)} [data-mode=haunted] .toggle.on{background:var(--accent)}
+.toggle.on::after{left:18px}
+.row{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .t b{display:block;font-weight:600} .row .t span{color:var(--muted);font-size:12px}
+.input{border:1px solid var(--line);border-radius:var(--r);padding:9px 12px;background:var(--panel);color:var(--fg)}
+.side{display:grid;grid-template-columns:210px 1fr;height:100%}
+.side aside{border-right:1px solid var(--line);padding:20px 14px}
+.side aside a{display:block;padding:7px 10px;border-radius:var(--r);color:var(--muted);text-decoration:none;font-weight:500;margin-bottom:2px}
+.side aside a.on{background:var(--sunk);color:var(--fg)}
+.task{display:flex;align-items:center;gap:10px;padding:4px 0;font-size:12.5px}
+.box{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--line);flex:none}
+.box.done{background:var(--ok);border-color:var(--ok)} .box.run{border-color:var(--warn);border-radius:50%;border-top-color:transparent}
+.diff{font:12px/1.7 "JetBrains Mono";background:var(--sunk);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.add{color:var(--ok)} .del{color:var(--bad)}
+.site{background:#f7f5f0;color:#1b1a17;padding:26px 30px;font:13px Inter;height:100%}
+.site h2{font:600 24px/1.1 "Cormorant Garamond",serif;margin-bottom:6px}
+.site .doc{background:#fff;border:1px solid #ddd8cc;padding:14px 16px;margin-top:14px;font:12px/1.7 "Cormorant Garamond",serif}
+.site mark{background:#f6d6d0;box-shadow:0 0 0 1px #c0392b inset;color:inherit}
+.site .b{display:inline-block;background:#9b1b1b;color:#fff;padding:8px 14px;border-radius:4px;margin-top:14px;font-weight:600}
+.frame{border:1px solid var(--line);border-radius:calc(var(--r) + 2px);overflow:hidden;display:flex;flex-direction:column;background:var(--panel)}
+.url{padding:7px 12px;border-bottom:1px solid var(--line);font:11px "JetBrains Mono";color:var(--muted)}
+.ecg{height:46px;width:100%}
+.steps{display:flex;gap:0;margin:0 0 26px}
+.steps div{flex:1;padding:10px 0;border-top:3px solid var(--line);color:var(--muted);font-weight:500;font-size:12px}
+.steps div.done{border-color:var(--ok);color:var(--fg)} .steps div.on{border-color:var(--accent);color:var(--fg)}
+.check{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.dot{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:11px;color:#fff;background:var(--ok);flex:none}
+[data-mode=haunted] .dot{background:none;border:1px solid var(--ok);color:var(--ok)}
+.warnbar{background:var(--warnbg);color:var(--warn);border-bottom:1px solid var(--line);padding:7px 22px;font-size:12px;font-weight:500}
+.bar{height:8px;border-radius:99px;background:var(--sunk);overflow:hidden} .bar i{display:block;height:100%;background:var(--fg)}
+[data-mode=haunted] .bar i{background:var(--accent)}
+/* haunted, static: vignette + grain + dirt */
+#fx{position:fixed;inset:0;pointer-events:none;display:none;z-index:50}
+[data-mode=haunted] #fx{display:block}
+#fx .v{position:absolute;inset:0;background:radial-gradient(ellipse 70% 65% at 50% 42%,transparent 40%,rgba(0,0,0,.55) 100%)}
+#fx .g{position:absolute;inset:0;opacity:.09;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+#fx .rain{position:absolute;inset:0;opacity:.18;background-image:repeating-linear-gradient(105deg,transparent 0 22px,rgba(220,225,235,.5) 22px 23px,transparent 23px 70px)}
+.tomb{width:120px;height:150px;margin:0 auto;background:linear-gradient(#3a3532,#191614);border-radius:60px 60px 4px 4px;display:grid;place-items:center;font:italic 700 26px "Cormorant Garamond";color:#6d0a10;box-shadow:0 22px 22px -12px #000}
+</style>
+</head>
+<body>
+<div id="fx"><div class="v"></div><div class="g"></div><div class="rain"></div></div>
+<div id="app" style="height:100%"></div>
+<script>
+const q = new URLSearchParams(location.search);
+const H = (q.get("mode") || "light") === "haunted";
+document.documentElement.dataset.mode = H ? "haunted" : "light";
+const w = (a, b) => H ? b : a;
+const ecg = (dead) => {
+  let d = "M0 30"; for (let x = 0; x <= 600; x += 6) { const p = x % 90; let y = 30; if (!dead) { if (p === 36) y = 22; if (p === 42) y = 4; if (p === 48) y = 40; if (p === 54) y = 28; } d += ` L${x} ${y}`; }
+  return `<svg class="ecg" viewBox="0 0 600 46" preserveAspectRatio="none"><path d="${d}" fill="none" stroke="var(${dead ? "--bad" : "--ok"})" stroke-width="2"/></svg>`;
+};
+function header(active, opts = {}) {
+  const items = opts.admin ? ["Overview", "Users", "Apps", "Policy", "Audit"] : ["Home", "Apps", "Cost"];
+  return `<header><div class="logo"><i></i>Revenant${opts.admin ? '<span class="chip c-n" style="margin-left:6px">admin</span>' : ""}</div>
+    <nav>${items.map((n) => `<a class="${n === active ? "on" : ""}">${n}</a>`).join("")}</nav><span class="sp"></span>
+    <span class="credits">${w("AWS credits", "Credits in the crypt")} <b>$4,812</b> · $38 ${w("this month", "bled")}</span>
+    <div class="seg"><span class="${H ? "" : "on"}">Light</span><span class="${H ? "on" : ""}">Haunted</span></div>
+    <div class="avatar">JL</div></header>`;
+}
+
+const S = {};
+
+S.signin = () => `<main style="height:100%;display:grid;place-items:center">
+  <div style="width:380px">
+    <div class="logo" style="justify-content:center;margin-bottom:26px;font-size:20px"><i></i>Revenant</div>
+    <div class="card" style="padding:26px">
+      <div class="h" style="font-size:22px;margin-bottom:4px">${w("Sign in", "Enter the crypt")}</div>
+      <div class="muted" style="margin-bottom:18px">${w("Your apps, on your AWS account.", "Your apps, buried in your own AWS.")}</div>
+      <div class="label" style="margin-bottom:6px">Email</div><div class="input" style="margin-bottom:12px">janghoon@example.com</div>
+      <div class="label" style="margin-bottom:6px">Password</div><div class="input" style="margin-bottom:18px">••••••••••••</div>
+      <div class="btn" style="width:100%;justify-content:center">${w("Sign in", "Open the gate")}</div>
+      <div class="muted" style="margin-top:14px;font-size:12px;text-align:center">Signed in with Amazon Cognito · invite only</div>
+    </div>
+    <div class="muted mono" style="text-align:center;margin-top:16px">revenant.d2k8f.amplifyapp.com · account 4417-2209-1180 · us-east-1</div>
+  </div></main>`;
+
+S.welcome = () => `${header("")}<main><div class="wrap" style="max-width:860px">
+  <div class="steps"><div class="done">1 · AWS account</div><div class="done">2 · Kiro</div><div class="done">3 · Budget</div><div class="on">4 · Look</div><div>5 · First app</div></div>
+  <div class="h" style="font-size:30px;margin-bottom:6px">${w("Welcome, Janghoon. Revenant is installed.", "Welcome, Janghoon. The crypt is open.")}</div>
+  <div class="muted" style="margin-bottom:22px">${w("We checked your setup. One choice left.", "We checked the bones. One choice left.")}</div>
+  <div class="card" style="margin-bottom:18px">
+    <div class="check"><span class="dot">✓</span><div class="sp"><b>AWS account</b> <span class="muted">4417-2209-1180 · us-east-1 · member of your Organization</span></div><span class="chip c-ok">ok</span></div>
+    <div class="check"><span class="dot">✓</span><div class="sp"><b>Kiro</b> <span class="muted">key works · model Auto</span></div><span class="chip c-ok">ok</span></div>
+    <div class="check" style="border:0"><span class="dot">✓</span><div class="sp"><b>Budget</b> <span class="muted">$200 / month · alarm at 80%</span></div><span class="ghost" style="padding:4px 10px">Change</span></div>
+  </div>
+  <div class="label">How should it look?</div>
+  <div class="grid2" style="margin-bottom:24px">
+    <div class="card" style="border:2px solid ${H ? "var(--line)" : "var(--fg)"}"><b>Light</b><div class="muted">Plain and calm. No effects.</div><div style="margin-top:12px;height:70px;border-radius:6px;background:#fbfbfa;border:1px solid #e7e6e2"></div></div>
+    <div class="card" style="border:2px solid ${H ? "var(--accent)" : "var(--line)"}"><b>Haunted</b><div class="muted">Dark, rain, thunder. Deploys die and rise. Calm mode inside.</div><div style="margin-top:12px;height:70px;border-radius:6px;background:radial-gradient(circle at 30% 40%,#2a2522,#060607 70%);border:1px solid #241f1b"></div></div>
+  </div>
+  <div style="display:flex;gap:10px"><span class="btn">${w("Continue", "Continue into the dark")}</span><span class="ghost">Back</span></div>
+</div></main>`;
+
+S.home = () => `${header("Home")}<main><div class="wrap" style="max-width:900px;padding-top:56px">
+  <div class="h" style="font-size:38px;text-align:center;margin-bottom:6px">${w("What should we build?", "What shall we raise tonight?")}</div>
+  <div class="muted" style="text-align:center;margin-bottom:22px">${w("Kiro writes the spec, builds it, and deploys it to your AWS.", "Kiro writes the spell, raises it, and buries it in your AWS.")}</div>
+  <div class="card" style="padding:16px 18px;min-height:110px;position:relative;font-size:15px">Build me a contract signing site where an AI flags toxic clauses before you sign.
+    <div style="position:absolute;left:16px;bottom:14px" class="muted">⊕ Attach &nbsp; · &nbsp; lease-sample.pdf</div>
+    <span class="btn" style="position:absolute;right:14px;bottom:12px">${w("Write the spec", "Write the spell")}</span></div>
+  <div style="display:flex;gap:8px;justify-content:center;margin:14px 0 34px">${["FinePrint (example)", "Booking site for my clinic", "Waitlist with payments", "Internal orders admin"].map((x) => `<span class="ghost" style="padding:5px 11px;font-size:12px">${x}</span>`).join("")}</div>
+  <div class="label">${w("Your apps", "Your graves")}</div>
+  <div class="grid3">${[["fineprint", w("Live", "Risen"), "c-ok", "$6.10", "3 previews"], ["clinic-book", w("Building", "Summoning"), "c-warn", "$0.40", "task 4 / 9"], ["waitlist", w("Repairing", "Ritual"), "c-bad", "$1.20", "repair 1 / 3"]].map(([n, s, c, m, x]) => `
+    <div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:14px">${n}</b><span class="chip ${c}">${s}</span></div>
+    <div class="mono muted" style="margin-top:8px">${m} this month · ${x}</div></div>`).join("")}</div>
+</div></main>`;
+
+S.spec = () => `${header("Apps")}<main><div class="wrap" style="display:grid;grid-template-columns:1fr 300px;gap:24px">
+  <div>
+    <div class="muted" style="margin-bottom:4px">Apps / fineprint</div>
+    <div class="h" style="font-size:26px;margin-bottom:14px">${w("Here is the plan", "The grimoire")}</div>
+    <div style="display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:14px">${["Requirements", "Design", "Tasks · 9"].map((t, i) => `<span style="padding:8px 14px;${i ? "color:var(--muted)" : "border-bottom:2px solid var(--accent);font-weight:600"}">${t}</span>`).join("")}</div>
+    <div class="card"><div class="label">In plain words</div>
+      <ul style="margin-left:18px;line-height:1.9"><li>Upload a PDF. AI marks each clause safe, watch or ${w("toxic", "cursed")}, with a fairer rewrite.</li><li>Send it to signers by email. They read the review before they sign.</li><li>Signed PDFs are sealed so anyone can check they never changed.</li></ul>
+      <div class="diff" style="margin-top:14px"><span class="muted">requirements.md</span><br>2. WHEN clauses are split THEN the review agent SHALL rate each clause safe, watch or toxic.<br><span class="add">+ 4. WHEN a clause is toxic THEN the system SHALL show a fairer rewrite.</span></div>
+    </div>
+    <div class="card" style="margin-top:14px;display:flex;gap:10px;align-items:center"><span class="muted sp">${w("Ask for a change to the plan…", "Whisper a change to the spell…")}</span><span class="ghost">Send</span></div>
+  </div>
+  <div>
+    <div class="card" style="margin-bottom:14px"><div class="label">${w("AWS parts", "Bones")}</div>
+      ${[["Hosting", "Amplify"], ["Sign-in", "Cognito"], ["Data", "Amplify Data"], ["Files", "S3"], ["Mail", "SES"], ["AI", "Bedrock"]].map(([a, b]) => `<div style="display:flex;justify-content:space-between;padding:4px 0"><span>${a}</span><span class="mono muted">${b}</span></div>`).join("")}
+      <div class="muted" style="font-size:11.5px;margin-top:8px">SQL database: off (admin policy)</div></div>
+    <div class="card" style="margin-bottom:14px"><div class="label">${w("Estimated cost", "Blood price")}</div><div class="kpi"><div class="n">~$6 / mo</div><div class="t">idle ~$0.40 · from your credits</div></div></div>
+    <div class="btn" style="width:100%;justify-content:center;padding:12px">${w("Build it", "Summon it")}</div>
+    <div class="muted" style="font-size:11.5px;margin-top:8px;text-align:center">Kiro Auto · about 20 min · ~120 credits</div>
+  </div></div></main>`;
+
+const workspace = (dead) => `${header("Apps")}<main style="display:grid;grid-template-columns:360px 1fr 300px;height:calc(100% - 52px)">
+  <div style="border-right:1px solid var(--line);padding:18px;display:flex;flex-direction:column;gap:14px">
+    <div><div class="label">${w("Tasks · 9", "The incantation · 9")}</div>
+      ${["Skeleton and theme", "Upload and preview", "Review agent", "Fields and sending", "Signing", "Seal", "Verify page", "Seed data", "Polish"].map((t, i) => `<div class="task"><span class="box ${i < 7 ? "done" : i === 7 ? "run" : ""}"></span>${i + 1}. ${t}</div>`).join("")}</div>
+    <div class="sp"></div>
+    <div class="mono" style="line-height:1.7">${dead
+      ? `<div class="del">Amplify build #14 FAILED · npm run build</div><div class="del">Error: SEAL_SECRET is not set</div><div class="muted">kiro › the build reads SEAL_SECRET, but the backend never defines it.</div><div class="muted">amplify/backend.ts</div><div class="add">+ secret("SEAL_SECRET")</div><div>synth ✓ guard ✓ build ✓</div>`
+      : `<div class="muted">kiro › seeding 3 sample contracts</div><div class="add">+ amplify/seed.ts</div><div class="muted">~ amplify/data/resource.ts</div><div>synth ✓ guard ✓</div>`}</div>
+    <div class="card" style="padding:10px 12px" ><span class="muted">${w("Ask for a change…", "Whisper a change…")}</span></div>
+  </div>
+  <div style="padding:18px;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:12px"><div class="h" style="font-size:28px">${dead ? w("Repairing", "The ritual") : w("Building", "Summoning")}</div><span class="mono muted">${dead ? "repair 1 / 3 · Kiro Auto" : "task 8 / 9 · 14m 10s"}</span><span class="sp"></span><span class="ghost">Stop</span><span class="btn">Publish</span></div>
+    ${ecg(dead)}
+    <div class="frame" style="flex:1"><div class="url">preview-14.fineprint.amplifyapp.com</div>
+      <div style="flex:1;position:relative">${dead && H ? `<div style="position:absolute;inset:0;background:#000a;display:grid;place-items:center;z-index:2"><div><div class="tomb">#14</div><div class="mono" style="text-align:center;margin-top:10px">here lies build #14</div></div></div>` : dead ? `<div style="position:absolute;inset:0;background:#fffa;display:grid;place-items:center;z-index:2"><span class="chip c-bad" style="font-size:12px;padding:6px 12px">Build #14 failed · repairing</span></div>` : ""}
+        <div class="site"><div style="font:600 11px Inter;letter-spacing:.1em;color:#8a857a">FINEPRINT${H ? " · BLOOD OATH" : ""}</div><h2>Read it before you sign it.</h2><div style="color:#6b675e">lease-2026.pdf · 1 toxic clause · 1 to watch</div>
+        <div class="doc"><b>12. Liability.</b> <mark>Tenant shall indemnify Landlord against any and all claims, without limit.</mark></div><span class="b">Sign document</span></div></div></div>
+  </div>
+  <div style="border-left:1px solid var(--line);padding:18px">
+    <div class="label">${w("Timeline", "The chronicle")}</div>
+    ${(dead ? [["c-bad", w("Build #14 failed", "Build #14 died"), "14:02 · SEAL_SECRET is not set"], ["c-warn", w("Repair 1", "Ritual 1"), "14:03 · amplify/backend.ts"], ["c-ok", "Check passed", "14:05 · synth, guard, build"]] : [["c-ok", "Spec approved", "13:40"], ["c-ok", "Preview #13 live", "13:51"], ["c-warn", "Build #14", "running"]]).map(([c, t, s]) => `<div style="padding:0 0 14px"><span class="chip ${c}">●</span> <b>${t}</b><div class="mono muted">${s}</div></div>`).join("")}
+    <div class="card" style="margin-top:10px"><div class="kpi"><div class="n">${dead ? "--" : "112"}</div><div class="t">${dead ? w("time to recover", "time in the grave") : "Kiro credits this build"}</div></div></div>
+  </div></main>`;
+S.build = () => workspace(false);
+S.repair = () => workspace(true);
+
+S.publish = () => `${header("Apps")}<main><div class="wrap" style="max-width:980px">
+  <div class="muted">Apps / fineprint</div>
+  <div class="h" style="font-size:28px;margin:4px 0 18px">${w("Publish preview #15 to production", "Raise preview #15 for the living")}</div>
+  <div class="grid2">
+    <div class="card"><div class="label">What changes</div>
+      ${[["c-ok", "add", "Data model Seal (new)"], ["c-ok", "add", "Field Contract.sealedAt (optional)"], ["c-ok", "update", "Function review: memory 512 → 1024 MB"], ["c-bad", "remove", "Field Contract.draftNote · 42 records"]].map(([c, k, t]) => `<div class="row"><span class="chip ${c}" style="width:62px;text-align:center">${k}</span><div class="t sp">${t}</div></div>`).join("")}
+    </div>
+    <div class="card" style="border-color:var(--bad)"><div class="label" style="color:var(--bad)">Needs your approval</div>
+      <div style="font-size:14px;margin-bottom:10px"><b>Removing <span class="mono">Contract.draftNote</span> deletes the value in 42 records.</b></div>
+      <div class="muted" style="margin-bottom:14px">Kiro asked for this because the new spec drops draft notes. A backup of the table is taken before publish.</div>
+      <div class="diff" style="margin-bottom:14px"><span class="muted">amplify/data/resource.ts</span><br><span class="del">-   draftNote: a.string(),</span><br><span class="add">+   sealedAt: a.datetime(),</span></div>
+      <div style="display:flex;gap:10px"><span class="btn" style="background:var(--bad)">${w("Approve and publish", "Seal the pact")}</span><span class="ghost">Keep the field</span></div>
+    </div></div>
+  <div class="card" style="margin-top:18px;display:flex;gap:28px">
+    ${[["Backup", "point-in-time ✓"], ["Guard", "passed"], ["Build", "passed"], ["Health check", "after publish"]].map(([a, b]) => `<div><div class="label" style="margin-bottom:2px">${a}</div><b>${b}</b></div>`).join("")}</div>
+</div></main>`;
+
+S.app = () => `${header("Apps")}<main><div class="wrap">
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px"><div class="h" style="font-size:30px">fineprint</div><span class="chip c-ok">${w("live", "risen")}</span><span class="sp"></span><span class="ghost">Open spec</span><span class="ghost">Open in AWS console</span><span class="btn">New change</span></div>
+  <div class="grid4" style="margin-bottom:18px">${[["$6.10", "this month"], ["99.98%", "uptime 30 d"], ["3 / 3", w("repaired by agent", "raised by agent")], ["2m 54s", w("avg time to recover", "avg time in grave")]].map(([n, t]) => `<div class="card kpi"><div class="n">${n}</div><div class="t">${t}</div></div>`).join("")}</div>
+  <div class="grid2">
+    <div class="card"><div class="label">Production</div>${ecg(false)}
+      <div class="row"><div class="t sp"><b>fineprint.example.com</b><span>custom domain · DNS ok</span></div><span class="chip c-ok">ok</span></div>
+      <div class="row"><div class="t sp"><b>main.d9x2.amplifyapp.com</b><span>Amplify default</span></div></div>
+      <div class="row"><div class="t sp"><b>Data</b><span>Amplify Data · 7 models · 1,204 records</span></div><span class="ghost" style="padding:4px 10px">Export</span></div></div>
+    <div class="card"><div class="label">${w("Previews", "Restless spirits")}</div>
+      <table><tr><th>Branch</th><th>Status</th><th>Age</th><th></th></tr>
+      ${[["preview/16", "c-warn", w("building", "summoning"), "4 min"], ["preview/15", "c-ok", "ready", "2 h"], ["preview/12", "c-n", "expires in 1 d", "6 d"]].map(([b, c, s, a]) => `<tr><td class="mono">${b}</td><td><span class="chip ${c}">${s}</span></td><td class="muted">${a}</td><td class="muted">Open ›</td></tr>`).join("")}</table>
+      <div class="muted" style="font-size:12px;margin-top:10px">Previews are deleted 7 days after creation, or when merged.</div></div>
+  </div></div></main>`;
+
+S.cost = () => `${header("Cost")}<main><div class="wrap">
+  <div class="h" style="font-size:30px;margin-bottom:18px">${w("Cost", "The toll")}</div>
+  <div class="grid4" style="margin-bottom:18px">${[["$4,812", "AWS credits left"], ["$38.20", "spent this month"], ["$61", "forecast · budget $200"], ["1,840", "Kiro credits this month"]].map(([n, t]) => `<div class="card kpi"><div class="n">${n}</div><div class="t">${t}</div></div>`).join("")}</div>
+  <div class="card"><table><tr><th>App</th><th>AWS this month</th><th style="width:34%">Share</th><th>Kiro credits</th><th>Biggest part</th></tr>
+  ${[["fineprint", 18.4, 640, "Bedrock (reviews)"], ["clinic-book", 9.1, 520, "CodeBuild"], ["waitlist", 6.3, 410, "Amplify builds"], ["revenant (itself)", 4.4, 270, "Aurora"]].map(([n, c, k, b]) => `<tr><td><b>${n}</b></td><td class="mono">$${c.toFixed(2)}</td><td><div class="bar"><i style="width:${c / 18.4 * 100}%"></i></div></td><td class="mono">${k}</td><td class="muted">${b}</td></tr>`).join("")}</table></div>
+</div></main>`;
+
+const adminShell = (active, body) => `${header(active, { admin: true })}<main>${body}</main>`;
+S.admin = () => adminShell("Overview", `<div class="wrap">
+  <div class="h" style="font-size:30px;margin-bottom:18px">${w("Admin", "The keeper")}</div>
+  <div class="grid4" style="margin-bottom:18px">${[["12", "users · 2 admins"], ["9", "apps · 23 previews"], ["$38.20", "AWS this month · budget $200"], ["1,840", "Kiro credits this month"]].map(([n, t]) => `<div class="card kpi"><div class="n">${n}</div><div class="t">${t}</div></div>`).join("")}</div>
+  <div class="grid2">
+    <div class="card"><div class="label">Policy now</div>
+      ${[["SQL databases", "off · on for 1 user"], ["Kiro model", "Auto"], ["Auto-delete apps", "off"], ["Monthly budget", "$200 · alarm at 80%"]].map(([a, b]) => `<div class="row"><div class="t sp"><b>${a}</b></div><span class="mono muted">${b}</span></div>`).join("")}</div>
+    <div class="card"><div class="label">Recent admin changes</div>
+      ${[["JL", "turned SQL on for mina@", "2 h ago"], ["JL", "invited 3 users", "yesterday"], ["SY", "deleted app old-landing", "2 d ago"], ["JL", "set budget to $200", "5 d ago"]].map(([a, t, s]) => `<div class="row"><div class="avatar">${a}</div><div class="t sp"><b style="font-weight:500">${t}</b></div><span class="muted">${s}</span></div>`).join("")}</div>
+  </div></div>`);
+
+S.policy = () => adminShell("Policy", `<div class="wrap" style="max-width:900px">
+  <div class="h" style="font-size:30px;margin-bottom:18px">Policy</div>
+  <div class="card" style="margin-bottom:18px">
+    <div class="row"><div class="t sp"><b>Allow SQL databases (Aurora Postgres)</b><span>Off: new apps keep data in Amplify Data only. On: Kiro may add Aurora when the spec needs joins or reports.</span></div><div class="toggle"></div></div>
+    <div class="row"><div class="t sp"><b>Allow SQL for these users</b><span>Overrides the switch above.</span></div><span class="ghost" style="padding:4px 10px">mina@example.com ✕</span><span class="ghost" style="padding:4px 10px">+ Add</span></div>
+    <div class="row"><div class="t sp"><b>Kiro model</b><span>Auto picks the model per step (1× credits). Others cost more.</span></div><div class="input" style="width:220px">Auto (recommended) ▾</div></div>
+    <div class="row"><div class="t sp"><b>Monthly budget</b><span>Warns everyone at 80%, stops new builds at 100%.</span></div><div class="input mono" style="width:120px">$200</div></div>
+    <div class="row"><div class="t sp"><b>Auto-delete apps after</b><span>For demos and trials. Production apps of admins are never auto-deleted.</span></div><div class="input" style="width:160px">Never ▾</div></div>
+    <div class="row"><div class="t sp"><b>Delete previews after</b><span>Also deleted when merged.</span></div><div class="input" style="width:160px">7 days ▾</div></div>
+  </div>
+  <div style="display:flex;gap:10px"><span class="btn">Save policy</span><span class="ghost">Cancel</span><span class="muted" style="align-self:center;margin-left:8px">Every change is written to the audit log.</span></div>
+</div>`);
+
+S.users = () => adminShell("Users", `<div class="wrap">
+  <div style="display:flex;align-items:center;margin-bottom:18px"><div class="h" style="font-size:30px">Users</div><span class="sp"></span><span class="btn">Invite user</span></div>
+  <div class="card"><table><tr><th>User</th><th>Role</th><th>SQL</th><th>Apps</th><th>AWS this month</th><th>Kiro credits</th><th>Last seen</th><th></th></tr>
+  ${[["Janghoon Lee", "janghoon@example.com", "admin", "policy", 4, "$24.80", 1210, "now"], ["Mina Park", "mina@example.com", "member", "on", 2, "$7.10", 380, "1 h"], ["Seo Yun", "seo@example.com", "admin", "policy", 1, "$3.00", 150, "2 d"], ["Judge 01", "judge01@demo", "judge", "off", 1, "$0.90", 100, "5 d"], ["Alex Kim", "alex@example.com", "disabled", "off", 0, "$0.00", 0, "30 d"]].map(([n, e, r, s, a, c, k, l]) => `<tr><td><b>${n}</b><div class="muted" style="font-size:12px">${e}</div></td><td><span class="chip ${r === "admin" ? "c-warn" : r === "disabled" ? "c-bad" : "c-n"}">${r}</span></td><td><span class="chip ${s === "on" ? "c-ok" : "c-n"}">${s}</span></td><td class="mono">${a}</td><td class="mono">${c}</td><td class="mono">${k}</td><td class="muted">${l}</td><td class="muted">⋯</td></tr>`).join("")}</table></div>
+</div>`);
+
+S.apps = () => adminShell("Apps", `<div class="wrap">
+  <div class="h" style="font-size:30px;margin-bottom:18px">Apps</div>
+  <div class="card"><table><tr><th>App</th><th>Owner</th><th>Data</th><th>Status</th><th>Previews</th><th>AWS this month</th><th>Repairs</th><th></th></tr>
+  ${[["fineprint", "Janghoon", "Amplify Data", "c-ok", "live", 3, "$18.40", "3 / 3"], ["clinic-book", "Mina", "Aurora (SQL)", "c-warn", "building", 1, "$9.10", "0"], ["waitlist", "Janghoon", "Amplify Data", "c-bad", "repairing", 2, "$6.30", "1 / 2"], ["judge01-todo", "Judge 01", "Amplify Data", "c-n", "expires in 9 h", 0, "$0.90", "0"]].map(([n, o, d, c, s, p, m, r]) => `<tr><td><b>${n}</b></td><td>${o}</td><td class="muted">${d}</td><td><span class="chip ${c}">${s}</span></td><td class="mono">${p}</td><td class="mono">${m}</td><td class="mono">${r}</td><td class="muted">Open · Delete</td></tr>`).join("")}</table></div>
+</div>`);
+
+S.audit = () => adminShell("Audit", `<div class="wrap">
+  <div class="h" style="font-size:30px;margin-bottom:18px">Audit log</div>
+  <div class="card"><table><tr><th>When</th><th>Who</th><th>What</th><th>Detail</th></tr>
+  ${[["14:21", "Janghoon", "policy.sql_user_on", "mina@example.com"], ["14:05", "Kiro (repair)", "repair.merged", "waitlist · fix-3 · SEAL_SECRET"], ["13:40", "Janghoon", "publish.approved", "fineprint · remove Contract.draftNote (42 records)"], ["11:02", "Seo", "app.deleted", "old-landing"], ["09:15", "system", "preview.expired", "fineprint · preview/9"]].map(([a, b, c, d]) => `<tr><td class="mono muted">${a}</td><td>${b}</td><td class="mono">${c}</td><td class="muted">${d}</td></tr>`).join("")}</table></div>
+</div>`);
+
+document.getElementById("app").innerHTML = (S[q.get("s")] || S.home)();
+window.SCREENS = Object.keys(S);
+</script>
+</body>
+</html>
