@@ -133,13 +133,15 @@ async function onBuild(sig: Extract<Signal, { kind: "build" }>, d: Deps): Promis
 async function onHealth(sig: Extract<Signal, { kind: "health" }>, d: Deps): Promise<string> {
   const project = await d.store.project(sig.projectId);
   if (!project) return "project gone";
-  const text = `${sig.url} answered ${sig.status ?? "nothing"}:\n${focus(sig.text, 40)}`;
+  const text = sig.url ? `${sig.url} answered ${sig.status ?? "nothing"}:\n${focus(sig.text, 40)}` : focus(sig.text, 40);
   const open = await openRepair(project, d);
   if (open) {
     if (open.deploying && open.target === sig.branch) return next(open, `The health check failed after the redeploy: ${text}`, d);
     return "already repairing";
   }
-  return start(await deployFailure(project, sig.branch, null, `The health check of ${sig.branch} failed.`, text, d), d);
+  // No URL: the checks of a commit failed before any deploy (lib/deploy/check.ts).
+  const what = sig.url ? `The health check of ${sig.branch} failed.` : `The checks of the last commit on ${sig.branch} failed.`;
+  return start(await deployFailure(project, sig.branch, null, what, text, d), d);
 }
 
 // ---------- steps ----------
