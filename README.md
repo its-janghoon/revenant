@@ -43,6 +43,22 @@ The stack copies this repository into CodeCommit in your account, bootstraps CDK
 the first Amplify build (about 15 minutes). The `RevenantUrl` output is your Revenant; the admin
 gets a Cognito invite email. To update later, run the `UpdateCommand` output.
 
+### Publishing the template (maintainers)
+
+The one-click link only works with a template in S3. After each release on `main`, upload
+`infra/install.yaml` to an S3 bucket you own (here `BUCKET`, any region) and point the link at it:
+
+```
+aws s3api put-public-access-block --bucket BUCKET --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=false,RestrictPublicBuckets=false
+aws s3api put-bucket-policy --bucket BUCKET --policy '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":"s3:GetObject","Resource":"arn:aws:s3:::BUCKET/install.yaml"}]}'
+aws s3 cp infra/install.yaml s3://BUCKET/install.yaml --content-type text/yaml --cache-control no-cache
+aws cloudformation validate-template --template-url https://BUCKET.s3.amazonaws.com/install.yaml
+```
+
+Only `install.yaml` is public; keep everything else in the bucket private. The link is
+`https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate?stackName=revenant&templateURL=https://BUCKET.s3.amazonaws.com/install.yaml`;
+the link above is a placeholder until the bucket exists.
+
 - Spec: [.kiro/specs/revenant](.kiro/specs/revenant)
 - Mockups: [design/mockups](design/mockups) (open `flow.html` for every screen, `live.html` for the theme)
 - Host your own, public or private: [docs/self-host.md](docs/self-host.md)
