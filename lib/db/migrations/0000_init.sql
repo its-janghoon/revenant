@@ -29,7 +29,7 @@ CREATE TABLE "runs" (
 CREATE TABLE "tasks" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"project_id" uuid NOT NULL,
-	"number" integer NOT NULL,
+	"number" text NOT NULL,
 	"title" text NOT NULL,
 	"state" text DEFAULT 'todo' NOT NULL,
 	CONSTRAINT "tasks_project_number_key" UNIQUE("project_id","number")

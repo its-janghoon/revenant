@@ -44,7 +44,7 @@ export interface Run {
 export interface Task {
   id: string;
   projectId: string;
-  number: number; // task number from tasks.md, also in the commit message
+  number: string; // "3" or "3.1", from tasks.md, also in the commit message
   title: string;
   state: TaskState;
 }

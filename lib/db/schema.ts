@@ -42,7 +42,7 @@ export const runs = pgTable("runs", {
 export const tasks = pgTable("tasks", {
   id: id(),
   projectId: projectId(),
-  number: integer("number").notNull(),
+  number: text("number").notNull(), // "3" or "3.1", as in tasks.md
   title: text("title").notNull(),
   state: text("state").$type<TaskState>().notNull().default("todo"),
 }, (t) => [unique("tasks_project_number_key").on(t.projectId, t.number)]);
