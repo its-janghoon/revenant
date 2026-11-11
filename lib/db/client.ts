@@ -5,8 +5,9 @@ import { RDSDataClient } from "@aws-sdk/client-rds-data";
 import { drizzle } from "drizzle-orm/aws-data-api/pg";
 import { env } from "../env";
 import * as schema from "./schema";
+import { wake } from "./wake";
 
-export const db = drizzle(new RDSDataClient({ region: env.AWS_REGION }), {
+export const db = drizzle(wake(new RDSDataClient({ region: env.AWS_REGION })), {
   database: env.RV_DB_NAME,
   resourceArn: env.RV_DB_CLUSTER_ARN,
   secretArn: env.RV_DB_SECRET_ARN,
