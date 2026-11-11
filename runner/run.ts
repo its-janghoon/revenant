@@ -26,7 +26,8 @@ const done = new Set<string>();
 
 process.on('uncaughtException', fail);
 
-const MODES = ['spec', 'build', 'change', 'repair'] as const;
+// check: no Kiro, no push; the checks on COMMIT of BRANCH (Code tab commits, lib/deploy/check.ts).
+const MODES = ['spec', 'build', 'change', 'repair', 'check'] as const;
 type Mode = (typeof MODES)[number];
 
 class Step extends Error {
@@ -72,6 +73,8 @@ const reserveMs = Math.min(10 * 60_000, totalMs / 3);
 const work = env.WORK_DIR?.trim() || '/work/app';
 const hold = `rv/run-${run}`;
 const spec = `.kiro/specs/${app}`;
+const commitId = env.COMMIT?.trim() || '';
+if (mode === 'check' && !/^[0-9a-f]{40}$/.test(commitId)) fail(new Step('input', 'COMMIT must be a full commit id in check mode', 2));
 
 const identity = {
   GIT_AUTHOR_NAME: env.GIT_NAME || 'Revenant',
@@ -148,7 +151,7 @@ function pushHold(): void {
 }
 
 function save(): void {
-  if (!cloned) return;
+  if (!cloned || mode === 'check') return; // a check commits nothing
   try {
     if (dirty()) commitAll(`chore: uncommitted work from run ${run}`);
   } catch {
@@ -430,7 +433,26 @@ async function push(): Promise<void> {
   throw new Step('push', `could not push ${branch}`);
 }
 
+// MODE=check: the commit is already on BRANCH; run the checks on it and push nothing.
+async function check(): Promise<void> {
+  say(`run ${run}: check ${commitId.slice(0, 8)} on ${branch}`);
+  clone();
+  if (!remote(branch)) throw new Step('clone', `branch ${branch} not found`);
+  must(git('checkout', '-q', '-B', branch, commitId), 'clone');
+  await checks();
+  say(`checks passed on ${branch} at ${commitId.slice(0, 8)}`);
+  finish(0);
+}
+
 async function main(): Promise<void> {
+  if (mode === 'check') {
+    setTimeout(() => {
+      emit({ t: 'error', step: 'limit', text: 'time limit reached' });
+      stopChild();
+      finish(3);
+    }, totalMs).unref();
+    return check();
+  }
   const startedAt = Date.now();
   const end = startedAt + totalMs;
   const watchdog = setTimeout(() => {

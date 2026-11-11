@@ -10,6 +10,7 @@ import { deployEnv } from "./env";
 import { event } from "./events";
 import { health } from "./health";
 import { getHooks } from "./hooks";
+import { followCheck } from "./check";
 import { advance } from "./publish";
 
 const RUNNING = new Set(["PENDING", "PROVISIONING", "RUNNING", "CANCELLING"]);
@@ -36,7 +37,7 @@ async function finish(project: Project, d: Deploy, status: "live" | "failed", ur
 }
 
 export async function settle(project: Project, d: Deploy): Promise<Deploy> {
-  if (d.status === "pending") return advance(project, d);
+  if (d.status === "pending") return d.branch === PROD ? advance(project, d) : followCheck(project, d);
   if (d.status !== "running" || !project.amplifyAppId) return d;
   const job = await jobFor(project.amplifyAppId, d.branch, d.commit);
   const s = job?.status;

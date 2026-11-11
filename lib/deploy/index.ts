@@ -9,6 +9,7 @@
 //                                         ./wire registers the real ones on import
 import "./wire";
 export { PROD, branchUrl, ensureApp, ensureBranch, envOf, previewBranch, previewNumber } from "./amplify";
+export { checkCommit, checkRunId, followCheck } from "./check";
 export { getDomain, setDomain } from "./domain";
 export { health } from "./health";
 export { setHooks, type DeployHooks, type SqlHooks } from "./hooks";
