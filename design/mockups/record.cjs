@@ -13,6 +13,7 @@ const runs = [["normal", "off"], ["spooky", "off"], ["spooky", "on"]];
     const tag = mode === "normal" ? "light" : calm === "on" ? "haunted-calm" : "haunted";
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 860 }, recordVideo: { dir: out, size: { width: 1440, height: 860 } } });
     const p = await ctx.newPage();
+    const born = Date.now();
     await p.goto(`${page}?mode=${mode}&calm=${calm}&once`);
     await p.waitForTimeout(600);
     // a short cursor sweep so the flashlight shows it follows the hand
@@ -27,6 +28,14 @@ const runs = [["normal", "off"], ["spooky", "off"], ["spooky", "on"]];
     await p.waitForFunction(() => window.__state === "alive"); await p.mouse.move(520, 105, { steps: 20 }); await p.waitForTimeout(1800);
     await p.screenshot({ path: `${out}/${tag}-risen.png` });
     await p.waitForTimeout(1500);
+    if (mode === "spooky" && calm === "off") {
+      const dur = (Date.now() - born) / 1000 + .5;
+      const wav = await p.evaluate(async ([born, dur]) => {
+        const ev = (window.__ev || []).map((e) => ({ at: (performance.timeOrigin + e.t - born) / 1000, big: e.big }));
+        return window.haunt.bake(ev, dur);
+      }, [born, dur]);
+      require("fs").writeFileSync(`${out}/${tag}.wav`, Buffer.from(wav, "base64"));
+    }
     const v = await p.video().path();
     await ctx.close();
     require("fs").renameSync(v, `${out}/${tag}.webm`);
