@@ -1,10 +1,8 @@
 // Revenant's own data for the screens, always scoped to the owner.
 import "server-only";
 import { and, desc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
-import type { Project, Repair, Settings } from "@/lib/contracts";
-import { nextPreview } from "@/lib/deploy";
+import type { Project, Settings } from "@/lib/contracts";
 import { getSettings as policySettings, isSqlAllowed } from "@/lib/policy";
-import { repairsFor } from "@/lib/repair/store";
 import { db, schema } from "@/lib/db/client";
 import type { User } from "./auth";
 import { byNumber } from "./repo";
@@ -88,23 +86,9 @@ export async function projectTasks(id: string) {
 export async function projectDeploys(id: string, limit = 30) {
   return db.select().from(deploys).where(eq(deploys.projectId, id)).orderBy(desc(deploys.createdAt)).limit(limit);
 }
-export async function projectPreviews(id: string) {
-  return db.select().from(previews).where(eq(previews.projectId, id)).orderBy(desc(previews.createdAt));
-}
-export async function projectRepairs(id: string, limit = 30): Promise<Repair[]> {
-  return (await repairsFor(db, id)).slice(0, limit);
-}
 
 export async function livePreviews(id: string) {
   return db.select().from(previews).where(and(eq(previews.projectId, id), isNull(previews.deletedAt))).orderBy(desc(previews.createdAt));
-}
-
-/** "preview/12" -> 12 */
-export const previewNumber = (branch: string) => Number(/^preview\/(\d+)$/.exec(branch)?.[1] ?? 0);
-
-/** Reserves the next preview/<n> through the deploy lane (row, event, SQL preview database). */
-export async function nextPreviewBranch(p: ProjectRow): Promise<string> {
-  return (await nextPreview(toProject(p))).branch;
 }
 
 /** The branch the agent and the Code tab work on: newest live preview, else the spec branch. */
