@@ -115,7 +115,7 @@ function statusOf(b: Build): RunStatus {
 export async function syncRuns(projectId: string): Promise<void> {
   const open = await db.select().from(runs).where(and(eq(runs.projectId, projectId), inArray(runs.status, ACTIVE)));
   const ids = open.map((r) => r.codebuildId).filter((x): x is string => Boolean(x));
-  if (!ids.length) return;
+  if (!ids.length) return firstDeploy(projectId);
   const r = await codebuild.send(new BatchGetBuildsCommand({ ids }));
   for (const b of r.builds ?? []) {
     const run = open.find((x) => x.codebuildId === b.id);
@@ -198,6 +198,17 @@ export async function endRun(run: RunRow, status: RunStatus, at?: string, extra:
     }
   }
   await putEvents([event(run.projectId, "run_done", { run: run.id, mode: run.mode, status, credits: extra.credits ?? null })]);
+}
+
+/**
+ * A first build that repair fixed: the fix is merged into the preview branch, but the app has no
+ * Amplify app yet and only this server can create one (the broker passes its roles). Deploy it.
+ */
+async function firstDeploy(projectId: string): Promise<void> {
+  const [p] = await db.select().from(projects).where(eq(projects.id, projectId));
+  if (!p?.repo || p.amplifyAppId || p.status !== "preview") return;
+  const [last] = await projectRuns(p.id, 1);
+  if (last?.mode === "repair" && last.status === "succeeded") await deployAfter(last, null);
 }
 
 /** The runner pushed the newest preview branch: hand it to the deploy lane. */

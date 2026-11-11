@@ -5,7 +5,7 @@
 import {
   AmplifyClient, GetAppCommand, GetBranchCommand as GetAmplifyBranch, NotFoundException, StartJobCommand,
 } from "@aws-sdk/client-amplify";
-import { CodeCommitClient, GetBranchCommand, MergeBranchesByThreeWayCommand } from "@aws-sdk/client-codecommit";
+import { CodeCommitClient, CreateBranchCommand, GetBranchCommand, MergeBranchesByThreeWayCommand } from "@aws-sdk/client-codecommit";
 import { RDSDataClient } from "@aws-sdk/client-rds-data";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/aws-data-api/pg";
@@ -28,8 +28,14 @@ const db = () =>
   });
 
 async function target(projectId: string): Promise<{ repo: string; appId: string }> {
+  const { repo, appId } = await project(projectId);
+  if (!appId) throw new Error(`project ${projectId} has no Amplify app yet`);
+  return { repo, appId };
+}
+
+async function project(projectId: string): Promise<{ repo: string; appId: string | null }> {
   const [p] = await db().select().from(schema.projects).where(eq(schema.projects.id, projectId)).limit(1);
-  if (!p?.repo || !p?.amplifyAppId) throw new Error(`project ${projectId} has no repo or Amplify app yet`);
+  if (!p?.repo) throw new Error(`project ${projectId} has no repo yet`);
   return { repo: p.repo, appId: p.amplifyAppId };
 }
 
@@ -52,7 +58,21 @@ async function startJob(appId: string, branch: string, commit: string | undefine
 
 export const deployer: Deployer = {
   async merge({ projectId, from, into }) {
-    const { repo, appId } = await target(projectId);
+    // A first build that never deployed has a repo but no Amplify app: merge only. The Revenant
+    // server creates the app and starts the first deploy (app/_lib/runs.ts firstDeploy).
+    const { repo, appId } = await project(projectId);
+    // The failed first build never pushed its branch: the fix branch becomes it.
+    const exists = await codecommit.send(new GetBranchCommand({ repositoryName: repo, branchName: into })).then(() => true, (e) => {
+      if ((e as Error).name === "BranchDoesNotExistException") return false;
+      throw e;
+    });
+    if (!exists) {
+      const src = await codecommit.send(new GetBranchCommand({ repositoryName: repo, branchName: from }));
+      const commitId = src.branch?.commitId;
+      if (!commitId) throw new Error(`fix branch ${from} has no commit`);
+      await codecommit.send(new CreateBranchCommand({ repositoryName: repo, branchName: into, commitId }));
+      return { commit: commitId };
+    }
     const r = await codecommit.send(new MergeBranchesByThreeWayCommand({
       repositoryName: repo,
       sourceCommitSpecifier: from,
@@ -63,7 +83,7 @@ export const deployer: Deployer = {
     }));
     if (!r.commitId) throw new Error(`merge ${from} -> ${into} returned no commit`);
     // A branch Amplify deploys gets its redeploy now; the loop waits for its SUCCEED or FAILED event.
-    if (await amplifyBranch(appId, into)) await startJob(appId, into, r.commitId, `Revenant repair ${from}`);
+    if (appId && (await amplifyBranch(appId, into))) await startJob(appId, into, r.commitId, `Revenant repair ${from}`);
     return { commit: r.commitId };
   },
 

@@ -72,7 +72,7 @@ export class RepairRules extends Construct {
     allow(["cloudformation:DescribeStackEvents"], [`arn:${partition}:cloudformation:${at}:stack/amplify-*`]);
     allow(["codebuild:StartBuild", "codebuild:BatchGetBuilds"], [`arn:${partition}:codebuild:${at}:project/${props.runnerProject}`]);
     allow(["logs:GetLogEvents"], [`arn:${partition}:logs:${at}:log-group:*`]);
-    allow(["codecommit:GetBranch", "codecommit:GetCommit", "codecommit:GetDifferences", "codecommit:MergeBranchesByThreeWay"], [`arn:${partition}:codecommit:${at}:rv-*`]);
+    allow(["codecommit:GetBranch", "codecommit:CreateBranch", "codecommit:GetCommit", "codecommit:GetDifferences", "codecommit:MergeBranchesByThreeWay"], [`arn:${partition}:codecommit:${at}:rv-*`]);
     allow(["ssm:GetParameter", "ssm:PutParameter"], [`arn:${partition}:ssm:${at}:parameter/amplify/*`]);
     allow(["s3:PutObject"], [`arn:${partition}:s3:::${props.promptBucket}/runs/*`]);
     allow(["iam:PassRole"], [`arn:${partition}:iam::${account}:role/rv-*-runner`]);
