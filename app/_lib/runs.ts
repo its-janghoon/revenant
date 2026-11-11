@@ -3,7 +3,7 @@ import "server-only";
 import { FilterLogEventsCommand } from "@aws-sdk/client-cloudwatch-logs";
 import { BatchGetBuildsCommand, StopBuildCommand, type Build } from "@aws-sdk/client-codebuild";
 import { CopyObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { parseLine, type RunMode, type RunStatus } from "@/lib/contracts";
 import { broker } from "@/lib/broker/client";
 import { db, schema } from "@/lib/db/client";
@@ -208,8 +208,20 @@ async function firstDeploy(projectId: string): Promise<void> {
   const [p] = await db.select().from(projects).where(eq(projects.id, projectId));
   if (!p?.repo || p.amplifyAppId || p.status !== "preview") return;
   const [last] = await projectRuns(p.id, 1);
-  if (last?.mode === "repair" && last.status === "succeeded") await deployAfter(last, null);
+  if (last?.mode !== "repair" || last.status !== "succeeded") return;
+  // Every page poll lands here and CreateApp is rate limited: one caller at a time, once a minute.
+  const now = Date.now();
+  if (now - (firstTried.get(p.id) ?? 0) < 60_000) return;
+  firstTried.set(p.id, now);
+  const [claimed] = await db.update(projects).set({ status: "building" })
+    .where(and(eq(projects.id, p.id), eq(projects.status, "preview"), isNull(projects.amplifyAppId))).returning({ id: projects.id });
+  if (!claimed) return;
+  await deployAfter(last, null);
+  // deployAfter logs a failed start; give it back so a later poll tries again.
+  const [after] = await db.select({ app: projects.amplifyAppId }).from(projects).where(eq(projects.id, p.id));
+  if (!after?.app) await db.update(projects).set({ status: "preview" }).where(and(eq(projects.id, p.id), eq(projects.status, "building")));
 }
+const firstTried = new Map<string, number>();
 
 /** The runner pushed the newest preview branch: hand it to the deploy lane. */
 async function deployAfter(run: RunRow, commit: string | null): Promise<void> {
