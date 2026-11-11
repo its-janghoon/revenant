@@ -35,6 +35,8 @@ async function vars(project: Project, appId?: string): Promise<Record<string, st
   };
   const compute = (await h.computeRole?.(project)) ?? deployEnv.RV_APPS_COMPUTE_ROLE_ARN;
   if (compute) out.RV_COMPUTE_ROLE_ARN = compute;
+  // The role Amplify builds the app with: blocks/data lets it seed preview tables.
+  if (deployEnv.RV_APPS_SERVICE_ROLE_ARN) out.RV_BUILD_ROLE_ARN = deployEnv.RV_APPS_SERVICE_ROLE_ARN;
   if (appId) out.RV_AMPLIFY_APP_ID = appId;
   const sql = await sqlFor(project);
   if (sql) Object.assign(out, await sql.appEnv(project));
