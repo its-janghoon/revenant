@@ -1,5 +1,6 @@
 // AWS clients and names for the screens lane. Credentials come from the compute role only.
 import "server-only";
+import { CloudWatchLogsClient } from "@aws-sdk/client-cloudwatch-logs";
 import { CodeBuildClient } from "@aws-sdk/client-codebuild";
 import { CodeCommitClient } from "@aws-sdk/client-codecommit";
 import { IAMClient } from "@aws-sdk/client-iam";
@@ -44,3 +45,4 @@ export const secrets = new SecretsManagerClient({ region });
 export const s3 = new S3Client({ region });
 export const lambda = new LambdaClient({ region });
 export const iam = new IAMClient({ region });
+export const logs = new CloudWatchLogsClient({ region });

@@ -1,13 +1,14 @@
 // Start, follow and stop runner runs (CodeBuild, runner/README.md).
 import "server-only";
+import { FilterLogEventsCommand } from "@aws-sdk/client-cloudwatch-logs";
 import { BatchGetBuildsCommand, StopBuildCommand, type Build } from "@aws-sdk/client-codebuild";
 import { CopyObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { and, eq, inArray } from "drizzle-orm";
-import type { RunMode, RunStatus } from "@/lib/contracts";
+import { parseLine, type RunMode, type RunStatus } from "@/lib/contracts";
 import { broker } from "@/lib/broker/client";
 import { db, schema } from "@/lib/db/client";
 import { deployPreview } from "@/lib/deploy";
-import { codebuild, names, s3 } from "./aws";
+import { codebuild, logs, names, s3 } from "./aws";
 import type { User } from "./auth";
 import { HttpError, busy } from "./http";
 import { kiroFor } from "./keys";
@@ -123,8 +124,25 @@ export async function syncRuns(projectId: string): Promise<void> {
     // Exit code 3 (time or credits limit) shows up as FAILED with this phase message.
     const limit = (b.phases ?? []).some((ph) => /exit status 3\b/.test((ph.contexts ?? []).map((c) => c.message).join(" ")));
     const status: RunStatus = limit ? "timeout" : st;
-    await endRun(run, status, b.endTime?.toISOString());
+    await endRun(run, status, b.endTime?.toISOString(), await reported(b));
   }
+}
+
+/** Credits and last commit from the run's `run_done` line; the runner only writes them to its log. */
+async function reported(b: Build): Promise<{ credits?: number; commit?: string | null }> {
+  const group = b.logs?.groupName;
+  const stream = b.logs?.streamName;
+  if (!group || !stream) return {};
+  try {
+    const r = await logs.send(new FilterLogEventsCommand({ logGroupName: group, logStreamNames: [stream], filterPattern: '"run_done"', limit: 5 }));
+    for (const e of (r.events ?? []).reverse()) {
+      const line = parseLine((e.message ?? "").trim());
+      if (line?.t === "run_done") return { ...(typeof line.credits === "number" ? { credits: line.credits } : {}), ...(line.commit ? { commit: line.commit } : {}) };
+    }
+  } catch (e) {
+    console.error("run credits not read", (e as Error).name, (e as Error).message);
+  }
+  return {};
 }
 
 export async function endRun(run: RunRow, status: RunStatus, at?: string, extra: { credits?: number; commit?: string | null } = {}): Promise<void> {

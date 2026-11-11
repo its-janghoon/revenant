@@ -92,6 +92,9 @@ async function onBuild(sig: Extract<Signal, { kind: "build" }>, d: Deps): Promis
   const build = await d.aws.build(sig.buildId);
   const env = Object.keys(sig.env).length ? sig.env : (build?.env ?? {});
   const sum = summarize(build?.log ?? []);
+  const done = sum.lines.find((l) => l.t === "run_done");
+  await d.store.finishRun?.(run.id, sig.status === "SUCCEEDED" ? "succeeded" : "failed",
+    done?.t === "run_done" ? done.credits : undefined, done?.t === "run_done" ? done.commit : undefined);
 
   if (run.mode === "repair") {
     const open = await openRepair(project, d);

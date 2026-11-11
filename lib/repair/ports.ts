@@ -25,6 +25,8 @@ export interface Store {
   lastRun(projectId: string): Promise<Run | null>;
   addRun(r: { projectId: string; mode: "repair"; model: string; kiroPayer: KiroPayer }): Promise<Run>;
   setRunBuild(id: string, codebuildId: string): Promise<void>;
+  /** Records the end of a run and what the runner reported (credits, last commit); a run already ended keeps its status. */
+  finishRun?(id: string, status: "succeeded" | "failed", credits?: number, commit?: string | null): Promise<void>;
   deploy(id: string): Promise<Deploy | null>;
   deployFor(projectId: string, branch: string): Promise<Deploy | null>;
   addDeploy(d: { projectId: string; branch: string; commit: string; status: DeployStatus }): Promise<Deploy>;

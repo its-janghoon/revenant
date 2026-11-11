@@ -38,6 +38,12 @@ export function dbStore(db: Db): Store {
     async setRunBuild(id, codebuildId) {
       await db.update(runs).set({ codebuildId, status: "running" }).where(eq(runs.id, id));
     },
+    async finishRun(id, status, credits, commit) {
+      const extra = { ...(credits !== undefined ? { credits } : {}), ...(commit ? { commit } : {}) };
+      await db.update(runs).set({ status, endedAt: new Date().toISOString(), ...extra })
+        .where(and(eq(runs.id, id), inArray(runs.status, ["queued", "running"])));
+      if (Object.keys(extra).length) await db.update(runs).set(extra).where(eq(runs.id, id));
+    },
     deploy: (id) => one(db.select().from(deploys).where(eq(deploys.id, id)).limit(1)) as Promise<Deploy | null>,
     deployFor: (projectId, branch) =>
       one(
