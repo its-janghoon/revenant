@@ -105,6 +105,16 @@ user's AWS credits.
 6. The app's health SHALL be drawn as a heartbeat line in both themes: beats while live, flat while dead.
 7. Both choices SHALL be remembered per browser and rendered on first paint with no flash.
 8. Text contrast SHALL meet WCAG AA in Light and in Haunted Calm.
+9. Haunted Full SHALL include a storm: rain (picture and sound), random thunder (light first, sound 0.3-1 s later), blood dripping from the top of the screen and from the tombstone when a deploy dies, a weathered tombstone with soil, and dirt and grain on the screen.
+10. Sound SHALL be made in the browser (no audio files), start muted, and play only after the user presses Sound.
+11. When a deploy dies, Haunted Full SHALL play the scare, in this order:
+    1. **Silence**: rain sound cuts to zero for about 1 s.
+    2. **Delay**: the strike lands 2-4 s after the death, at a random moment.
+    3. **Strike**: white, black, white flash, a big quake and a close thunder crack.
+    4. **Silhouette**: a human shadow shows only during the 2 lightning frames, and is gone when the flashlight looks there.
+    5. **Moved**: after the strike, the tombstone stands a little closer than before.
+    6. **Breath**: a very quiet breath plays when the failure log line appears.
+12. Lightning SHALL light the whole screen for its flash, past the flashlight.
 
 ## Requirement 11: Demo
 
