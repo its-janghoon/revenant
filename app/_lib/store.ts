@@ -1,12 +1,13 @@
 // Revenant's own data for the screens, always scoped to the owner.
 import "server-only";
 import { and, desc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
-import { DEFAULT_SETTINGS, type Project, type Settings } from "@/lib/contracts";
+import type { Project, Settings } from "@/lib/contracts";
+import { getSettings as policySettings, isSqlAllowed } from "@/lib/policy";
 import { db, schema } from "@/lib/db/client";
 import type { User } from "./auth";
 import { notFound } from "./http";
 
-const { projects, runs, tasks, deploys, repairs, previews, costs, settings, userPolicies } = schema;
+const { projects, runs, tasks, deploys, repairs, previews, costs, settings } = schema;
 
 export type ProjectRow = typeof projects.$inferSelect;
 export type RunRow = typeof runs.$inferSelect;
@@ -18,17 +19,9 @@ export function toProject(r: ProjectRow): Project {
   };
 }
 
-export async function getSettings(): Promise<Settings> {
-  const rows = await db.select().from(settings).where(inArray(settings.key, Object.keys(DEFAULT_SETTINGS)));
-  const out: Settings = { ...DEFAULT_SETTINGS };
-  for (const r of rows) (out as unknown as Record<string, unknown>)[r.key] = r.value;
-  return out;
-}
-
-export async function sqlAllowedFor(u: User, s?: Settings): Promise<boolean> {
-  const [p] = await db.select().from(userPolicies).where(eq(userPolicies.userId, u.sub));
-  return p?.sqlAllowed ?? (s ?? (await getSettings())).sqlAllowed;
-}
+// The install policy is lib/policy.ts (L9); these keep the screens' call sites short.
+export const getSettings = (): Promise<Settings> => policySettings();
+export const sqlAllowedFor = (u: User, _s?: Settings): Promise<boolean> => isSqlAllowed(u.sub);
 
 // Per-user flags live in the settings table as "user:<sub>:<flag>" (no migration needed).
 export async function getFlag(u: User, flag: string): Promise<unknown> {

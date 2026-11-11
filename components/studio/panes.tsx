@@ -1,6 +1,6 @@
 "use client";
 // Studio tabs Spec, Data and Timeline.
-import { Download, ExternalLink, Loader } from "lucide-react";
+import { ExternalLink, Loader } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import type { Detail, SpecView } from "@/app/_lib/types";
@@ -8,6 +8,7 @@ import type { Ev } from "@/app/_lib/events";
 import { Heartbeat, type Pulse } from "@/lib/haunt";
 import { Word, type CopyKey } from "@/lib/theme";
 import { api, clock, dur } from "../api";
+import { Export } from "../live";
 import { Markdown } from "../markdown";
 import { activeRun, deployNo } from "./state";
 
@@ -33,62 +34,38 @@ export function SpecPane({ d }: { d: Detail }) {
   );
 }
 
-type Rows = Record<string, unknown>[];
-interface DataModel { name: string; count?: number; rows?: Rows }
-interface DataAnswer { engine?: string; branch?: string; models?: DataModel[]; tables?: DataModel[] }
+interface Count { name: string; rows: number }
+interface DataAnswer { branch: string; env: string; models: Count[]; sql: Count[] | null }
 
-const show = (v: unknown) => (v === null || v === undefined ? "" : typeof v === "object" ? JSON.stringify(v) : String(v));
-
-// Shape of GET /api/projects/:id/data (L3): { engine?, branch?, models|tables: [{ name, count?, rows? }] }
+// GET /api/projects/:id/data: record counts per Amplify Data model and per SQL table (lib/data/records.ts).
 export function DataPane({ d, branch }: { d: Detail; branch: string }) {
   const [a, setA] = useState<DataAnswer | null>(null);
   const [err, setErr] = useState("");
-  const [pick, setPick] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
   useEffect(() => {
     setA(null); setErr("");
     api<DataAnswer>(`/api/projects/${d.project.id}/data?branch=${encodeURIComponent(branch)}`).then(setA).catch((e: Error) => setErr(e.message));
   }, [d.project.id, branch]);
-  const models = a?.models ?? a?.tables ?? [];
-  const cur = models.find((m) => m.name === pick) ?? models[0];
-  const cols = cur?.rows ? [...new Set(cur.rows.flatMap((r) => Object.keys(r)))].slice(0, 12) : [];
 
-  async function exportData() {
-    setBusy(true); setErr("");
-    try {
-      const r = await api<{ url?: string }>(`/api/projects/${d.project.id}/dump`, { body: { branch } });
-      if (r.url) window.open(r.url, "_blank", "noopener");
-    } catch (e) {
-      setErr((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
+  const Table = ({ title, rows }: { title: string; rows: Count[] }) => (
+    <div className="card" style={{ padding: "4px 8px", marginBottom: 14 }}>
+      <table>
+        <thead><tr><th>{title}</th><th style={{ textAlign: "right" }}>Records</th></tr></thead>
+        <tbody>{rows.map((m) => <tr key={m.name}><td className="mono">{m.name}</td><td className="mono" style={{ textAlign: "right" }}>{m.rows.toLocaleString()}</td></tr>)}</tbody>
+      </table>
+    </div>
+  );
 
   return (
     <div className="scroll">
       <div className="row-f" style={{ marginBottom: 12 }}>
-        <b>{a?.engine ?? (d.sqlAllowed ? "Amplify Data or Aurora" : "Amplify Data")}</b><span className="mono muted">{branch}</span><span className="sp" />
-        <button type="button" className="ghost" style={{ padding: "4px 10px" }} onClick={exportData} disabled={busy}>{busy ? <Loader size={13} className="spin" aria-hidden /> : <Download size={13} aria-hidden />} Export</button>
+        <b>{a?.sql ? "Amplify Data + Aurora Postgres" : "Amplify Data"}</b><span className="mono muted">{branch}{a ? ` · ${a.env}` : ""}</span><span className="sp" />
+        {a?.sql ? <Export projectId={d.project.id} branch={branch} /> : null}
       </div>
-      {err ? <div className="err">{err}</div> : !a ? <div className="muted"><Loader size={12} className="spin" aria-hidden /> Loading…</div> : !models.length ? <div className="empty">No data models yet.</div> : (
-        <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 14 }}>
-          <div className="tree" style={{ border: 0, padding: 0 }}>
-            {models.map((m) => (
-              <button key={m.name} type="button" className={cur?.name === m.name ? "on" : ""} onClick={() => setPick(m.name)}>
-                {m.name}<span className="sp" />{m.count !== undefined ? <span className="mono">{m.count.toLocaleString()}</span> : null}
-              </button>
-            ))}
-          </div>
-          <div className="card" style={{ padding: "4px 8px", overflow: "auto" }}>
-            {cur?.rows?.length ? (
-              <table className="mono">
-                <thead><tr>{cols.map((c) => <th key={c}>{c}</th>)}</tr></thead>
-                <tbody>{cur.rows.slice(0, 100).map((r, i) => <tr key={i}>{cols.map((c) => <td key={c} style={{ maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{show(r[c])}</td>)}</tr>)}</tbody>
-              </table>
-            ) : <div className="empty">No records.</div>}
-          </div>
-        </div>
+      {err ? <div className="err">{err}</div> : !a ? <div className="muted"><Loader size={12} className="spin" aria-hidden /> Loading…</div> : (
+        <>
+          {a.models.length ? <Table title="Model" rows={a.models} /> : <div className="empty">No data models on this branch yet.</div>}
+          {a.sql?.length ? <Table title="SQL table" rows={a.sql} /> : null}
+        </>
       )}
     </div>
   );

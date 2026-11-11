@@ -6,6 +6,7 @@ import {
 } from "@aws-sdk/client-secrets-manager";
 import { env } from "@/lib/env";
 import type { KiroPayer, Settings } from "@/lib/contracts";
+import { kiroKeyFor } from "@/lib/policy";
 import { names, secrets } from "./aws";
 import type { User } from "./auth";
 import { HttpError } from "./http";
@@ -60,11 +61,8 @@ export async function companyKeySet(): Promise<boolean> {
 }
 
 /** Which key pays for this user's run. `own` mode without a key is a 409 that points to Settings. */
-export async function kiroFor(u: User, s: Settings): Promise<{ arn: string; payer: KiroPayer }> {
-  if (s.kiroMode !== "company") {
-    const k = await ownKey(u);
-    if (k) return { arn: k.arn, payer: "own" };
-    if (s.kiroMode === "own") throw new HttpError(409, "Connect your own Kiro key first", "no_kiro_key", "/settings");
-  }
-  return { arn: env.RV_KIRO_SECRET_ARN, payer: "company" };
+export async function kiroFor(u: User, _s?: Settings): Promise<{ arn: string; payer: KiroPayer }> {
+  const k = await kiroKeyFor(u.sub);
+  if (!k) throw new HttpError(409, "Connect your own Kiro key first", "no_kiro_key", "/settings");
+  return { arn: k.secretArn, payer: k.payer };
 }

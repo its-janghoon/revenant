@@ -9,7 +9,13 @@ import { SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
 import { env } from "@/lib/env";
 import { outputs } from "@/lib/amplify";
 
-const custom = (outputs as { custom?: { name?: string; runnerLogGroup?: string; timelineFunction?: string } }).custom ?? {};
+interface Custom {
+  name?: string;
+  runnerLogGroup?: string;
+  timelineFunction?: string;
+  runner?: { project?: string; promptBucket?: string; basePolicyArn?: string; boundaryArn?: string };
+}
+const custom = (outputs as { custom?: Custom }).custom ?? {};
 
 export const region = env.AWS_REGION;
 // arn:aws:secretsmanager:<region>:<account>:secret:...
@@ -18,12 +24,15 @@ export const partition = env.RV_KIRO_SECRET_ARN.split(":")[1] ?? "aws";
 
 export const names = {
   install: custom.name ?? "rv-revenant-dev",
-  // The shared runner CodeBuild project (runner/). Lane X creates it; override with RV_RUNNER_PROJECT.
-  runnerProject: process.env.RV_RUNNER_PROJECT ?? "rv-runner",
+  // The shared runner CodeBuild project (runner/), from amplify/backend.ts.
+  runnerProject: process.env.RV_RUNNER_PROJECT ?? custom.runner?.project ?? `${custom.name ?? "rv-revenant-dev"}-runner`,
+  // Every rv-<app>-runner role gets the base policy and must carry the boundary.
+  runnerBasePolicy: custom.runner?.basePolicyArn ?? "",
+  runnerBoundary: custom.runner?.boundaryArn ?? "",
   runnerLogGroup: custom.runnerLogGroup ?? `/rv/${custom.name ?? "rv-revenant-dev"}/runner`,
-  // Prompts and attachments: runs/<app>/..., uploads/<user>/...
-  promptBucket: process.env.RV_PROMPT_BUCKET ?? "",
-  timelineFunction: custom.timelineFunction ?? `${custom.name ?? "rv-revenant-dev"}-timeline`,
+  // Prompts and attachments: runs/<app>/<run>/..., uploads under runs/_uploads/<user>/...
+  promptBucket: process.env.RV_PROMPT_BUCKET ?? custom.runner?.promptBucket ?? "",
+  timelineFunction: process.env.RV_TIMELINE_FUNCTION ?? custom.timelineFunction ?? `${custom.name ?? "rv-revenant-dev"}-timeline`,
   repo: (app: string) => `rv-${app}`,
   runnerRole: (app: string) => `rv-${app}-runner`,
   ownKey: (sub: string) => `rv/kiro/${sub}`,

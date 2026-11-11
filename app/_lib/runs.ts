@@ -1,7 +1,7 @@
 // Start, follow and stop runner runs (CodeBuild, runner/README.md).
 import "server-only";
 import { BatchGetBuildsCommand, StartBuildCommand, StopBuildCommand, type Build } from "@aws-sdk/client-codebuild";
-import { CreateRoleCommand, GetRoleCommand, PutRolePolicyCommand } from "@aws-sdk/client-iam";
+import { AttachRolePolicyCommand, CreateRoleCommand, GetRoleCommand, PutRolePolicyCommand } from "@aws-sdk/client-iam";
 import { CopyObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { and, eq, inArray } from "drizzle-orm";
 import type { RunMode, RunStatus } from "@/lib/contracts";
@@ -28,9 +28,11 @@ export async function ensureRunnerRole(app: string, owner: string): Promise<void
   } catch (e) {
     if ((e as Error).name !== "NoSuchEntityException") throw e;
   }
+  if (!names.runnerBoundary) throw new HttpError(503, "The runner boundary policy is missing from amplify_outputs.json", "no_runner");
   await iam.send(new CreateRoleCommand({
     RoleName: name,
     AssumeRolePolicyDocument: JSON.stringify(trust(account)),
+    PermissionsBoundary: names.runnerBoundary,
     Description: `Revenant runner for ${app}`,
     Tags: [{ Key: "revenant:project", Value: app }, { Key: "revenant:app", Value: "revenant" }],
   }));
@@ -44,6 +46,7 @@ export async function ensureRunnerRole(app: string, owner: string): Promise<void
       logGroup: names.runnerLogGroup,
     })),
   }));
+  if (names.runnerBasePolicy) await iam.send(new AttachRolePolicyCommand({ RoleName: name, PolicyArn: names.runnerBasePolicy }));
 }
 
 function needBucket(): string {
@@ -51,18 +54,21 @@ function needBucket(): string {
   return names.promptBucket;
 }
 
-/** Copies uploads (uploads/<sub>/...) under runs/<app>/<run>/attach/ where the runner may read them. */
+/** Copies uploads (runs/_uploads/<sub>/...) under runs/<app>/<run>/attach/ where the run may read them. */
 async function copyAttachments(app: string, runId: string, u: User, keys: { key: string; name: string }[]): Promise<string | null> {
   if (!keys.length) return null;
   const bucket = needBucket();
   const prefix = `runs/${app}/${runId}/attach/`;
   for (const k of keys) {
-    if (!k.key.startsWith(`uploads/${u.sub}/`)) throw new HttpError(400, "Attachment not found", "attachment");
+    if (!k.key.startsWith(`${UPLOADS}${u.sub}/`)) throw new HttpError(400, "Attachment not found", "attachment");
     const safe = k.name.replace(/[^A-Za-z0-9._-]/g, "-").slice(0, 120) || "file";
     await s3.send(new CopyObjectCommand({ Bucket: bucket, CopySource: `${bucket}/${encodeURI(k.key)}`, Key: prefix + safe }));
   }
   return prefix;
 }
+
+// App names start with a letter, so this prefix never meets runs/<app>/.
+export const UPLOADS = "runs/_uploads/";
 
 const ACTIVE: RunStatus[] = ["queued", "running"];
 

@@ -52,14 +52,26 @@ export function Domain({ projectId }: { projectId: string }) {
   );
 }
 
-export function Export({ projectId }: { projectId: string }) {
+type Dump = { status: "running"; build?: string } | { status: "failed"; reason: string } | { status: "done"; url: string; file: string };
+
+/** pg_dump of an SQL app's database (POST /api/projects/:id/dump), then a presigned download. */
+export function Export({ projectId, branch = "main" }: { projectId: string; branch?: string }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   async function go() {
     setBusy(true); setErr("");
     try {
-      const r = await api<{ url?: string }>(`/api/projects/${projectId}/dump`, { body: { branch: "main" } });
-      if (r.url) window.open(r.url, "_blank", "noopener");
+      const url = `/api/projects/${projectId}/dump`;
+      const start = await api<Dump>(url, { body: { branch } });
+      const build = start.status === "running" ? start.build : undefined;
+      let r: Dump = start;
+      for (let i = 0; build && r.status === "running" && i < 120; i++) {
+        await new Promise((ok) => setTimeout(ok, 5000));
+        r = await api<Dump>(url, { body: { branch, build } });
+      }
+      if (r.status === "done") window.location.href = r.url;
+      else if (r.status === "failed") setErr(r.reason);
+      else setErr("The export is still running; try again in a minute.");
     } catch (e) {
       setErr((e as Error).message);
     } finally {
@@ -68,7 +80,7 @@ export function Export({ projectId }: { projectId: string }) {
   }
   return (
     <>
-      <button type="button" className="ghost" style={{ padding: "4px 10px" }} onClick={go} disabled={busy}>{busy ? <Loader size={13} className="spin" aria-hidden /> : <Download size={13} aria-hidden />} Export</button>
+      <button type="button" className="ghost" style={{ padding: "4px 10px" }} onClick={go} disabled={busy}>{busy ? <Loader size={13} className="spin" aria-hidden /> : <Download size={13} aria-hidden />} {busy ? "Exporting…" : "Export"}</button>
       {err ? <span className="err" style={{ marginTop: 0 }}>{err}</span> : null}
     </>
   );

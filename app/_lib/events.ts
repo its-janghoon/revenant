@@ -10,7 +10,7 @@ export interface Ev {
   text: string | null;
   path: string | null;
   op: "add" | "modify" | "delete" | null;
-  task: number | null;
+  task: string | null; // "3" or "3.1"
   title: string | null;
   branch: string | null;
   url: string | null;
@@ -37,12 +37,13 @@ export function readEvent(e: TimelineEvent): Ev {
   const sel = d.select && typeof d.select === "object" ? (d.select as Record<string, unknown>) : null;
   return {
     at: e.at,
+    // error lines name the failed step; they read as runner messages
     kind: kind === "error" ? "message" : kind,
     from: str(d.from) ?? (kind === "error" ? "runner" : null),
-    text: str(d.text),
+    text: kind === "error" ? `${str(d.step) ?? "run"} failed: ${str(d.text) ?? ""}` : str(d.text),
     path: str(d.path),
     op: change === "edit" ? "modify" : change === "add" || change === "modify" || change === "delete" ? change : null,
-    task: num(d.task) ?? num(d.number),
+    task: str(d.task) ?? (num(d.task) ?? num(d.number))?.toString() ?? null,
     title: str(d.title),
     branch: str(d.branch),
     url: str(d.url),
