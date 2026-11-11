@@ -20,7 +20,8 @@ const runs = [["normal", "off"], ["spooky", "off"], ["spooky", "on"]];
     for (const [x, y] of [[180, 160], [200, 700], [700, 450], [900, 110]]) { await p.mouse.move(x, y, { steps: 18 }); await p.waitForTimeout(200); }
     await p.screenshot({ path: `${out}/${tag}-building.png` });
     await p.mouse.move(740, 520, { steps: 20 });
-    await p.waitForFunction(() => window.__state === "dead"); await p.waitForTimeout(450);
+    if (mode === "spooky" && calm === "off") { await p.waitForFunction(() => window.__scare); await p.waitForTimeout(180); await p.screenshot({ path: `${out}/${tag}-scare.png` }); }
+    await p.waitForFunction(() => window.__state === "dead"); await p.waitForTimeout(2200);
     await p.screenshot({ path: `${out}/${tag}-dead.png` });
     await p.waitForTimeout(900); await p.mouse.move(190, 700, { steps: 25 });
     await p.waitForFunction(() => window.__state === "alive"); await p.mouse.move(520, 105, { steps: 20 }); await p.waitForTimeout(1800);
