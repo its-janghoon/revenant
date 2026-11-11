@@ -1,0 +1,72 @@
+{
+  "name": "revenant",
+  "version": "0.1.0",
+  "displayName": "Revenant",
+  "description": "Build and deploy apps into your own AWS account from chat. Say \"build me X\": Revenant writes the spec, builds a preview, publishes it, and repairs failed deploys.",
+  "author": "Revenant",
+  "license": "MIT",
+  "minKiroCrewVersion": "0.12.0",
+  "iconPath": "assets/icon.png",
+  "tags": ["aws", "deploy", "app-builder", "self-hosted"],
+  "highlights": [
+    "\"Build me X\" in chat creates a Revenant project and returns its spec link",
+    "Build, publish and status tools that call your own Revenant install",
+    "A notification when a build, deploy or repair finishes",
+    "A page listing every project with its status and cost"
+  ],
+  "useCases": [
+    "Ask for a small internal app in chat and have it built and deployed in your own AWS account.",
+    "Get told in Kiro Crew when a deploy died and when Revenant brought it back."
+  ],
+  "configuration": [
+    "Install Revenant in your AWS account and create an API token under Settings -> Kiro Crew.",
+    "Add REVENANT_URL and REVENANT_API_TOKEN under Settings -> Secrets.",
+    "Grant both secrets to the revenant-monitor schedule and resume it."
+  ],
+  "links": [
+    { "label": "Source", "url": "https://github.com/its-janghoon/revenant" }
+  ],
+  "agents": ["agents/revenant.json"],
+  "skills": ["skills/revenant"],
+  "mcpServers": {
+    "revenant": {
+      "command": "python3",
+      "args": ["mcp/server.py"],
+      "env": {
+        "REVENANT_URL": "secret://REVENANT_URL",
+        "REVENANT_API_TOKEN": "secret://REVENANT_API_TOKEN"
+      },
+      "autoApprove": ["status"]
+    }
+  },
+  "crons": [
+    {
+      "name": "revenant-monitor",
+      "every": 60,
+      "message": "Report finished Revenant builds, deploys and repairs",
+      "script": "crons/monitor.py:run",
+      "timeout": 45,
+      "timeout_secs": 60,
+      "persistent_session": false,
+      "enabled": false
+    }
+  ],
+  "ui": {
+    "entry": "dist/index.mjs",
+    "pages": [
+      {
+        "route": "/apps/revenant",
+        "label": "Revenant",
+        "icon": "Activity",
+        "iconUrl": "icon.svg"
+      }
+    ]
+  },
+  "permissions": {
+    "api": ["/api/apps/revenant/config"],
+    "cron": true
+  },
+  "platform": {
+    "os": ["macos", "linux"]
+  }
+}
