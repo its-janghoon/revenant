@@ -3,28 +3,43 @@
 ## Introduction
 
 Revenant is a self-hosted, Lovable-style app builder that runs in the user's own AWS
-account. A Kiro agent turns a plain request into a spec, builds the app, deploys it with
-CloudFormation, and repairs failed builds and deploys by itself. Costs come out of the
-user's AWS credits.
+account. A Kiro agent turns a plain request into a spec, builds the app on Amplify Gen 2,
+deploys it, and repairs failed builds and deploys by itself. Code lives in CodeCommit,
+data in Aurora Postgres, everything in AWS. There are no seats; the user pays their own
+AWS bill (and spends their AWS credits).
+
+### In scope for Kiroween
+
+One company installs Revenant into its own AWS account and uses it for its own apps,
+plus one demo install for judges.
+
+### Out of scope (documented only)
+
+- Private dashboard in a VPC (`docs/self-host.md`).
+- One AWS account per app, and one AWS account per customer for platforms that resell
+  hosting ("Revenant for Platforms", `docs/platforms.md`).
+- GitHub as the code host (CodeCommit only).
 
 ## Requirement 1: Install
 
-**User story:** As a startup founder, I want Revenant in my own AWS account in one click, so that I own everything and spend my credits.
+**User story:** As a founder, I want Revenant in my own AWS account in one step, so that I own everything.
 
-1. The README SHALL offer a CloudFormation quick-create link that installs Revenant.
-2. The install stack SHALL ask only for: a Kiro API key, an admin email, and a monthly budget. No GitHub token and no mail domain.
-3. WHEN the stack finishes THEN the output SHALL be the Revenant URL and the admin SHALL get a Cognito invite email (Cognito's own sender).
-4. The install stack SHALL create an AWS Budgets alarm at the chosen monthly budget.
-5. WHEN Revenant is uninstalled THEN every generated app SHALL keep running (separate stacks and repos).
-6. The default install SHALL be public (Amplify Hosting, Cognito sign-in). `docs/self-host.md` SHALL describe the private layout (ECS Fargate, internal ALB, Route 53 private zone, Verified Access or Client VPN).
+1. The README SHALL offer two equal ways to install: a CloudFormation quick-create link (one click) and a one-line command for AWS CloudShell. Both deploy the same template.
+2. The install SHALL ask only for: a Kiro API key, an admin email, and a monthly budget. No GitHub token and no mail domain.
+3. The install template SHALL create the Amplify app for Revenant from this public repository; the first Amplify build SHALL deploy Revenant's Amplify Gen 2 backend.
+4. WHEN the install finishes THEN the output SHALL be the Revenant URL and the admin SHALL get a Cognito invite email (Cognito's own sender).
+5. The install SHALL create an AWS Budgets alarm at the chosen monthly budget.
+6. WHEN Revenant is uninstalled THEN every generated app SHALL keep running (separate Amplify apps, repos and databases).
+7. The default install SHALL be public (Amplify Hosting, Cognito sign-in).
 
 ## Requirement 2: Ask
 
 **User story:** As a user, I want to say what I need in plain words, so that I don't write code.
 
 1. The home screen SHALL show one prompt box, example requests, AWS credits left and this month's spend.
-2. WHEN a user sends a request THEN Revenant SHALL create a project with an AWS CodeCommit repository in the same account. GitHub MAY be connected later as an option.
+2. WHEN a user sends a request THEN Revenant SHALL create a project with an AWS CodeCommit repository.
 3. The user MAY attach images or files (logo, a screenshot, a sample PDF) to the request.
+4. Each user SHALL see only their own projects.
 
 ## Requirement 3: Spec first
 
@@ -32,7 +47,7 @@ user's AWS credits.
 
 1. WHEN a project is created THEN the agent SHALL write `.kiro/specs/<app>/requirements.md`, `design.md` and `tasks.md` in the repo.
 2. The spec screen SHALL show the three files as tabs with plain summaries on top and the raw markdown underneath.
-3. The spec SHALL list the AWS building blocks the app will use and the estimated monthly cost.
+3. The spec SHALL list the AWS parts the app will use and the estimated monthly cost.
 4. WHEN the user edits the spec or asks for a change in chat THEN the agent SHALL update the spec files and show the diff.
 5. Nothing SHALL be built until the user presses "Build it".
 
@@ -43,7 +58,7 @@ user's AWS credits.
 1. WHEN the user presses "Build it" THEN Revenant SHALL start a run of Kiro CLI headless in CodeBuild on the project repo.
 2. WHILE a run is going THE workspace SHALL stream the agent's messages, the task list with each task's state, and changed files.
 3. WHEN a task finishes THEN the agent SHALL commit it with the task number in the message.
-4. WHEN the run finishes THEN Revenant SHALL deploy a preview (Requirement 5) and show it in the workspace.
+4. WHEN the run finishes THEN the push SHALL start an Amplify preview build (Requirement 5) and the workspace SHALL show the preview.
 5. WHILE a preview exists THE user MAY ask for changes in chat; each change SHALL run as a new build on a new commit.
 6. The user SHALL be able to stop a run at any time; stopping keeps the commits made so far.
 
@@ -51,34 +66,49 @@ user's AWS credits.
 
 **User story:** As a user, I want push-to-deploy on my own AWS, so that it feels like Vercel.
 
-1. The agent SHALL write the app's `infra/stack.yaml` by joining building blocks from `blocks/`; it SHALL NOT invent resources outside them unless the spec says why.
-2. Each change SHALL deploy to a preview branch URL; "Publish" SHALL deploy to production.
-3. Revenant SHALL create a CloudFormation change set and apply it without asking IF it only adds or updates resources.
-4. IF a change set replaces or deletes any resource THEN Revenant SHALL wait for the user's approval and show what would be lost.
-5. WHEN a deploy succeeds THEN Revenant SHALL check the URL returns 2xx.
-6. The user MAY add a custom domain; Revenant SHALL show the DNS records to add.
+1. Every generated app SHALL be an Amplify Gen 2 app: frontend plus `amplify/backend.ts`. Anything Amplify does not cover SHALL be added in `backend.ts` as CDK.
+2. The agent SHALL build the backend from Revenant's tested building blocks (`blocks/`); it SHALL NOT add other resources unless the spec says why.
+3. Each change SHALL deploy to a preview branch with its own URL; "Publish" SHALL merge to `main` and deploy production.
+4. Before a deploy, Revenant SHALL synthesize the backend and run the guardrail check (Requirement 10) on the synthesized templates.
+5. IF the change replaces or deletes any resource THEN Revenant SHALL wait for the user's approval and show what would be lost.
+6. WHEN a deploy succeeds THEN Revenant SHALL check the URL returns 2xx.
+7. The user MAY add a custom domain; Revenant SHALL show the DNS records to add.
 
-## Requirement 6: Fix itself
+## Requirement 6: Data
+
+**User story:** As a user, I want my app's data to stay correct while the agent keeps changing the app.
+
+1. The source of truth for Revenant and for every generated app SHALL be Aurora Serverless v2 Postgres (minimum 0 ACU) with the Data API, defined in `backend.ts`.
+2. Code SHALL reach the database through the Data API with Drizzle. There SHALL be no public database, no VPC Lambda and no NAT gateway.
+3. Every table change SHALL ship as a Drizzle migration file in the same commit. Migrations SHALL run in the Amplify build.
+4. Append-only timeline events MAY live in Amplify Data (DynamoDB) for realtime subscriptions. Nothing else SHALL.
+5. Each app SHALL have a dev database and a prod database. Previews SHALL use dev data; only the published app SHALL use prod.
+6. Each preview SHALL get its own database copied from dev (`CREATE DATABASE <app>_pv<n> TEMPLATE <app>_dev`) inside one preview cluster per app.
+7. WHEN the user presses Publish THEN Revenant SHALL show the SQL migration diff, take a prod snapshot, and only then apply the migration to prod.
+8. The runner SHALL have access to dev and preview databases only. Only the publish step SHALL write to prod.
+9. A user SHALL be able to export any app's data with `pg_dump`.
+
+## Requirement 7: Fix itself
 
 **User story:** As a user, I want broken builds and deploys repaired for me, so that I never read AWS logs.
 
-1. WHEN a build fails, a stack event fails, an Amplify job fails, or the health check fails THEN Revenant SHALL start a repair run.
+1. WHEN a Kiro run fails, an Amplify build fails, a backend deploy fails, or the health check fails THEN Revenant SHALL start a repair run.
 2. The repair run SHALL collect the failing step's logs and the last commit's diff, and the agent SHALL state the cause in one plain sentence.
-3. The agent SHALL fix the code or the stack on a branch `revenant/fix-<n>` and check it with a build and `cfn-lint` / `validate-template`.
+3. The agent SHALL fix the code, the backend or a migration on a branch `revenant/fix-<n>`, and check it with a build, a synth and the guardrail check.
 4. WHEN the check passes THEN Revenant SHALL merge the fix and redeploy.
 5. IF it fails THEN the agent SHALL retry with the new error, up to 3 runs per failure, then stop and show what it tried.
-6. The agent SHALL never fix a failure by removing a check or test, weakening a guardrail (Requirement 9), or deleting data.
+6. The agent SHALL never fix a failure by removing a check or test, weakening a guardrail, editing an applied migration, or deleting data.
 7. Every repair SHALL appear in the timeline: cause, files changed, check result, outcome, time to recover.
 
-## Requirement 7: Credits and cost
+## Requirement 8: Credits and cost
 
-**User story:** As a founder, I want to see what my apps cost against my credits, so that I am never surprised.
+**User story:** As a founder, I want to see what my apps cost, so that I am never surprised.
 
 1. The home screen SHALL show AWS credits left (when Cost Explorer reports credits), month-to-date spend and forecast.
-2. Each project SHALL show its own month-to-date cost from its cost allocation tag.
+2. Each project SHALL show its own month-to-date cost from its tags.
 3. WHEN forecast spend passes the budget THEN Revenant SHALL warn on every screen.
 
-## Requirement 8: Kiro Crew app
+## Requirement 9: Kiro Crew app
 
 **User story:** As a Kiro Crew user, I want to build and deploy from chat.
 
@@ -87,15 +117,24 @@ user's AWS credits.
 3. A Crew monitor SHALL notify the user when a build, deploy or repair finishes.
 4. The Crew app SHALL provide a dashboard page listing projects with status and cost.
 
-## Requirement 9: Guardrails
+## Requirement 10: Guardrails
 
-1. Data resources (databases, buckets) SHALL have `DeletionPolicy: Snapshot` or `Retain`.
+1. Data resources (databases, buckets) SHALL be retained or snapshotted on delete.
 2. No IAM policy SHALL use `"Action": "*"`; `"Resource": "*"` only where AWS requires it, with a condition.
-3. No secret SHALL be a plain parameter or env var; generated apps use Secrets Manager.
-4. The CodeBuild runner role SHALL reach only the project's repo, its stack and its logs.
+3. No secret SHALL be a plain parameter or env var; secrets live in Secrets Manager.
+4. Each app's runner role SHALL reach only that app's repo, backend, dev and preview databases, and logs.
 5. Every agent action SHALL be logged with project, run, time and outcome.
 
-## Requirement 10: Theme
+## Requirement 11: Clean AWS console
+
+**User story:** As an AWS user, I want Revenant's resources out of my way, so that my console stays readable.
+
+1. Revenant SHALL support installing into a dedicated AWS Organizations member account, and the README SHALL recommend it.
+2. Each app SHALL get one AppRegistry application, and every resource of the app SHALL carry its `awsApplication` tag, so the console's myApplications shows the app with its cost.
+3. Every resource name SHALL follow `rv-<app>-<prod|dev|pv<n>>`.
+4. WHEN a preview branch is merged or closed, or 7 days pass, THEN Revenant SHALL delete the preview's database, Amplify branch and backend.
+
+## Requirement 12: Theme
 
 1. The header SHALL have one switch on every page: **Light** or **Haunted**. Light is the default.
 2. The theme SHALL NOT follow the OS light/dark setting.
@@ -116,15 +155,25 @@ user's AWS credits.
     6. **Breath**: a very quiet breath plays when the failure log line appears.
 12. Lightning SHALL light the whole screen for its flash, past the flashlight.
 
-## Requirement 11: Demo
+## Requirement 13: Demo install for judges
 
-1. The demo SHALL build FinePrint from the request: "Build me a contract signing site where an AI flags toxic clauses before you sign."
-2. The demo SHALL include one real repair on a planted break and show the time to recover.
-3. The video SHALL be under 3 minutes, show the three differences from Lovable in the first 20 seconds, and contain no unlicensed trademarks or music.
-4. The storyboard SHALL be approved by Janghoon before rendering.
+1. A demo Revenant SHALL run in a dedicated AWS account owned by Janghoon, installed with the same one-step install as customers.
+2. FinePrint SHALL be built in advance on the demo install, so judges can open it at once; judges MAY also build their own app.
+3. Each judge SHALL get an account and see only their own projects.
+4. Apps built by judges SHALL be deleted automatically 24 hours after creation.
+5. The demo account SHALL have a Budgets alarm.
+6. The demo install SHALL stay up until the results are announced (2027-02-04 KST) and SHALL then be deleted by removing its stacks.
 
-## Requirement 12: Submission
+## Requirement 14: Demo video
 
-1. The repository SHALL be public with an OSI license in the About section, and `/.kiro` committed.
+1. The video SHALL show the one-step install into a fresh AWS account within 30 seconds.
+2. The demo SHALL build FinePrint from the request: "Build me a contract signing site where an AI flags toxic clauses before you sign." In Haunted mode FinePrint is subtitled "Blood Oath".
+3. The demo SHALL include one real repair on a planted break and show the time to recover.
+4. The video SHALL be under 3 minutes, show the differences from Lovable in the first 20 seconds, and contain no unlicensed trademarks or music. Storm sound is rendered by the app itself.
+5. The storyboard SHALL be approved by Janghoon before rendering.
+
+## Requirement 15: Submission
+
+1. Revenant's own repository SHALL be public on GitHub with an OSI license in the About section, and `/.kiro` committed.
 2. `docs/kiro-usage.md` SHALL cover Kiro CLI headless, Kiro Crew (subagents, crons, monitors, memory), specs, steering, hooks, MCP and property-based tests.
-3. A judge account on a live Revenant install SHALL be provided in the private Devpost field.
+3. The judge account and demo URL SHALL be given in the private Devpost field.
