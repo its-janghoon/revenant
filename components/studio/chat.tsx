@@ -197,7 +197,7 @@ function DeployCard({ d, x }: { d: Detail; x: Deploy }) {
   const prod = x.branch === "main";
   const icon = x.status === "live" ? <Check size={14} aria-hidden /> : x.status === "failed" ? <CircleX size={14} aria-hidden style={{ color: "var(--bad)" }} /> : <Loader size={14} className="spin" aria-hidden />;
   const what = prod ? "Production" : `Preview ${x.branch.replace("preview/", "#")}`;
-  const state = x.status === "live" ? "deployed" : x.status === "failed" ? "failed" : x.status === "waiting_approval" ? "waits for your approval" : "deploying";
+  const state = x.status === "live" ? "deployed" : x.status === "failed" ? "failed" : x.status === "waiting_approval" ? "waits for your approval" : x.status === "queued" ? "waits for AWS (app limit), starts by itself" : "deploying";
   return (
     <div className="ai">
       <div className="edit">

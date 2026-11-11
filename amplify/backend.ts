@@ -19,10 +19,11 @@ import { data } from "./data/resource";
 import { timeline } from "./functions/timeline/resource";
 import { repair } from "./functions/repair/resource";
 import { broker } from "./functions/broker/resource";
+import { tick } from "./functions/tick/resource";
 import { RUNNER_PREFIX } from "../lib/contracts";
 import { RepairRules } from "../lib/repair/construct";
 
-const backend = defineBackend({ auth, data, timeline, repair, broker });
+const backend = defineBackend({ auth, data, timeline, repair, broker, tick });
 
 // rv-revenant-<env>: "prod" on main, the branch name elsewhere, "dev" in a sandbox.
 const branch = process.env.AWS_BRANCH;
@@ -347,6 +348,22 @@ new RepairRules(backend.createStack("repair"), "Repair", {
     resources: [at("cloudformation", "stack/rv-*/*")],
   }));
 }
+// ---------- tick: the 5-minute clock for scheduled jobs (amplify/functions/tick) ----------
+{
+  const fn = backend.tick.resources.lambda as import("aws-cdk-lib/aws-lambda").Function;
+  backend.tick.resources.cfnResources.cfnFunction.functionName = `${name}-tick`;
+  const host = process.env.RV_DOMAIN || `${branch ?? "main"}.${process.env.AWS_APP_ID ?? "local"}.amplifyapp.com`;
+  fn.addEnvironment("RV_URL", `https://${host}`);
+  // The install's app key (infra/install.yaml AppSecret, name rv-revenant-appkey); a name works
+  // for GetSecretValue when the build has no RV_APP_SECRET_ARN.
+  const s = Stack.of(fn);
+  fn.addEnvironment("RV_APP_SECRET_ARN", process.env.RV_APP_SECRET_ARN || "rv-revenant-appkey");
+  fn.addToRolePolicy(new PolicyStatement({
+    actions: ["secretsmanager:GetSecretValue"],
+    resources: [`arn:${s.partition}:secretsmanager:${s.region}:${s.account}:secret:rv-revenant-appkey*`],
+  }));
+}
+
 backend.addOutput({
   custom: {
     name,

@@ -91,3 +91,15 @@ Verified Access, Client VPN and NAT gateways have fixed monthly charges. Check t
 pricing pages for your region before choosing.
 
 The private template is planned as `infra/install-private.yaml`.
+
+## AWS limits to raise first
+
+Every generated app is one Amplify app (its previews are branches of that app). Amplify allows
+25 apps per region by default. Raise it before you invite people:
+
+```
+aws service-quotas request-service-quota-increase --service-code amplify --quota-code L-1BED97F3 --desired-value 100
+```
+
+Amplify also creates at most 25 new apps an hour. That one is fixed. When it is hit, Revenant
+queues the deploy, tells the user it waits for AWS, and starts it by itself within minutes.

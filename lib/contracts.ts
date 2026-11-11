@@ -10,7 +10,7 @@ export type RunStatus = "queued" | "running" | "succeeded" | "failed" | "stopped
 export type KiroPayer = "company" | "own";
 export type KiroMode = "company" | "own" | "both";
 export type TaskState = "todo" | "running" | "done" | "failed";
-export type DeployStatus = "pending" | "waiting_approval" | "running" | "live" | "failed";
+export type DeployStatus = "pending" | "queued" | "waiting_approval" | "running" | "live" | "failed";
 export type RepairOutcome = "running" | "recovered" | "gave_up";
 export type CheckStatus = "pending" | "passed" | "failed";
 

@@ -3,11 +3,12 @@ import "server-only";
 import { FilterLogEventsCommand } from "@aws-sdk/client-cloudwatch-logs";
 import { BatchGetBuildsCommand, StopBuildCommand, type Build } from "@aws-sdk/client-codebuild";
 import { CopyObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
-import { and, eq, gte, inArray, isNull, ne } from "drizzle-orm";
+import { and, eq, inArray, isNull, ne } from "drizzle-orm";
 import { parseLine, type RunMode, type RunStatus } from "@/lib/contracts";
 import { broker } from "@/lib/broker/client";
 import { db, schema } from "@/lib/db/client";
 import { deployPreview } from "@/lib/deploy";
+import { drain, enqueue, throttled } from "@/lib/deploy/queue";
 import { codebuild, logs, names, s3 } from "./aws";
 import type { User } from "./auth";
 import { HttpError, busy } from "./http";
@@ -115,7 +116,10 @@ function statusOf(b: Build): RunStatus {
 export async function syncRuns(projectId: string): Promise<void> {
   const open = await db.select().from(runs).where(and(eq(runs.projectId, projectId), inArray(runs.status, ACTIVE)));
   const ids = open.map((r) => r.codebuildId).filter((x): x is string => Boolean(x));
-  if (!ids.length) return firstDeploy(projectId);
+  if (!ids.length) {
+    await drain(projectId);
+    return firstDeploy(projectId);
+  }
   const r = await codebuild.send(new BatchGetBuildsCommand({ ids }));
   for (const b of r.builds ?? []) {
     const run = open.find((x) => x.codebuildId === b.id);
@@ -209,24 +213,11 @@ async function firstDeploy(projectId: string): Promise<void> {
   if (!p?.repo || p.amplifyAppId || p.status !== "preview") return;
   const [last] = await projectRuns(p.id, 1);
   if (last?.mode !== "repair" || last.status !== "succeeded") return;
-  // Every page poll on every server instance lands here, and Amplify allows 25 app creations an
-  // hour: claim the project atomically, and after a failed start wait 10 minutes (a failed
-  // deploy row on the branch marks the attempt).
-  const branch = await workBranch(p.id);
-  const since = new Date(Date.now() - 10 * 60_000).toISOString();
-  const [recent] = await db.select({ id: schema.deploys.id }).from(schema.deploys)
-    .where(and(eq(schema.deploys.projectId, p.id), eq(schema.deploys.branch, branch), eq(schema.deploys.status, "failed"), gte(schema.deploys.createdAt, since)));
-  if (recent) return;
+  // Every page poll on every server instance lands here: claim the project atomically.
   const [claimed] = await db.update(projects).set({ status: "building" })
     .where(and(eq(projects.id, p.id), eq(projects.status, "preview"), isNull(projects.amplifyAppId))).returning({ id: projects.id });
   if (!claimed) return;
-  await deployAfter(last, null);
-  const [after] = await db.select({ app: projects.amplifyAppId }).from(projects).where(eq(projects.id, p.id));
-  if (!after?.app) {
-    const sha = (await head(p.repo, branch)) ?? "unknown";
-    await db.insert(schema.deploys).values({ projectId: p.id, branch, commit: sha, status: "failed" });
-    await db.update(projects).set({ status: "preview" }).where(and(eq(projects.id, p.id), eq(projects.status, "building")));
-  }
+  await deployAfter(last, null); // a hit Amplify limit puts the deploy in the queue (lib/deploy/queue)
 }
 
 /** The runner pushed the newest preview branch: hand it to the deploy lane. */
@@ -243,6 +234,7 @@ async function deployAfter(run: RunRow, commit: string | null): Promise<void> {
   try {
     await deployPreview(toProject(p), branch, sha);
   } catch (e) {
+    if (throttled(e)) return enqueue(toProject(p), branch, sha);
     console.error("preview deploy failed to start", (e as Error).name);
   }
 }
