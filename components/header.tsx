@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { CostSummary } from "@/lib/contracts";
-import { Logo, ThemeSwitch } from "@/lib/theme";
+import { Logo, ThemeSwitch, Word } from "@/lib/theme";
 import { api, usd } from "./api";
 import { W } from "./words";
 
@@ -73,7 +73,7 @@ export function Header({ user }: { user: HeaderUser }) {
           ) : null}
         </div>
       </header>
-      {cost?.overBudget ? <div className="warnbar" role="status">Forecast spend {usd(cost.forecastUsd)} is over the {usd(cost.budgetUsd, 0)} budget. New builds stop at 100%.</div> : null}
+      {cost?.overBudget ? <div className="warnbar" role="status"><Word k="overBudget" />: {usd(cost.forecastUsd)} of the {usd(cost.budgetUsd, 0)} budget. New builds stop at 100%.</div> : null}
     </>
   );
 }

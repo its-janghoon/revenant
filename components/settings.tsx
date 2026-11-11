@@ -62,7 +62,7 @@ function Passkeys() {
 
   return (
     <Section icon={<KeyRound size={16} aria-hidden />} title="Sign-in" sub="You sign in with a code we email you. A passkey is faster: Touch ID, Windows Hello or your phone.">
-      {list === null ? <div className="muted"><Loader size={12} className="spin" aria-hidden /> Loading…</div> : list.map((k) => (
+      {list === null ? <div className="muted"><Loader size={12} className="spin" aria-hidden /> Loading…</div> : !list.length && !err ? <div className="muted">No passkeys yet.</div> : list.map((k) => (
         <div key={k.credentialId} className="row">
           <div className="t sp"><b>{k.friendlyCredentialName ?? "Passkey"}</b><span>added {k.createdAt ? since(new Date(k.createdAt).toISOString()) : ""}</span></div>
           <button type="button" className="ghost" style={{ padding: "4px 10px" }} onClick={() => k.credentialId && remove(k.credentialId)} aria-label="Remove passkey"><Trash2 size={13} aria-hidden /></button>
@@ -159,6 +159,8 @@ function Crew() {
 
   return (
     <Section icon={<Bot size={16} aria-hidden />} title="Kiro Crew" sub="Build and publish from chat with the Revenant app for Kiro Crew. It calls Revenant with an API token.">
+      {list === null ? <div className="muted"><Loader size={12} className="spin" aria-hidden /> Loading…</div> : null}
+      {list && !list.length && !err ? <div className="muted">No tokens yet.</div> : null}
       {list?.map((t) => (
         <div key={t.id} className="row">
           <div className="t sp"><b>{t.label}</b><span className="mono">rvc_…{t.id.slice(0, 6)} · created {since(t.createdAt)} · {t.lastUsedAt ? `used ${since(t.lastUsedAt)}` : "never used"}</span></div>
