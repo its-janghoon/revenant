@@ -1,0 +1,310 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  BloodOath - every AWS service the app needs, in one stack: Amplify Hosting (Next.js SSR),
+  Aurora Serverless v2 Postgres with the Data API (scales to zero), S3 for documents,
+  SES for mail, Bedrock for the review agent, EventBridge for the seal and reminder cron.
+
+Parameters:
+  GitHubRepo:
+    Type: String
+    Default: https://github.com/its-janghoon/blood-oath
+  Branch:
+    Type: String
+    Default: main
+  GitHubToken:
+    Type: String
+    NoEcho: true
+    Description: GitHub token with repo read access, used once by Amplify to install its GitHub App. Not stored.
+  MailFrom:
+    Type: String
+    Description: Sender address for signing emails, for example oath@example.com. Its domain is created as an SES identity.
+  ReviewModel:
+    Type: String
+    Default: us.anthropic.claude-sonnet-4-5-20250929-v1:0
+    Description: Bedrock model or inference profile id for the review agent.
+
+Resources:
+  # ---------- Secrets (generated, never typed) ----------
+  AppSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: BloodOath session signing key
+      GenerateSecretString:
+        SecretStringTemplate: "{}"
+        GenerateStringKey: value
+        PasswordLength: 48
+        ExcludePunctuation: true
+
+  CronSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: BloodOath cron caller key (sent by EventBridge as x-cron-key)
+      GenerateSecretString:
+        SecretStringTemplate: "{}"
+        GenerateStringKey: value
+        PasswordLength: 48
+        ExcludePunctuation: true
+
+  # ---------- Network for Aurora (private only, no NAT, no internet) ----------
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.40.0.0/16
+      Tags: [{ Key: Name, Value: blood-oath }]
+
+  SubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.40.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs ""]
+
+  SubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.40.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs ""]
+
+  DbSubnets:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: BloodOath Aurora
+      SubnetIds: [!Ref SubnetA, !Ref SubnetB]
+
+  DbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: BloodOath Aurora, no inbound. The app uses the Data API over HTTPS.
+      VpcId: !Ref Vpc
+
+  # ---------- Database ----------
+  Db:
+    Type: AWS::RDS::DBCluster
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      Engine: aurora-postgresql
+      EngineVersion: "16.6"
+      DatabaseName: bloodoath
+      MasterUsername: bloodoath
+      ManageMasterUserPassword: true
+      EnableHttpEndpoint: true
+      StorageEncrypted: true
+      DBSubnetGroupName: !Ref DbSubnets
+      VpcSecurityGroupIds: [!Ref DbSecurityGroup]
+      ServerlessV2ScalingConfiguration:
+        MinCapacity: 0
+        MaxCapacity: 4
+        SecondsUntilAutoPause: 600
+
+  DbInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBClusterIdentifier: !Ref Db
+      DBInstanceClass: db.serverless
+      Engine: aurora-postgresql
+
+  # ---------- Files ----------
+  Files:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 }
+      VersioningConfiguration: { Status: Enabled }
+      CorsConfiguration:
+        CorsRules:
+          - AllowedMethods: [PUT, GET]
+            # Wildcard avoids a cycle (App -> ComputeRole -> Files -> App).
+            # Uploads still need a presigned URL from the server.
+            AllowedOrigins: ["https://*.amplifyapp.com"]
+            AllowedHeaders: ["*"]
+            MaxAge: 3000
+
+  # ---------- Mail ----------
+  MailDomain:
+    Type: AWS::SES::EmailIdentity
+    Properties:
+      EmailIdentity: !Select [1, !Split ["@", !Ref MailFrom]]
+
+  # ---------- Runtime role for the Next.js server ----------
+  ComputeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: amplify.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: app
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: [rds-data:ExecuteStatement, rds-data:BatchExecuteStatement, rds-data:BeginTransaction, rds-data:CommitTransaction, rds-data:RollbackTransaction]
+                Resource: !Sub "arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:${Db}"
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource:
+                  - !GetAtt Db.MasterUserSecret.SecretArn
+                  - !Ref AppSecret
+                  - !Ref CronSecret
+              - Effect: Allow
+                Action: [s3:GetObject, s3:PutObject]
+                Resource: !Sub "${Files.Arn}/*"
+              - Effect: Allow
+                Action: [ses:SendEmail, ses:SendRawEmail]
+                Resource: "*"
+                Condition:
+                  StringEquals: { "ses:FromAddress": !Ref MailFrom }
+              - Effect: Allow
+                Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream]
+                Resource:
+                  - !Sub "arn:${AWS::Partition}:bedrock:*::foundation-model/*"
+                  - !Sub "arn:${AWS::Partition}:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/*"
+
+  # ---------- Build role: only what `npm run db:migrate` needs ----------
+  BuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: amplify.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: migrate
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: [rds-data:ExecuteStatement, rds-data:BatchExecuteStatement, rds-data:BeginTransaction, rds-data:CommitTransaction, rds-data:RollbackTransaction]
+                Resource: !Sub "arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:${Db}"
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !GetAtt Db.MasterUserSecret.SecretArn
+
+  # ---------- Hosting ----------
+  App:
+    Type: AWS::Amplify::App
+    Properties:
+      Name: blood-oath
+      Repository: !Ref GitHubRepo
+      AccessToken: !Ref GitHubToken
+      Platform: WEB_COMPUTE
+      IAMServiceRole: !GetAtt BuildRole.Arn
+      ComputeRoleArn: !GetAtt ComputeRole.Arn
+      EnvironmentVariables:
+        - { Name: DB_CLUSTER_ARN, Value: !Sub "arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:${Db}" }
+        - { Name: DB_SECRET_ARN, Value: !GetAtt Db.MasterUserSecret.SecretArn }
+        - { Name: DB_NAME, Value: bloodoath }
+        - { Name: FILES_BUCKET, Value: !Ref Files }
+        - { Name: MAIL_FROM, Value: !Ref MailFrom }
+        - { Name: REVIEW_MODEL, Value: !Ref ReviewModel }
+        - { Name: APP_SECRET_ARN, Value: !Ref AppSecret }
+        - { Name: CRON_SECRET_ARN, Value: !Ref CronSecret }
+        - { Name: APP_REGION, Value: !Ref AWS::Region }
+      # Amplify passes env vars to the build only. Writing them to .env.production
+      # makes them visible to the Next.js server at runtime. They are ARNs and names, not secrets.
+      BuildSpec: |
+        version: 1
+        frontend:
+          phases:
+            preBuild:
+              commands:
+                - npm ci
+            build:
+              commands:
+                - env | grep -E '^(DB_|FILES_BUCKET|MAIL_FROM|REVIEW_MODEL|APP_SECRET_ARN|CRON_SECRET_ARN|APP_REGION)' >> .env.production
+                - npm run db:migrate
+                - npm run build
+          artifacts:
+            baseDirectory: .next
+            files:
+              - "**/*"
+          cache:
+            paths:
+              - node_modules/**/*
+              - .next/cache/**/*
+
+  MainBranch:
+    Type: AWS::Amplify::Branch
+    Properties:
+      AppId: !GetAtt App.AppId
+      BranchName: !Ref Branch
+      Framework: Next.js - SSR
+      Stage: PRODUCTION
+      EnableAutoBuild: true
+
+  # ---------- Cron: seal upgrades + signer reminders, every 30 min ----------
+  CronConnection:
+    Type: AWS::Events::Connection
+    Properties:
+      AuthorizationType: API_KEY
+      AuthParameters:
+        ApiKeyAuthParameters:
+          ApiKeyName: x-cron-key
+          ApiKeyValue: !Sub "{{resolve:secretsmanager:${CronSecret}:SecretString:value}}"
+
+  CronTarget:
+    Type: AWS::Events::ApiDestination
+    Properties:
+      ConnectionArn: !GetAtt CronConnection.Arn
+      HttpMethod: POST
+      InvocationEndpoint: !Sub "https://${Branch}.${App.DefaultDomain}/api/cron"
+      InvocationRateLimitPerSecond: 1
+
+  CronRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: events.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: invoke
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: events:InvokeApiDestination
+                Resource: !GetAtt CronTarget.Arn
+
+  CronRule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: rate(30 minutes)
+      Targets:
+        - Id: app
+          Arn: !GetAtt CronTarget.Arn
+          RoleArn: !GetAtt CronRole.Arn
+
+Outputs:
+  AppUrl:
+    Value: !Sub "https://${Branch}.${App.DefaultDomain}"
+  AppId:
+    Value: !GetAtt App.AppId
+  FilesBucket:
+    Value: !Ref Files
+  DbClusterArn:
+    Value: !Sub "arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:${Db}"
+  MailDomainDkim:
+    Description: Add these 3 CNAME records to the mail domain's DNS so SES can send.
+    Value: !Join
+      - " | "
+      - - !Sub "${MailDomain.DkimDNSTokenName1} -> ${MailDomain.DkimDNSTokenValue1}"
+        - !Sub "${MailDomain.DkimDNSTokenName2} -> ${MailDomain.DkimDNSTokenValue2}"
+        - !Sub "${MailDomain.DkimDNSTokenName3} -> ${MailDomain.DkimDNSTokenValue3}"

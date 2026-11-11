@@ -1,9 +1,10 @@
 # Tasks: BloodOath
 
 - [ ] 1. Project setup
-  - [ ] 1.1 Next.js + TypeScript app, Drizzle, Neon, Vercel Blob, env schema
-  - [ ] 1.2 Theme tokens, fonts, reduced-motion helper
-  - [ ] 1.3 Auth (email magic link) and a seeded judge account
+  - [ ] 1.1 Next.js + TypeScript app, Drizzle (`aws-data-api`), S3 presigned URLs, env schema, `db:migrate` script
+  - [ ] 1.2 Deploy `infra/stack.yaml` with `infra/deploy.sh`, SES DKIM records, SES production access
+  - [ ] 1.3 Theme tokens, fonts, reduced-motion helper
+  - [ ] 1.4 Auth (email magic link) and a seeded judge account
   - _Requirements: 8, 10.4_
 
 - [ ] 2. Upload and preview
@@ -22,7 +23,7 @@
 
 - [ ] 4. Fields and sending
   - [ ] 4.1 Field placement editor
-  - [ ] 4.2 Signers, order, single-use hashed tokens, Resend email
+  - [ ] 4.2 Signers, order, single-use hashed tokens, SES email
   - [ ] 4.3 Property test: used or expired tokens never open
   - _Requirements: 3_
 

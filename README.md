@@ -7,6 +7,18 @@ Built for Kiroween 2026 (Frankenstein category). Work in progress.
 
 - Spec: [.kiro/specs/bloodoath](.kiro/specs/bloodoath)
 - Kiro usage log: [docs/kiro-usage.md](docs/kiro-usage.md)
+- Kiro credits per message: [docs/credits.md](docs/credits.md)
+
+## Deploy to your AWS account
+
+Everything (Amplify, Aurora Serverless, S3, SES, Bedrock access, cron) is one
+CloudFormation stack:
+
+```bash
+GITHUB_TOKEN=<repo read token> MAIL_FROM=oath@your-domain.com ./infra/deploy.sh us-east-1
+```
+
+Then add the 3 DKIM CNAME records from the stack output to your mail domain.
 
 Not legal advice.
 
