@@ -62,7 +62,8 @@ const vpc = new Vpc(dbStack, "Vpc", {
 });
 const cluster = new DatabaseCluster(dbStack, "Db", {
   clusterIdentifier: name,
-  engine: DatabaseClusterEngine.auroraPostgres({ version: AuroraPostgresEngineVersion.VER_16_6 }),
+  // Pinned as text: AWS retires old minors (16.6 is gone), and CDK constants lag behind.
+  engine: DatabaseClusterEngine.auroraPostgres({ version: AuroraPostgresEngineVersion.of("16.15", "16") }),
   credentials: Credentials.fromGeneratedSecret("revenant", { secretName: `${name}-db` }),
   defaultDatabaseName: "revenant",
   writer: ClusterInstance.serverlessV2("writer"),

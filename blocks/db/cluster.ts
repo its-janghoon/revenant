@@ -17,7 +17,7 @@ export type ClusterInput = {
   name: string; // rv-<app>-<prod|dev>
   prod: boolean;
   maxAcu?: number; // default 4
-  engineVersion?: string; // default 16.6 (min 0 ACU needs 16.3 or later)
+  engineVersion?: string; // default 16.15 (min 0 ACU needs 16.3 or later)
   dumpUser: string; // read-only role pg_dump signs in as
 };
 
@@ -117,7 +117,7 @@ export function template(i: ClusterInput): Json {
         Properties: {
           DBClusterIdentifier: i.name,
           Engine: 'aurora-postgresql',
-          EngineVersion: i.engineVersion ?? '16.6',
+          EngineVersion: i.engineVersion ?? '16.15',
           MasterUsername: sub('{{resolve:secretsmanager:${Secret}:SecretString:username}}'),
           MasterUserPassword: sub('{{resolve:secretsmanager:${Secret}:SecretString:password}}'),
           EnableHttpEndpoint: true,
