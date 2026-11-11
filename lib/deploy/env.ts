@@ -8,6 +8,8 @@ const schema = z.object({
   RV_APPS_SERVICE_ROLE_ARN: z.string().startsWith("arn:aws:iam::").optional(),
   // SSR compute role for generated apps; per app roles can be passed to ensureApp instead.
   RV_APPS_COMPUTE_ROLE_ARN: z.string().startsWith("arn:aws:iam::").optional(),
+  // Revenant's own origin (https://...), allowed to drive Select mode in preview builds.
+  RV_STUDIO_ORIGIN: z.string().url().optional(),
   // Seconds the health check keeps trying after Amplify reports a deploy done.
   RV_HEALTH_WAIT_S: z.coerce.number().int().positive().default(20),
 });

@@ -9,6 +9,7 @@ frontend:
   phases:
     build:
       commands:
+        - node scripts/rv-annotate.mjs
         - npm run build
   artifacts:
     baseDirectory: .next

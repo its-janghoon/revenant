@@ -79,7 +79,12 @@ export async function ensureApp(project: Project): Promise<string> {
 
 /** Creates or updates the Amplify branch: auto build off, RV_* variables set. */
 export async function ensureBranch(project: Project, appId: string, branch: string): Promise<void> {
-  const env = { ...(await vars(project, appId)), RV_ENV: envOf(branch) };
+  const env: Record<string, string> = { ...(await vars(project, appId)), RV_ENV: envOf(branch) };
+  // Select mode (Studio Preview): previews only; templates/starter reads these at build time.
+  if (branch !== PROD) {
+    env.NEXT_PUBLIC_RV_INSPECT = "1";
+    if (deployEnv.RV_STUDIO_ORIGIN) env.NEXT_PUBLIC_RV_STUDIO_ORIGIN = deployEnv.RV_STUDIO_ORIGIN;
+  }
   const stage: Stage = branch === PROD ? "PRODUCTION" : "DEVELOPMENT";
   try {
     const { branch: b } = await amplify.send(new GetBranchCommand({ appId, branchName: branch }));
