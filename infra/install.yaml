@@ -581,20 +581,32 @@ Resources:
       Role: !GetAtt SeedStarterRole.Arn
       Code:
         ZipFile: |
-          import boto3, cfnresponse
+          # cfnresponse is not bundled for python3.13, so reply to CloudFormation with urllib.
+          import json, urllib.request, boto3
+          def reply(event, context, status, reason=""):
+              body = json.dumps({
+                  "Status": status, "Reason": reason or "See " + context.log_stream_name,
+                  "PhysicalResourceId": event.get("PhysicalResourceId") or "start-seed",
+                  "StackId": event["StackId"], "RequestId": event["RequestId"],
+                  "LogicalResourceId": event["LogicalResourceId"], "Data": {},
+              }).encode()
+              req = urllib.request.Request(event["ResponseURL"], data=body, method="PUT",
+                                           headers={"Content-Type": ""})
+              urllib.request.urlopen(req, timeout=20)
           def handler(event, context):
               try:
                   if event["RequestType"] in ("Create", "Update"):
                       boto3.client("codebuild").start_build(projectName=event["ResourceProperties"]["Project"])
-                  cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+                  reply(event, context, "SUCCESS")
               except Exception as e:
-                  cfnresponse.send(event, context, cfnresponse.FAILED, {}, reason=str(e)[:200])
+                  reply(event, context, "FAILED", str(e)[:200])
 
   StartSeed:
     Type: Custom::StartSeed
     DependsOn: [MainBranch]
     Properties:
       ServiceToken: !GetAtt SeedStarter.Arn
+      ServiceTimeout: 300 # fail in 5 minutes instead of the default hour
       Project: !Ref Seed
       SourceBranch: !Ref SourceBranch # changing it re-runs the seed
 
