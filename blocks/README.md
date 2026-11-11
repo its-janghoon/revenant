@@ -8,7 +8,7 @@ Gen 2 itself provides (`defineAuth`, `defineData`, `defineFunction`, `defineStor
 |---|---|---|
 | `tags` | `tags(backend)`, always last | `awsApplication`, `revenant:app`, `revenant:env`, `revenant:name`, `revenant:project` on every resource |
 | `name` | `name(scope, part?)` | names `rv-<app>-<prod\|dev\|pv<n>>` |
-| `files` | `files.define()` in `amplify/storage/resource.ts`, then `files(backend)` | private S3 bucket per user folder, presigned upload and download, retained, versioned |
+| `files` | `export const storage = defineStorage(files.props())` in `amplify/storage/resource.ts` (Amplify requires the call there), then `files(backend)` | private S3 bucket per user folder, presigned upload and download, retained, versioned |
 | `mail` | `mail(backend, { from, senders })` | SES sender identity; senders may send only as `from` |
 | `ai` | `ai(backend, { models, functions })` | Bedrock invoke on the listed models only, for the functions and the server |
 | `cron` | `cron(backend.fn, { id, schedule })` | EventBridge rule that runs a function |

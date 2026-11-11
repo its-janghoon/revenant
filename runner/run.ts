@@ -225,13 +225,18 @@ function steering(): void {
   cpSync(join(home, 'steering'), join(work, '.kiro', 'steering'), { recursive: true });
 }
 
+// blocks/ belongs to Revenant (agents may not edit it), so every run brings in its current copy.
+function blocks(): void {
+  cpSync(join(home, 'blocks'), join(work, 'blocks'), { recursive: true });
+}
+
 // A new repo starts from the starter template with the building blocks.
 function seed(): void {
   if (remote(base)) return;
   if (git('branch', '-r').out) throw new Step('clone', `base branch ${base} not found`);
   must(git('symbolic-ref', 'HEAD', `refs/heads/${base}`), 'seed');
   cpSync(join(home, 'templates', 'starter'), work, { recursive: true });
-  cpSync(join(home, 'blocks'), join(work, 'blocks'), { recursive: true });
+  blocks();
   steering();
   commitAll('chore: start from the Revenant starter');
   must(git('push', '-q', 'origin', `HEAD:refs/heads/${base}`), 'seed');
@@ -242,7 +247,8 @@ function checkout(): void {
   if (remote(branch)) must(git('checkout', '-q', '-B', branch, `origin/${branch}`), 'clone');
   else must(git('checkout', '-q', '-b', branch, `origin/${base}`), 'clone');
   steering();
-  if (git('status', '--porcelain', '.kiro/steering').out) commitAll('chore: update Revenant steering');
+  blocks();
+  if (git('status', '--porcelain', '.kiro/steering', 'blocks').out) commitAll('chore: update Revenant steering and blocks');
 }
 
 function attachments(): string {
