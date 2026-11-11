@@ -10,6 +10,8 @@ import { RDSDataClient } from "@aws-sdk/client-rds-data";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/aws-data-api/pg";
 import * as schema from "../db/schema";
+import { times } from "../db/times";
+import { wake } from "../db/wake";
 import type { Deployer } from "../repair/ports";
 import { health } from "./health";
 
@@ -18,7 +20,7 @@ const codecommit = new CodeCommitClient({ region });
 const amplify = new AmplifyClient({ region });
 
 const db = () =>
-  drizzle(new RDSDataClient({ region }), {
+  drizzle(times(wake(new RDSDataClient({ region }))), {
     database: process.env.RV_DB_NAME ?? "revenant",
     resourceArn: process.env.RV_DB_CLUSTER_ARN ?? "",
     secretArn: process.env.RV_DB_SECRET_ARN ?? "",

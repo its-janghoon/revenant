@@ -12,6 +12,8 @@ import type { Context, EventBridgeEvent } from "aws-lambda";
 import { drizzle } from "drizzle-orm/aws-data-api/pg";
 import { z } from "zod";
 import * as schema from "../db/schema";
+import { times } from "../db/times";
+import { wake } from "../db/wake";
 import { awsPort, lambdaTimeline } from "./aws";
 import { toSignal } from "./events";
 import { handle } from "./loop";
@@ -35,7 +37,7 @@ export function makeHandler(deployer: Deployer) {
     if (!deps) {
       const env = Env.parse(process.env);
       const [, partition = "aws", , , account = ""] = ctx.invokedFunctionArn.split(":");
-      const db = drizzle(new RDSDataClient({ region: env.AWS_REGION }), {
+      const db = drizzle(times(wake(new RDSDataClient({ region: env.AWS_REGION }))), {
         database: env.RV_DB_NAME, resourceArn: env.RV_DB_CLUSTER_ARN, secretArn: env.RV_DB_SECRET_ARN, schema,
       });
       deps = {
