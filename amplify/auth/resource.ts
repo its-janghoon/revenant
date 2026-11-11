@@ -12,7 +12,9 @@ export const auth = defineAuth({
           `You can now sign in to Revenant as ${user()}. Use your email address and the one-time code we send you. (Temporary password, only if asked: ${code()})`,
       },
     },
-    webAuthn: true,
+    // Passkeys belong to one domain. RV_DOMAIN (set on the Amplify app) is the custom
+    // domain when there is one; otherwise Amplify picks the branch URL.
+    webAuthn: process.env.RV_DOMAIN ? { relyingPartyId: process.env.RV_DOMAIN } : true,
   },
   groups: ["admin"],
 });
