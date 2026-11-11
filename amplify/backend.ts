@@ -16,10 +16,11 @@ import { AwsCustomResource, AwsCustomResourcePolicy, PhysicalResourceId } from "
 import { auth } from "./auth/resource";
 import { data } from "./data/resource";
 import { timeline } from "./functions/timeline/resource";
+import { repair } from "./functions/repair/resource";
 import { RUNNER_PREFIX } from "../lib/contracts";
-import { Repair } from "../lib/repair/construct";
+import { RepairRules } from "../lib/repair/construct";
 
-const backend = defineBackend({ auth, data, timeline });
+const backend = defineBackend({ auth, data, timeline, repair });
 
 // rv-revenant-<env>: "prod" on main, the branch name elsewhere, "dev" in a sandbox.
 const branch = process.env.AWS_BRANCH;
@@ -233,12 +234,24 @@ const runner = new CfnProject(runnerStack, "Runner", {
 });
 
 // ---------- repair: EventBridge failure rules (lib/repair/construct.ts, lane L4) ----------
-new Repair(backend.createStack("repair"), "Repair", {
+{
+  const fn = backend.repair.resources.lambda as import("aws-cdk-lib/aws-lambda").Function;
+  fn.addEnvironment("RV_DB_CLUSTER_ARN", cluster.clusterArn);
+  fn.addEnvironment("RV_DB_SECRET_ARN", cluster.secret!.secretArn);
+  fn.addEnvironment("RV_DB_NAME", "revenant");
+  fn.addEnvironment("RV_RUNNER_PROJECT", runner.ref);
+  fn.addEnvironment("RV_PROMPT_BUCKET", prompts.bucketName);
+  fn.addEnvironment("RV_TIMELINE_FUNCTION", backend.timeline.resources.lambda.functionName);
+  // RV_KIRO_SECRET_ARN: the company Kiro key from infra/install.yaml (passed as a backend secret at integration).
+  fn.addEnvironment("RV_KIRO_SECRET_ARN", process.env.RV_KIRO_SECRET_ARN ?? "arn:aws:secretsmanager:unset");
+}
+new RepairRules(backend.createStack("repair"), "Repair", {
+  handler: backend.repair.resources.lambda,
+  runnerProject: runner.ref,
+  promptBucket: prompts.bucketName,
+  timelineFunction: backend.timeline.resources.lambda.functionName,
   name,
-  runnerProjectName: runner.ref,
-  runnerProjectArn: runner.attrArn,
-  runnerLogs,
-  timeline: backend.timeline.resources.lambda,
+  db: { clusterArn: cluster.clusterArn, secretArn: cluster.secret!.secretArn },
 });
 
 backend.addOutput({
