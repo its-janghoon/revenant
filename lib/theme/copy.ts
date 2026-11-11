@@ -1,0 +1,71 @@
+// One copy map for words that change with the theme. The theme never changes behaviour.
+// Placeholders like {n} are filled by <Word vars={{ n }}>. Add keys here, not in screens.
+export const COPY = {
+  light: {
+    credits: "AWS credits {credits} · {spent} this month",
+    tasks: "Tasks · {n}",
+    ask: "Ask for a change…",
+    askHome: "What should we build?",
+    ttr: "time to recover",
+    preview: "Preview",
+    timeline: "Timeline",
+    spec: "Spec",
+    building: "Building",
+    deploying: "Deploying",
+    dead: "Failed",
+    repair: "Repairing",
+    alive: "Live",
+    stopped: "Stopped",
+    subBuilding: "task {n} / {total} · kiro-cli",
+    subDeploying: "deploy #{n} · CloudFormation",
+    subDead: "deploy #{n} · {reason}",
+    subRepair: "repair {n} / 3 · kiro-cli",
+    subAlive: "deploy #{n} · 200 OK",
+    tomb: "Deploy #{n} failed",
+    evFail: "Deploy #{n} failed",
+    evFix: "Repair {n}",
+    evOk: "Check passed",
+    evLive: "Deploy #{n} live",
+    build: "Build it",
+    publish: "Publish",
+    overBudget: "Forecast spend is over the budget",
+    agent: "kiro",
+  },
+  haunted: {
+    credits: "Credits in the crypt {credits} · {spent} bled",
+    tasks: "The incantation · {n}",
+    ask: "Whisper a change…",
+    askHome: "What shall we raise?",
+    ttr: "time in the grave",
+    preview: "The vessel",
+    timeline: "The chronicle",
+    spec: "The scripture",
+    building: "Summoning",
+    deploying: "Descending",
+    dead: "It died.",
+    repair: "The ritual",
+    alive: "It has risen.",
+    stopped: "Laid to rest",
+    subBuilding: "verse {n} of {total} · kiro-cli",
+    subDeploying: "deploy #{n} · into the stack",
+    subDead: "deploy #{n} · {reason}",
+    subRepair: "ritual {n} of 3 · kiro-cli",
+    subAlive: "deploy #{n} · heartbeat found",
+    tomb: "here lies deploy #{n}",
+    evFail: "Deploy #{n} died",
+    evFix: "Ritual {n}",
+    evOk: "The seal held",
+    evLive: "Risen",
+    build: "Begin the ritual",
+    publish: "Raise it",
+    overBudget: "The bleeding will pass the budget",
+    agent: "kiro",
+  },
+} as const satisfies Record<"light" | "haunted", Record<string, string>>;
+
+export type Mode = keyof typeof COPY;
+export type CopyKey = keyof (typeof COPY)["light"];
+
+export function word(mode: Mode, k: CopyKey, vars: Record<string, string | number> = {}): string {
+  return COPY[mode][k].replace(/\{(\w+)\}/g, (_, v: string) => String(vars[v] ?? ""));
+}
