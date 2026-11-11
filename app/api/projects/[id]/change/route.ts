@@ -2,7 +2,8 @@ import { changeBody } from "@/lib/contracts";
 import { needUser } from "@/app/_lib/auth";
 import { accepted, body, route } from "@/app/_lib/http";
 import { assertIdle, startRun } from "@/app/_lib/runs";
-import { SPEC_BRANCH, findProject, livePreviews, nextPreviewBranch } from "@/app/_lib/store";
+import { SPEC_BRANCH, findProject, livePreviews, toProject } from "@/app/_lib/store";
+import { nextPreview } from "@/lib/deploy";
 import { event, putEvents } from "@/app/_lib/timeline";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ export const POST = route<{ id: string }>(async (req, { id }) => {
     ? await startRun({ project: p, user: u, mode: "spec", branch: SPEC_BRANCH, base: "main", prompt })
     : await startRun({
         project: p, user: u, mode: "change", prompt,
-        branch: await nextPreviewBranch(p),
+        branch: (await nextPreview(toProject(p))).branch,
         base: p.status === "live" ? "main" : cur ? cur.branch : SPEC_BRANCH,
       });
   await putEvents([event(p.id, "message", { from: "user", text: b.text, run: run.id, ...(b.select ? { select: b.select } : {}) })]);

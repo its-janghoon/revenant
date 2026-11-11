@@ -39,6 +39,7 @@
     "@aws-sdk/client-ssm": "^3.800.0",
     "@aws-sdk/rds-signer": "^3.800.0",
     "@aws-sdk/s3-request-presigner": "^3.800.0",
+    "@aws-sdk/util-dynamodb": "^3.800.0",
     "aws-amplify": "^6.15.0",
     "drizzle-orm": "^0.44.0",
     "lucide-react": "^0.460.0",

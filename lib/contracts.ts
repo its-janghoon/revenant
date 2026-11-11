@@ -247,9 +247,18 @@ export const ROUTES = {
 
   cost: { path: "/api/cost", methods: ["GET"], owner: "L6" },
   projectCost: { path: "/api/cost/:id", methods: ["GET"], owner: "L6" },
+  costDaily: { path: "/api/cost/daily", methods: ["POST"], owner: "L6" }, // app key; ?job=all|cost|cleanup
 
   settings: { path: "/api/settings", methods: ["GET"], owner: "L5" },
   kiroKey: { path: "/api/settings/kiro", methods: ["PUT", "DELETE"], owner: "L5" },
+  crewTokens: { path: "/api/settings/crew", methods: ["GET", "POST", "DELETE"], owner: "L5" },
+
+  // Kiro Crew app (crew-app/), called with a crew token
+  crewProjects: { path: "/api/crew/projects", methods: ["GET", "POST"], owner: "L7" },
+  crewProject: { path: "/api/crew/projects/:project", methods: ["GET"], owner: "L7" },
+  crewBuild: { path: "/api/crew/projects/:project/build", methods: ["POST"], owner: "L7" },
+  crewPublish: { path: "/api/crew/projects/:project/publish", methods: ["POST"], owner: "L7" },
+  crewEvents: { path: "/api/crew/events", methods: ["GET"], owner: "L7" }, // ?since=
 
   adminSettings: { path: "/admin/api/settings", methods: ["GET", "PUT"], owner: "L9" },
   adminUsers: { path: "/admin/api/users", methods: ["GET", "POST"], owner: "L9" },

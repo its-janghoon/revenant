@@ -4,7 +4,8 @@ import { and, eq, inArray } from "drizzle-orm";
 import type { z } from "zod";
 import type { Deploy, Preview, Repair, Run, Task, createProjectBody } from "@/lib/contracts";
 import { db, schema } from "@/lib/db/client";
-import { settleAll } from "@/lib/deploy";
+import { previewsOf, settleAll } from "@/lib/deploy";
+import { repairsFor } from "@/lib/repair/store";
 import { region } from "./aws";
 import type { User } from "./auth";
 import { readEvent, lastAgentText } from "./events";
@@ -13,7 +14,7 @@ import { byNumber, createRepo, head, parseTasks, readFile, specPath } from "./re
 import { ensureRunnerRole, startRun, stopRun, syncRuns } from "./runs";
 import { parseParts, summarize } from "./spec";
 import {
-  SPEC_BRANCH, listProjects, livePreviews, monthCosts, monthCredits, projectDeploys, projectPreviews, projectRepairs,
+  SPEC_BRANCH, listProjects, livePreviews, monthCosts, monthCredits, projectDeploys,
   projectRuns, sqlAllowedFor, toProject, workBranch, type ProjectRow,
 } from "./store";
 import { listEvents } from "./timeline";
@@ -97,7 +98,7 @@ export async function detail(u: User, p: ProjectRow): Promise<Detail> {
   const proj = fresh ?? p;
   const branch = await workBranch(p.id);
   const [runRows, deployRows, previewRows, repairRows, taskRows, cost, credits, sqlAllowed] = await Promise.all([
-    projectRuns(p.id), projectDeploys(p.id), projectPreviews(p.id), projectRepairs(p.id), syncTasks(proj, branch),
+    projectRuns(p.id), projectDeploys(p.id), previewsOf(p.id), repairsFor(db, p.id).then((r) => r.slice(0, 30)), syncTasks(proj, branch),
     monthCosts([p.id]), monthCredits([p.id]), sqlAllowedFor(u),
   ]);
   const live = deployRows.find((d) => d.branch === branch && d.url);
@@ -126,7 +127,7 @@ export async function cards(u: User): Promise<ProjectCard[]> {
     monthCosts(ids), monthCredits(ids),
     db.select().from(tasks).where(inArray(tasks.projectId, ids)),
     db.select().from(schema.previews).where(inArray(schema.previews.projectId, ids)),
-    Promise.all(ps.filter((p) => p.status === "repairing").map(async (p) => [p.id, (await projectRepairs(p.id, 1))[0]] as const)),
+    Promise.all(ps.filter((p) => p.status === "repairing").map(async (p) => [p.id, (await repairsFor(db, p.id))[0]] as const)),
   ]);
   const rep = new Map(repRows);
   return ps.map((p) => {

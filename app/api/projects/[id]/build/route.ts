@@ -3,7 +3,8 @@ import { needUser } from "@/app/_lib/auth";
 import { HttpError, accepted, optionalBody, route } from "@/app/_lib/http";
 import { head } from "@/app/_lib/repo";
 import { assertIdle, startRun } from "@/app/_lib/runs";
-import { SPEC_BRANCH, findProject, livePreviews, nextPreviewBranch, toProject } from "@/app/_lib/store";
+import { SPEC_BRANCH, findProject, livePreviews, toProject } from "@/app/_lib/store";
+import { nextPreview } from "@/lib/deploy";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,7 @@ export const POST = route<{ id: string }>(async (req, { id }) => {
   if (!p.repo || !(await head(p.repo, SPEC_BRANCH))) throw new HttpError(409, "The spec is not written yet", "no_spec", `/p/${p.id}/spec`);
   await assertIdle(p.id);
   const [cur] = await livePreviews(p.id);
-  const branch = cur?.branch ?? (await nextPreviewBranch(p));
+  const branch = cur?.branch ?? (await nextPreview(toProject(p))).branch;
   const run = await startRun({ project: p, user: u, mode: "build", branch, base: cur ? branch : SPEC_BRANCH, prompt: b.notes });
   return accepted({ project: { ...toProject(p), status: "building" }, run });
 });
