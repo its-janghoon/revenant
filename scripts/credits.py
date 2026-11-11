@@ -11,7 +11,12 @@ import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-SLOTS = {"chat-180-1794367657"}  # Kiro Crew chat sessions that worked on BloodOath
+ROOT = Path(__file__).resolve().parent.parent
+SLOTS = {"chat-180-1794367657"}  # Kiro Crew chat sessions that worked on Revenant
+# Subagent and other slots that worked on Revenant, one per line (added as they are spawned).
+extra = ROOT / "docs/credit-slots.txt"
+if extra.exists():
+    SLOTS |= {l.strip() for l in extra.read_text().splitlines() if l.strip() and not l.startswith("#")}
 START = "2026-11-11"  # first day of work on BloodOath
 KST = timezone(timedelta(hours=9))
 
@@ -33,17 +38,18 @@ total = 0.0
 out = [
     "# Kiro credits used",
     "",
-    "One row per message to Kiro Crew. Rebuilt by `scripts/credits.py`.",
+    "One row per Kiro turn (chat message, loop cycle or subagent turn). Rebuilt by `scripts/credits.py`.",
     "",
-    "| # | Time (KST) | Model | Credits | Total | Duration |",
-    "|---|---|---|---|---|---|",
+    "| # | Time (KST) | Who | Model | Credits | Total | Duration |",
+    "|---|---|---|---|---|---|---|",
 ]
 for i, r in enumerate(rows, 1):
     total += r["credits"]
     ts = datetime.fromisoformat(r["ts"]).astimezone(KST).strftime("%Y-%m-%d %H:%M")
     secs = round((r.get("duration_ms") or 0) / 1000)
-    out.append(f"| {i} | {ts} | {r.get('model', '')} | {r['credits']:.2f} | {total:.2f} | {secs}s |")
-out += ["", f"**Total: {total:.2f} credits over {len(rows)} messages.**", ""]
+    who = "subagent" if r["slot"].startswith("subagent:") else "chat"
+    out.append(f"| {i} | {ts} | {who} | {r.get('model', '')} | {r['credits']:.2f} | {total:.2f} | {secs}s |")
+out += ["", f"**Total: {total:.2f} credits over {len(rows)} turns.**", ""]
 
 dest = Path(__file__).resolve().parent.parent / "docs/credits.md"
 dest.write_text("\n".join(out), encoding="utf-8")

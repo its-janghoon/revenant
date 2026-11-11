@@ -1,0 +1,2 @@
+# Kiro Crew slots (besides the main chat) whose Kiro credits count toward Revenant.
+# One per line, e.g. subagent:0123abcd.
