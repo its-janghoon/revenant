@@ -4,7 +4,9 @@
   "private": true,
   "license": "MIT",
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,20 +14,28 @@
     "typecheck": "tsc --noEmit",
     "sandbox": "ampx sandbox",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx lib/db/migrate.ts"
+    "db:migrate": "tsx lib/db/migrate.ts",
+    "test": "node --import tsx --test lib/guard/*.test.ts lib/timeline/*.test.ts"
   },
   "dependencies": {
     "@aws-amplify/adapter-nextjs": "^1.6.0",
+    "@aws-sdk/client-amplify": "^3.800.0",
     "@aws-sdk/client-cloudformation": "^3.800.0",
+    "@aws-sdk/client-cloudwatch-logs": "^3.800.0",
     "@aws-sdk/client-codebuild": "^3.800.0",
     "@aws-sdk/client-codecommit": "^3.800.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.800.0",
+    "@aws-sdk/client-cost-explorer": "^3.800.0",
     "@aws-sdk/client-dynamodb": "^3.800.0",
+    "@aws-sdk/client-eventbridge": "^3.800.0",
     "@aws-sdk/client-iam": "^3.800.0",
     "@aws-sdk/client-lambda": "^3.800.0",
     "@aws-sdk/client-rds": "^3.800.0",
     "@aws-sdk/client-rds-data": "^3.800.0",
+    "@aws-sdk/client-resource-groups-tagging-api": "^3.800.0",
     "@aws-sdk/client-s3": "^3.800.0",
     "@aws-sdk/client-secrets-manager": "^3.800.0",
+    "@aws-sdk/client-service-catalog-appregistry": "^3.800.0",
     "@aws-sdk/client-ssm": "^3.800.0",
     "@aws-sdk/rds-signer": "^3.800.0",
     "@aws-sdk/s3-request-presigner": "^3.800.0",
@@ -45,10 +55,12 @@
     "@types/node": "^22.15.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
+    "aws-cdk": "^2.1000.0",
     "aws-cdk-lib": "^2.200.0",
     "constructs": "^10.4.2",
     "drizzle-kit": "^0.31.0",
     "esbuild": "^0.25.0",
+    "fast-check": "^4.0.0",
     "tsx": "^4.20.0",
     "typescript": "^5.8.0"
   }

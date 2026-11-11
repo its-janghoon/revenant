@@ -3,7 +3,8 @@ backend:
   phases:
     build:
       commands:
-        - npm ci --cache .npm --prefer-offline
+        # npm ci needs package-lock.json; until the repo has one, install from package.json
+        - if [ -f package-lock.json ]; then npm ci --cache .npm --prefer-offline; else npm install --cache .npm --no-audit --no-fund; fi
         # deploys amplify/backend.ts (Cognito, timeline, Aurora) and writes amplify_outputs.json
         - npx ampx pipeline-deploy --branch "$AWS_BRANCH" --app-id "$AWS_APP_ID"
         - npm run db:migrate
