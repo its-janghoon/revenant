@@ -101,9 +101,10 @@ async function onBuild(sig: Extract<Signal, { kind: "build" }>, d: Deps): Promis
     if (!open || open.last.id !== env.RV_REPAIR || open.deploying) return "stale repair run";
     if (sig.status === "SUCCEEDED") {
       // The runner pushes the fix branch only after install, lint, synth, cfn-lint and the guard pass.
+      // Merge first: if it throws, the event is retried with the repair still open, not stuck as deploying.
+      await d.deployer.merge({ projectId: project.id, from: open.last.branch, into: open.target });
       await d.store.updateRepair(open.last.id, { cause: sum.cause ?? open.last.cause, checkStatus: "passed" });
       await emit(d, open.project, "message", { repair: fixNo(open.last.branch), text: `Fix checked: build, synth and guardrails passed. ${sum.files.length} file(s) changed.`, files: sum.files });
-      await d.deployer.merge({ projectId: project.id, from: open.last.branch, into: open.target });
       // A run's branch that Amplify does not build (no deploy follows): merged is recovered.
       const built = project.amplifyAppId ? (await d.aws.branches(project.amplifyAppId)).includes(open.target) : false;
       if (!built) return recover({ ...open, last: { ...open.last, cause: sum.cause ?? open.last.cause, checkStatus: "passed" }, deploying: true }, d);

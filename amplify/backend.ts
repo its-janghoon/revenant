@@ -328,7 +328,13 @@ new RepairRules(backend.createStack("repair"), "Repair", {
     actions: ["amplify:CreateApp", "amplify:UpdateApp", "amplify:TagResource"], resources: [at("amplify", "apps/*")],
   }));
   fn.addToRolePolicy(new PolicyStatement({
-    actions: ["codecommit:GetRepository", "codecommit:GitPull"], resources: [at("codecommit", "rv-*")],
+    actions: ["codecommit:GetRepository", "codecommit:GitPull", "codecommit:GetBranch", "codecommit:ListBranches", "codecommit:GetRepositoryTriggers", "codecommit:PutRepositoryTriggers"],
+    resources: [at("codecommit", "rv-*")],
+  }));
+  // CreateApp on a CodeCommit repo makes this topic and a repo trigger with the caller's rights.
+  fn.addToRolePolicy(new PolicyStatement({
+    actions: ["sns:CreateTopic", "sns:GetTopicAttributes", "sns:SetTopicAttributes", "sns:Subscribe", "sns:ListSubscriptionsByTopic", "sns:TagResource"],
+    resources: [at("sns", "amplify_codecommit_topic")],
   }));
   if (dbStack) {
     fn.addToRolePolicy(new PolicyStatement({
