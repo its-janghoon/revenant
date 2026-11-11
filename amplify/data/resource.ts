@@ -16,7 +16,7 @@ const schema = a
       })
       .identifier(["projectId", "at"])
       .disableOperations(["update", "delete"])
-      .authorization((allow) => [allow.authenticated().to(["read", "listen"])]),
+      .authorization((allow) => [allow.authenticated().to(["read"])]),
   })
   .authorization((allow) => [allow.resource(timeline).to(["mutate", "query"])]);
 
