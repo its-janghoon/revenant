@@ -1,0 +1,94 @@
+/* Admin screens, ported from design/mockups/flow.html + flow2.js (admin v2). Scoped to .rv-admin. */
+
+[data-mode=light] .rv-admin { --badbg: #fdecea; --okbg: #e6f4ec; --warnbg: #fbf1dc }
+[data-mode=haunted] .rv-admin { --badbg: #2a0a0c; --okbg: #17150f; --warnbg: #1d1810 }
+
+.rv-admin { overflow: hidden }
+.rv-admin .sp { flex: 1 }
+.rv-admin .ic-svg { display: inline-block; vertical-align: -3px; flex: none }
+.rv-admin button { font: inherit; color: inherit; cursor: pointer }
+.rv-admin a { text-decoration: none }
+
+/* header extras */
+.rv-admin .credits { font: 500 11.5px var(--mono); color: var(--muted) }
+.rv-admin .credits b { color: var(--fg) }
+.rv-admin .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--sunk); border: 1px solid var(--line); display: grid; place-items: center; font-weight: 600; font-size: 11px }
+
+/* base pieces */
+.rv-admin .card { background: var(--panel); border: 1px solid var(--line); border-radius: calc(var(--r) + 2px); padding: 18px 20px }
+.rv-admin .btn { display: inline-flex; align-items: center; gap: 6px; background: var(--accent); color: var(--onaccent); padding: 9px 16px; border-radius: var(--r); font-weight: 600; font-size: 13px; border: 0 }
+.rv-admin .btn[disabled] { opacity: .5; cursor: default }
+.rv-admin .ghost { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); padding: 8px 14px; border-radius: var(--r); font-weight: 500; background: var(--panel) }
+.rv-admin .chip { display: inline-block; font: 600 10.5px var(--mono); padding: 2px 8px; border-radius: 99px; text-transform: uppercase; letter-spacing: .03em; white-space: nowrap }
+.rv-admin .c-ok { background: var(--okbg); color: var(--ok) }
+.rv-admin .c-bad { background: var(--badbg); color: var(--bad) }
+.rv-admin .c-warn { background: var(--warnbg); color: var(--warn) }
+.rv-admin .c-n { background: var(--sunk); color: var(--muted) }
+.rv-admin table { width: 100%; border-collapse: collapse }
+.rv-admin th { font: 600 10.5px var(--body); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line) }
+.rv-admin td { padding: 11px 10px; border-bottom: 1px solid var(--line); vertical-align: middle }
+.rv-admin tr:last-child td { border-bottom: 0 }
+.rv-admin .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px }
+.rv-admin .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px }
+.rv-admin .row { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line) }
+.rv-admin .row:last-child { border-bottom: 0 }
+.rv-admin .row .t b { display: block; font-weight: 600 }
+.rv-admin .row .t span { color: var(--muted); font-size: 12px }
+.rv-admin .input { border: 1px solid var(--line); border-radius: var(--r); padding: 9px 12px; background: var(--panel); color: var(--fg); font: inherit }
+.rv-admin select.input { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 26px }
+.rv-admin .bar { height: 8px; border-radius: 99px; background: var(--sunk); overflow: hidden }
+.rv-admin .bar i { display: block; height: 100%; background: var(--fg) }
+[data-mode=haunted] .rv-admin .bar i { background: var(--accent) }
+.rv-admin .err { color: var(--bad); font-size: 12px }
+
+/* layout: side nav + body */
+.rv-admin .adm { display: grid; grid-template-columns: 230px 1fr; height: 100% }
+.rv-admin .adm aside { border-right: 1px solid var(--line); padding: 18px 12px; display: flex; flex-direction: column; gap: 2px }
+.rv-admin .adm aside a { display: flex; gap: 9px; align-items: center; padding: 8px 10px; border-radius: 8px; color: var(--muted); font-weight: 500 }
+.rv-admin .adm aside a.on { background: var(--sunk); color: var(--fg) }
+.rv-admin .adm aside .grp { font: 600 10.5px var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 14px 10px 6px }
+.rv-admin .adm .body { padding: 26px 30px; overflow: auto }
+.rv-admin .title { font-size: 28px }
+
+/* overview */
+.rv-admin .spark { display: flex; align-items: flex-end; gap: 3px; height: 44px; margin-top: 10px }
+.rv-admin .spark i { flex: 1; background: var(--fg); opacity: .85; border-radius: 2px 2px 0 0 }
+[data-mode=haunted] .rv-admin .spark i { background: var(--accent) }
+.rv-admin .kpi2 { padding: 16px 18px }
+.rv-admin .kpi2 .t { font: 500 12px var(--body); color: var(--muted); display: flex; gap: 6px; align-items: center }
+.rv-admin .kpi2 .n { font: 650 28px var(--body); letter-spacing: -.03em; margin-top: 4px }
+[data-mode=haunted] .rv-admin .kpi2 .n { font: italic 700 32px var(--serif) }
+.rv-admin .pill { display: inline-flex; gap: 5px; align-items: center; border: 1px solid var(--line); border-radius: 99px; padding: 4px 10px; font-size: 11.5px; color: var(--muted); background: transparent }
+.rv-admin .pill.on { color: var(--fg); border-color: var(--fg) }
+.rv-admin select.pill { appearance: none; padding-right: 22px; background: transparent url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='5'><path d='M0 0h8L4 5z' fill='%23888'/></svg>") no-repeat right 9px center }
+
+/* policy */
+.rv-admin .pcard { padding: 18px 20px; scroll-margin-top: 20px }
+.rv-admin .pcard .hd { display: flex; gap: 10px; align-items: center; margin-bottom: 6px }
+.rv-admin .pcard .hd b { font-size: 14px }
+.rv-admin .ic { width: 32px; height: 32px; border-radius: 9px; background: var(--sunk); border: 1px solid var(--line); display: grid; place-items: center; flex: none }
+.rv-admin .radio { display: flex; gap: 8px; margin-top: 12px }
+.rv-admin .radio button { all: unset; cursor: pointer; flex: 1; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 12px }
+.rv-admin .radio button[aria-pressed=true] { border-color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg) }
+[data-mode=haunted] .rv-admin .radio button[aria-pressed=true] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent) }
+.rv-admin .radio button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.rv-admin .radio b { display: block; font-size: 13px }
+
+/* users */
+.rv-admin .av { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font: 600 10.5px var(--body); color: #fff; flex: none }
+.rv-admin .who { display: flex; gap: 10px; align-items: center }
+.rv-admin .menu { position: relative }
+.rv-admin .menu > summary { list-style: none; cursor: pointer; color: var(--muted); padding: 2px 4px }
+.rv-admin .menu > summary::-webkit-details-marker { display: none }
+.rv-admin .menu .pop { position: absolute; right: 0; top: 24px; z-index: 5; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 12px 30px #0002; padding: 6px; width: 200px; display: flex; flex-direction: column }
+.rv-admin .menu .pop button { all: unset; cursor: pointer; padding: 7px 10px; border-radius: 6px; font-size: 12.5px }
+.rv-admin .menu .pop button:hover { background: var(--sunk) }
+.rv-admin .menu .pop button[aria-pressed=true] { font-weight: 600 }
+.rv-admin .menu .pop .danger { color: var(--bad) }
+.rv-admin .menu .pop .lbl { font: 600 10px var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 6px 10px 2px }
+.rv-admin .menu .pop hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0 }
+.rv-admin .iconbtn { all: unset; cursor: pointer; color: var(--muted); padding: 2px 4px; display: inline-flex }
+.rv-admin .iconbtn:hover { color: var(--fg) }
+.rv-admin .search { display: flex; gap: 8px; align-items: center; width: 240px; margin-right: 10px; padding: 0 12px }
+.rv-admin .search input { all: unset; flex: 1; padding: 9px 0 }
+.rv-admin .invite { display: flex; gap: 10px; align-items: center; margin-bottom: 14px }
