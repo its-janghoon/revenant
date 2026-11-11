@@ -7,3 +7,8 @@ out/
 !.env.example
 *.log
 video/out/
+.amplify/
+amplify_outputs*
+next-env.d.ts
+*.tsbuildinfo
+.npm/

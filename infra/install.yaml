@@ -1,0 +1,338 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Revenant install. Creates the Amplify app for Revenant, its IAM roles, secrets and a
+  budget alarm. The first Amplify build deploys Revenant's backend (amplify/backend.ts).
+  No GitHub token: a one-off CodeBuild job copies the public repository into a
+  CodeCommit repository in this account, and Amplify builds from there.
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label: { default: Revenant }
+        Parameters: [KiroApiKey, AdminEmail, Budget]
+      - Label: { default: Advanced }
+        Parameters: [SourceRepo, SourceBranch, Demo]
+
+Parameters:
+  KiroApiKey:
+    Type: String
+    NoEcho: true
+    MinLength: 10
+    Description: Company Kiro API key. Stored in Secrets Manager, used by build runs.
+  AdminEmail:
+    Type: String
+    AllowedPattern: "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+    Description: Admin email. Gets the Cognito invite and the budget alarms.
+  Budget:
+    Type: Number
+    Default: 100
+    MinValue: 1
+    Description: Monthly budget in USD for this account. You get an email at 80% and when the forecast passes it.
+  SourceRepo:
+    Type: String
+    Default: https://github.com/its-janghoon/revenant.git
+    Description: Public Git repository to install from.
+  SourceBranch:
+    Type: String
+    Default: main
+  Demo:
+    Type: String
+    Default: "off"
+    AllowedValues: ["on", "off"]
+    Description: Demo install for judges (projects are deleted after 24 hours).
+
+Resources:
+  # ---------- secrets ----------
+  KiroSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: rv-revenant-kiro
+      Description: Revenant company Kiro API key
+      SecretString: !Ref KiroApiKey
+      Tags: [{ Key: revenant:app, Value: revenant }]
+
+  AppSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: rv-revenant-appkey
+      Description: Revenant app key for machine callers (runner, Kiro Crew app), sent as x-rv-key
+      GenerateSecretString: { PasswordLength: 48, ExcludePunctuation: true }
+      Tags: [{ Key: revenant:app, Value: revenant }]
+
+  # ---------- source: a copy of the public repository in CodeCommit ----------
+  SourceRepository:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: rv-revenant
+      RepositoryDescription: Revenant source, copied from the public repository. Re-run the rv-revenant-seed build to update.
+      Tags: [{ Key: revenant:app, Value: revenant }]
+
+  # ---------- Amplify roles ----------
+  # Service role: runs the Amplify build (ampx pipeline-deploy, CDK, migrations).
+  ServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub rv-revenant-service-${AWS::Region}
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: amplify.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AmplifyBackendDeployFullAccess
+      Policies:
+        - PolicyName: source-and-migrations
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: codecommit:GitPull
+                Resource: !GetAtt SourceRepository.Arn
+              - Effect: Allow
+                Action: [rds-data:ExecuteStatement, rds-data:BatchExecuteStatement, rds-data:BeginTransaction, rds-data:CommitTransaction, rds-data:RollbackTransaction]
+                Resource: !Sub arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:rv-revenant-*
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:rv-revenant-*-db-*
+
+  # Compute role: what the Revenant server (Next.js SSR) may do. Lanes extend it here.
+  ComputeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub rv-revenant-compute-${AWS::Region}
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: amplify.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: revenant
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: OwnDatabase
+                Effect: Allow
+                Action: [rds-data:ExecuteStatement, rds-data:BatchExecuteStatement, rds-data:BeginTransaction, rds-data:CommitTransaction, rds-data:RollbackTransaction]
+                Resource: !Sub arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:rv-revenant-*
+              - Sid: OwnSecrets
+                Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource:
+                  - !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:rv-revenant-*
+              - Sid: UserKiroKeys
+                Effect: Allow
+                Action: [secretsmanager:CreateSecret, secretsmanager:PutSecretValue, secretsmanager:DeleteSecret, secretsmanager:TagResource, secretsmanager:DescribeSecret]
+                Resource: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:rv/kiro/*
+              - Sid: Timeline
+                Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:rv-revenant-*-timeline
+              - Sid: AppRepos
+                Effect: Allow
+                Action: [codecommit:CreateRepository, codecommit:GetRepository, codecommit:GetBranch, codecommit:GetFile, codecommit:GetFolder, codecommit:CreateCommit, codecommit:CreateBranch, codecommit:GetDifferences, codecommit:MergeBranchesByFastForward, codecommit:MergeBranchesBySquash, codecommit:TagResource]
+                Resource: !Sub arn:${AWS::Partition}:codecommit:${AWS::Region}:${AWS::AccountId}:rv-*
+              - Sid: Runs
+                Effect: Allow
+                Action: [codebuild:StartBuild, codebuild:StopBuild, codebuild:BatchGetBuilds]
+                Resource: !Sub arn:${AWS::Partition}:codebuild:${AWS::Region}:${AWS::AccountId}:project/rv-*
+              - Sid: CostRead
+                Effect: Allow
+                Action: [ce:GetCostAndUsage, ce:GetCostForecast]
+                Resource: "*" # Cost Explorer has no resource-level permissions
+                Condition:
+                  StringEquals: { aws:RequestedRegion: us-east-1 }
+              - Sid: Users
+                Effect: Allow
+                Action: [cognito-idp:AdminCreateUser, cognito-idp:AdminDisableUser, cognito-idp:AdminEnableUser, cognito-idp:AdminDeleteUser, cognito-idp:AdminAddUserToGroup, cognito-idp:AdminRemoveUserFromGroup, cognito-idp:ListUsers, cognito-idp:AdminListGroupsForUser]
+                Resource: !Sub arn:${AWS::Partition}:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/*
+                Condition:
+                  StringEquals: { aws:ResourceTag/revenant:app: revenant }
+
+  # ---------- the Revenant app ----------
+  App:
+    Type: AWS::Amplify::App
+    Properties:
+      Name: revenant
+      Description: Revenant, Lovable on your own AWS account
+      Repository: !GetAtt SourceRepository.CloneUrlHttp
+      Platform: WEB_COMPUTE
+      IAMServiceRole: !GetAtt ServiceRole.Arn
+      ComputeRoleArn: !GetAtt ComputeRole.Arn
+      # ARNs and flags only. amplify.yml copies RV_* into .env.production for the server.
+      EnvironmentVariables:
+        - { Name: ADMIN_EMAIL, Value: !Ref AdminEmail }
+        - { Name: RV_KIRO_SECRET_ARN, Value: !Ref KiroSecret }
+        - { Name: RV_APP_SECRET_ARN, Value: !Ref AppSecret }
+        - { Name: RV_BUDGET_USD, Value: !Ref Budget }
+        - { Name: RV_DEMO, Value: !Ref Demo }
+      Tags: [{ Key: revenant:app, Value: revenant }]
+
+  MainBranch:
+    Type: AWS::Amplify::Branch
+    Properties:
+      AppId: !GetAtt App.AppId
+      BranchName: main
+      Framework: Next.js - SSR
+      Stage: PRODUCTION
+      EnableAutoBuild: true
+      Tags: [{ Key: revenant:app, Value: revenant }]
+
+  # ---------- budget ----------
+  MonthlyBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Sub rv-revenant-${AWS::Region}
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit: { Amount: !Ref Budget, Unit: USD }
+      NotificationsWithSubscribers:
+        - Notification: { NotificationType: ACTUAL, ComparisonOperator: GREATER_THAN, Threshold: 80, ThresholdType: PERCENTAGE }
+          Subscribers: [{ SubscriptionType: EMAIL, Address: !Ref AdminEmail }]
+        - Notification: { NotificationType: FORECASTED, ComparisonOperator: GREATER_THAN, Threshold: 100, ThresholdType: PERCENTAGE }
+          Subscribers: [{ SubscriptionType: EMAIL, Address: !Ref AdminEmail }]
+
+  # ---------- seed: CDK bootstrap, copy the source, start the first build ----------
+  # Amplify Gen 2 needs the account and region bootstrapped for CDK; pipeline-deploy does
+  # not do it, so the seed job runs `cdk bootstrap` (no-op when already bootstrapped).
+  SeedRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: codebuild.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: seed
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: [logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents]
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/rv-revenant-seed*
+              - Effect: Allow
+                Action: [codecommit:GitPush, codecommit:GitPull]
+                Resource: !GetAtt SourceRepository.Arn
+              - Effect: Allow
+                Action: [amplify:ListJobs, amplify:StartJob]
+                Resource: !Sub arn:${AWS::Partition}:amplify:${AWS::Region}:${AWS::AccountId}:apps/${App.AppId}/branches/main/jobs/*
+              - Sid: CdkBootstrap
+                Effect: Allow
+                Action: [cloudformation:CreateStack, cloudformation:UpdateStack, cloudformation:DescribeStacks, cloudformation:DescribeStackEvents, cloudformation:GetTemplate, cloudformation:CreateChangeSet, cloudformation:DescribeChangeSet, cloudformation:ExecuteChangeSet, cloudformation:DeleteChangeSet]
+                Resource: !Sub arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/CDKToolkit/*
+              - Effect: Allow
+                Action: [iam:CreateRole, iam:GetRole, iam:TagRole, iam:PutRolePolicy, iam:GetRolePolicy, iam:AttachRolePolicy, iam:DetachRolePolicy, iam:DeleteRolePolicy, iam:UpdateAssumeRolePolicy, iam:PassRole]
+                Resource: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-*
+              - Effect: Allow
+                Action: [s3:CreateBucket, s3:PutBucketPolicy, s3:GetBucketPolicy, s3:PutBucketVersioning, s3:PutEncryptionConfiguration, s3:PutBucketPublicAccessBlock, s3:PutLifecycleConfiguration, s3:GetBucketLocation, s3:PutBucketTagging]
+                Resource: !Sub arn:${AWS::Partition}:s3:::cdk-*
+              - Effect: Allow
+                Action: [ecr:CreateRepository, ecr:DescribeRepositories, ecr:SetRepositoryPolicy, ecr:PutLifecyclePolicy, ecr:PutImageTagMutability, ecr:PutImageScanningConfiguration, ecr:TagResource]
+                Resource: !Sub arn:${AWS::Partition}:ecr:${AWS::Region}:${AWS::AccountId}:repository/cdk-*
+              - Effect: Allow
+                Action: [ssm:PutParameter, ssm:GetParameter, ssm:GetParameters, ssm:AddTagsToResource]
+                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/cdk-bootstrap/*
+              - Effect: Allow
+                Action: sts:GetCallerIdentity
+                Resource: "*" # GetCallerIdentity has no resource; it reveals only the caller
+
+  Seed:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: rv-revenant-seed
+      Description: Copies Revenant from the public repository into CodeCommit and starts the Amplify build. Re-run to update Revenant.
+      ServiceRole: !GetAtt SeedRole.Arn
+      TimeoutInMinutes: 30
+      Artifacts: { Type: NO_ARTIFACTS }
+      Environment:
+        Type: ARM_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux-aarch64-standard:3.0
+        EnvironmentVariables:
+          - { Name: SOURCE_REPO, Value: !Ref SourceRepo }
+          - { Name: SOURCE_BRANCH, Value: !Ref SourceBranch }
+          - { Name: TARGET_REPO, Value: !GetAtt SourceRepository.CloneUrlHttp }
+          - { Name: APP_ID, Value: !GetAtt App.AppId }
+      Source:
+        Type: NO_SOURCE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            build:
+              commands:
+                - ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+                - npx -y aws-cdk@2 bootstrap "aws://$ACCOUNT/$AWS_REGION"
+                - git config --global credential.helper '!aws codecommit credential-helper $@'
+                - git config --global credential.UseHttpPath true
+                - git clone --branch "$SOURCE_BRANCH" --single-branch "$SOURCE_REPO" src
+                - cd src && git push "$TARGET_REPO" HEAD:refs/heads/main
+                # Amplify builds on push; start a job only if the push did not trigger one.
+                - sleep 45
+                - |
+                  if [ "$(aws amplify list-jobs --app-id "$APP_ID" --branch-name main --max-items 1 --query 'length(jobSummaries)' --output text)" = "0" ]; then
+                    aws amplify start-job --app-id "$APP_ID" --branch-name main --job-type RELEASE
+                  fi
+      Tags: [{ Key: revenant:app, Value: revenant }]
+
+  SeedStarterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: start-seed
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: codebuild:StartBuild
+                Resource: !GetAtt Seed.Arn
+
+  SeedStarter:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Starts the rv-revenant-seed build when the install stack is created or updated.
+      Runtime: python3.13
+      Handler: index.handler
+      Timeout: 60
+      Role: !GetAtt SeedStarterRole.Arn
+      Code:
+        ZipFile: |
+          import boto3, cfnresponse
+          def handler(event, context):
+              try:
+                  if event["RequestType"] in ("Create", "Update"):
+                      boto3.client("codebuild").start_build(projectName=event["ResourceProperties"]["Project"])
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+              except Exception as e:
+                  cfnresponse.send(event, context, cfnresponse.FAILED, {}, reason=str(e)[:200])
+
+  StartSeed:
+    Type: Custom::StartSeed
+    DependsOn: [MainBranch]
+    Properties:
+      ServiceToken: !GetAtt SeedStarter.Arn
+      Project: !Ref Seed
+      SourceBranch: !Ref SourceBranch # changing it re-runs the seed
+
+Outputs:
+  RevenantUrl:
+    Description: Open this after the first Amplify build finishes (about 15 minutes). Sign in with the admin email.
+    Value: !Sub https://main.${App.DefaultDomain}
+  AmplifyAppId:
+    Value: !GetAtt App.AppId
+  AmplifyConsole:
+    Value: !Sub https://${AWS::Region}.console.aws.amazon.com/amplify/apps/${App.AppId}/branches/main/deployments
+  UpdateCommand:
+    Description: Run this in CloudShell to update Revenant to the latest version.
+    Value: !Sub aws codebuild start-build --project-name ${Seed}

@@ -1,0 +1,69 @@
+/* Revenant theme tokens, ported from design/mockups/live.html.
+   <html data-mode="light|haunted" data-calm="on|off" data-snd="on|off">. Never follows the OS scheme.
+   Fonts come from next/font in app/layout.tsx as --font-inter, --font-mono, --font-serif, --font-type. */
+
+:root {
+  --r: 8px;
+  --body: var(--font-inter), Inter, system-ui, sans-serif;
+  --mono: var(--font-mono), "JetBrains Mono", ui-monospace, monospace;
+  --serif: var(--font-serif), "Cormorant Garamond", Georgia, serif;
+  --type: var(--font-type), "Special Elite", ui-monospace, monospace;
+  --head: var(--body); --headstyle: normal; --headw: 600; --track: -.01em; --capcase: none;
+  --blood: #b3121c;
+  color-scheme: light;
+}
+
+/* Light: plain, no effects. */
+[data-mode=light] {
+  --bg: #fbfbfa; --panel: #ffffff; --sunk: #f4f4f2; --fg: #141414; --muted: #6c6c68; --line: #e7e6e2;
+  --accent: #141414; --onaccent: #fff; --bad: #d4351c; --ok: #127a45; --warn: #9a6400; --ecg: #127a45;
+  --logo: var(--fg);
+}
+
+/* Haunted: bone, soot, one blood red. No purple, no orange. */
+[data-mode=haunted] {
+  --r: 2px; --head: var(--serif); --headstyle: italic; --headw: 700; --track: .01em; --capcase: uppercase;
+  --bg: #060607; --panel: #0c0b0b; --sunk: #050505; --fg: #e9e2d2; --muted: #8a8276; --line: #211d1a;
+  --accent: #b3121c; --onaccent: #f3ebdb; --bad: #ec3b45; --ok: #c9c1ad; --warn: #9c8a6a; --ecg: #d8d0bc;
+  --logo: var(--blood);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0 }
+html, body { height: 100% }
+body { background: var(--bg); color: var(--fg); font: 13px/1.45 var(--body); transition: background .6s, color .6s }
+a { color: inherit }
+.mono { font-family: var(--mono); font-size: 11.5px }
+.muted { color: var(--muted) }
+.h { font-family: var(--head); font-style: var(--headstyle); font-weight: var(--headw); letter-spacing: var(--track) }
+.label { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted) }
+[data-mode=haunted] .label { font: 400 11px var(--type); letter-spacing: .12em }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+
+/* one copy map: <Word k="..."> renders both words, CSS shows the one for the mode */
+[data-mode=light] .rv-h, [data-mode=haunted] .rv-l { display: none }
+
+/* shell */
+.rv-shell { display: grid; grid-template-rows: 52px 1fr; height: 100% }
+.rv-header { display: flex; align-items: center; gap: 14px; padding: 0 20px; border-bottom: 1px solid var(--line); position: relative; z-index: 3 }
+.rv-main { min-height: 0; position: relative; z-index: 2 }
+.rv-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; font: 700 15px var(--body); letter-spacing: -.02em }
+[data-mode=haunted] .rv-logo { font: italic 700 20px/1 var(--serif); letter-spacing: .02em }
+.rv-mark { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; background: var(--logo); color: #fff; flex: none }
+[data-mode=haunted] .rv-mark { border-radius: 4px }
+.rv-crumb { color: var(--muted) } .rv-crumb b { color: var(--fg); font-weight: 500 }
+.rv-sp { flex: 1 }
+
+/* switches */
+.seg { display: flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden }
+.seg button { all: unset; cursor: pointer; padding: 5px 10px; font-size: 11.5px; color: var(--muted) }
+.seg button[aria-pressed=true] { background: var(--fg); color: var(--bg) }
+[data-mode=haunted] .seg.mode button[aria-pressed=true] { background: var(--accent); color: var(--onaccent) }
+.seg.calm, .seg.snd { display: none }
+[data-mode=haunted] .seg.calm { display: flex }
+[data-mode=haunted][data-calm=off] .seg.snd { display: flex }
+
+/* Calm: same look and words; lib/haunt draws no effects. Reduced motion: nothing moves. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important }
+}
