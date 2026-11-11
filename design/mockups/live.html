@@ -309,13 +309,14 @@ async function run() {
   log('<span class="muted">CREATE_IN_PROGRESS  Db  AWS::RDS::DBCluster</span>');
   await wait(1500);
 
-  // death
-  await window.haunt.scare(); window.haunt.thunder(); window.haunt.bleed();
+  // death: it dies at once; the scare (silence, delay, strike, silhouette, moved) runs before the failure line
   const died = performance.now();
-  state = "dead"; ecgState = "dead"; renderState("die");
-  document.body.classList.remove("dying"); void document.body.offsetWidth; document.body.classList.add("dying");
+  state = "dead"; ecgState = "dead"; renderState(); target = "#frame";
   $("#frame").classList.add("dead"); $("#dot").style.background = "var(--bad)";
-  log('<span class="bad">CREATE_FAILED  Db: EngineVersion 13.4 does not support MinCapacity 0</span>');
+  await window.haunt.die();
+  renderState("die"); window.haunt.bleed();
+  document.body.classList.remove("dying"); void document.body.offsetWidth; document.body.classList.add("dying");
+  log('<span class="bad">CREATE_FAILED  Db: EngineVersion 13.4 does not support MinCapacity 0</span>'); // breath plays here
   ev("bad", C().evFail, "12:41 · CREATE_FAILED Db");
   await wait(2600); document.body.classList.remove("dying");
 
@@ -331,7 +332,7 @@ async function run() {
   await wait(1200);
 
   // risen
-  window.haunt.clot(); window.haunt.thunder();
+  window.haunt.rise();
   state = "alive"; ecgState = "alive"; renderState("rise"); target = "#state";
   $("#vitals").classList.remove("alive"); void $("#vitals").offsetWidth; $("#vitals").classList.add("alive");
   $("#frame").classList.remove("dead"); $("#dot").style.background = "var(--ok)";

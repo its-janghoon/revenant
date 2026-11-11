@@ -1,4 +1,4 @@
-// Haunted effects layer: dirt, rain, thunder, blood drips, a big strike on death, and sound.
+// Haunted effects layer: dirt, rain, thunder, blood drips, the death scare (Requirement 12.11), and sound.
 // Everything here does nothing in Light or in Haunted Calm.
 (() => {
   const root = document.documentElement;
@@ -19,7 +19,8 @@
     <svg id="dirt" preserveAspectRatio="none"><rect width="100%" height="100%" filter="url(#stainf)"/><rect width="100%" height="100%" filter="url(#dirtf)"/></svg>
     <canvas id="rain"></canvas>
     <div id="drips"></div>
-    <div id="thunder"><svg id="bolt" viewBox="0 0 100 100" preserveAspectRatio="none"><path/><path class="br"/><path class="br"/></svg></div>`);
+    <div id="thunder"><svg id="bolt" viewBox="0 0 100 100" preserveAspectRatio="none"><path/><path class="br"/><path class="br"/></svg></div>
+    <svg id="ghost" viewBox="0 0 60 160" preserveAspectRatio="xMidYMax meet"><circle cx="30" cy="15" r="10.5" fill="#050404"/><path fill="#050404" d="M30 27c-9 0-15 3-18 9-3 7-4 18-5 30l-3 44 7 1 5-38 2 85h10l2-48 2 48h10l2-85 5 38 7-1-3-44c-1-12-2-23-5-30-3-6-9-9-18-9z"/></svg>`);
 
   // sound switch sits next to Full / Calm
   const calmSeg = $("#calmseg");
@@ -27,8 +28,8 @@
 
   const css = document.createElement("style");
   css.textContent = `
-  #dirt,#rain,#drips,#thunder{position:fixed;inset:0;pointer-events:none;display:none}
-  [data-mode=spooky][data-calm=off] #dirt,[data-mode=spooky][data-calm=off] #rain,[data-mode=spooky][data-calm=off] #drips,[data-mode=spooky][data-calm=off] #thunder{display:block}
+  #dirt,#rain,#drips,#thunder,#ghost{position:fixed;inset:0;pointer-events:none;display:none}
+  [data-mode=spooky][data-calm=off] #dirt,[data-mode=spooky][data-calm=off] #rain,[data-mode=spooky][data-calm=off] #drips,[data-mode=spooky][data-calm=off] #thunder,[data-mode=spooky][data-calm=off] #ghost{display:block}
   .seg.snd{display:none} [data-mode=spooky][data-calm=off] .seg.snd{display:flex}
   #dirt{width:100%;height:100%;z-index:9;opacity:.42;-webkit-mask-image:radial-gradient(ellipse 75% 70% at 50% 45%,transparent 50%,#000 100%);mask-image:radial-gradient(ellipse 75% 70% at 50% 45%,transparent 50%,#000 100%)}
   #rain{z-index:11;width:100%;height:100%;opacity:.55}
@@ -44,6 +45,13 @@
   #thunder.big{animation:big 1.5s ease-out;mix-blend-mode:normal}
   @keyframes strike{0%{opacity:0}4%{opacity:.75}9%{opacity:.05}14%{opacity:.55}30%{opacity:.08}100%{opacity:0}}
   @keyframes big{0%{opacity:1;background:#fff}6%{opacity:1;background:#fff}7%{opacity:1;background:#000}20%{opacity:1;background:#000}22%{opacity:.9;background:#fff}26%{opacity:0}100%{opacity:0}}
+  /* silhouette: only in the two white frames of the close strike, gone once the flashlight reaches it */
+  #ghost{inset:auto;left:var(--gx,80%);top:var(--gy,60%);width:10vh;height:28vh;z-index:14;opacity:0;transform:translate(-50%,-50%);filter:blur(1.5px)}
+  #ghost.show{animation:ghost 1.5s forwards}
+  #ghost.gone{visibility:hidden}
+  @keyframes ghost{0%,6%{opacity:.92}6.5%,21.5%{opacity:0}22%,25.5%{opacity:.85}26%,100%{opacity:0}}
+  /* moved: after the strike the tombstone stands a little closer */
+  .tomb.moved .card{transform:translateY(16px) scale(1.16)}
   #bolt{position:absolute;inset:0;width:100%;height:100%}
   #bolt path{fill:none;stroke:#fff;stroke-width:.35;filter:drop-shadow(0 0 1px #fff)}
   #bolt path.br{stroke-width:.18;opacity:.8}
@@ -52,12 +60,13 @@
   #dark{transition:opacity .9s}
   body.quake main{animation:quake .7s cubic-bezier(.36,.07,.19,.97) both!important}
   @keyframes quake{10%,90%{transform:translate(-2px,1px)}20%,80%{transform:translate(6px,-3px)}30%,50%,70%{transform:translate(-12px,4px) scale(1.01)}40%,60%{transform:translate(12px,-4px)}}
-  @media (prefers-reduced-motion:reduce){#thunder,#rain,#drips{display:none!important}}
+  @media (prefers-reduced-motion:reduce){#thunder,#rain,#drips,#ghost{display:none!important}}
   `;
   document.head.append(css);
 
   /* ---------------- sound, made in the browser (no files, no licences) ---------------- */
-  let ac = null, rainGain = null, master = null;
+  let ac = null, rainGain = null, master = null, hushUntil = 0;
+  const quiet = () => performance.now() < hushUntil;
   const soundOn = () => on() && root.dataset.snd === "on";
   root.dataset.snd = "off";
   function noiseBuffer(sec, brown) {
@@ -78,12 +87,14 @@
     const hp = ac.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 900;
     const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 7000;
     rainGain = ac.createGain(); rainGain.gain.value = 0;
-    const gust = ac.createOscillator(), gustAmt = ac.createGain(); gust.frequency.value = .09; gustAmt.gain.value = .05;
-    gust.connect(gustAmt).connect(rainGain.gain); gust.start();
-    src.connect(hp).connect(lp).connect(rainGain).connect(master); src.start();
+    // gusts modulate a separate gain, so muted rain stays at zero
+    const gustG = ac.createGain(); gustG.gain.value = 1;
+    const gust = ac.createOscillator(), gustAmt = ac.createGain(); gust.frequency.value = .09; gustAmt.gain.value = .35;
+    gust.connect(gustAmt).connect(gustG.gain); gust.start();
+    src.connect(hp).connect(lp).connect(gustG).connect(rainGain).connect(master); src.start();
     // droplets on the roof
     (function drop() {
-      if (soundOn()) {
+      if (soundOn() && !quiet()) {
         const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
         o.frequency.setValueAtTime(1800 + Math.random() * 2600, t); o.frequency.exponentialRampToValueAtTime(400, t + .05);
         g.gain.setValueAtTime(.025 * Math.random(), t); g.gain.exponentialRampToValueAtTime(.0001, t + .06);
@@ -92,10 +103,22 @@
       setTimeout(drop, 20 + Math.random() * 90);
     })();
   }
-  function setRain() { if (rainGain) rainGain.gain.setTargetAtTime(soundOn() ? .13 : 0, ac.currentTime, .4); }
+  function setRain() { if (rainGain) { const q = quiet(); rainGain.gain.setTargetAtTime(soundOn() && !q ? .13 : 0, ac.currentTime, q ? .03 : .4); } }
+  // silence: the rain cuts to zero for about 1 s
+  function hush(ms) { hushUntil = performance.now() + ms; setRain(); setTimeout(setRain, ms + 10); }
+  // a very quiet breath: in, a short hold, out
+  function breathAt(t) {
+    const s = ac.createBufferSource(); s.buffer = noiseBuffer(3, false);
+    const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = .8;
+    bp.frequency.setValueAtTime(700, t); bp.frequency.linearRampToValueAtTime(1100, t + .9); bp.frequency.linearRampToValueAtTime(600, t + 2.8);
+    const g = ac.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.018, t + .9); g.gain.linearRampToValueAtTime(.003, t + 1.3);
+    g.gain.linearRampToValueAtTime(.024, t + 1.7); g.gain.linearRampToValueAtTime(0, t + 2.9);
+    s.connect(bp).connect(g).connect(master); s.start(t); s.stop(t + 3);
+  }
+  function breath() { if (ac && soundOn()) breathAt(ac.currentTime); (window.__ev = window.__ev || []).push({ t: performance.now(), breath: true }); }
   function boom(big, at) {
     if (!ac || (at === undefined && !soundOn())) return;
-    const t = at !== undefined ? at : ac.currentTime + (big ? 0 : .25 + Math.random() * .9); // light first, sound after
+    const t = at !== undefined ? at : ac.currentTime + (big ? 0 : .3 + Math.random() * .7); // light first, sound 0.3-1 s after
     // crack
     const c = ac.createBufferSource(); c.buffer = noiseBuffer(.4, false);
     const cf = ac.createBiquadFilter(); cf.type = "highpass"; cf.frequency.value = 1200;
@@ -169,15 +192,35 @@
   }
   function clot() { $("#drips").classList.add("gone"); }
 
-  /* ---------------- the scare is a strike right on top of you: white, black, white, a quake and a crack ---------------- */
-  function scare() {
-    return new Promise((res) => {
-      if (!on()) return res();
-      window.__scare = true;
-      thunder(true);
-      setTimeout(res, 380);
-    });
+  /* ---------------- the death scare, in order (Requirement 12.11) ----------------
+     1 silence  2 delay 2-4 s  3 strike: white, black, white, quake, close crack
+     4 silhouette in the white frames  5 tombstone moved closer  6 breath as the failure line appears.
+     Resolves when the caller should print the failure line. Off: resolves at once. */
+  let ghostAt = null;
+  function haunt() {
+    const g = $("#ghost"), d = $("#dark"), fx = parseFloat(d.style.getPropertyValue("--x")) || innerWidth * .7;
+    const x = innerWidth * (fx < innerWidth / 2 ? .66 + Math.random() * .22 : .1 + Math.random() * .22), y = innerHeight * (.5 + Math.random() * .15);
+    g.style.setProperty("--gx", x + "px"); g.style.setProperty("--gy", y + "px");
+    g.classList.remove("show", "gone"); void g.getBoundingClientRect(); g.classList.add("show");
+    ghostAt = { x, y }; setTimeout(() => { ghostAt = null; g.classList.remove("show"); }, 1500);
   }
+  (function look() { // the flashlight finds it, it is gone
+    if (ghostAt) { const d = $("#dark"), x = parseFloat(d.style.getPropertyValue("--x")), y = parseFloat(d.style.getPropertyValue("--y")); if (Math.hypot(x - ghostAt.x, y - ghostAt.y) < 180) $("#ghost").classList.add("gone"); }
+    requestAnimationFrame(look);
+  })();
+  const moved = (v) => document.querySelectorAll(".tomb").forEach((t) => t.classList.toggle("moved", v));
+  async function die() {
+    if (!on()) return;
+    hush(1000);                                                   // 1 silence
+    await new Promise((r) => setTimeout(r, 2000 + Math.random() * 2000)); // 2 delay
+    if (!on()) return;
+    window.__scare = true;
+    haunt(); thunder(true);                                       // 3 strike + 4 silhouette
+    setTimeout(() => moved(true), 105);                           // 5 moved, during the black frame
+    await new Promise((r) => setTimeout(r, 420));
+    breath();                                                     // 6 breath
+  }
+  function rise() { clot(); moved(false); thunder(); }
 
   /* render the same sounds offline, for the demo video (events: [{at, big}] in seconds) */
   async function bake(events, dur) {
@@ -194,7 +237,7 @@
       og.gain.setValueAtTime(.025 * Math.random() + .0001, t); og.gain.exponentialRampToValueAtTime(.0001, t + .06);
       o.connect(og).connect(master); o.start(t); o.stop(t + .07);
     }
-    for (const e of events) boom(e.big, Math.max(0, e.at + (e.big ? 0 : .5)));
+    for (const e of events) e.breath ? breathAt(Math.max(0, e.at)) : boom(e.big, Math.max(0, e.at + (e.big ? 0 : .5)));
     const buf = await off.startRendering();
     [ac, master] = keep;
     const d = buf.getChannelData(0), out = new DataView(new ArrayBuffer(44 + d.length * 2));
@@ -206,5 +249,5 @@
     return btoa(bin);
   }
 
-  window.haunt = { thunder, bleed, clot, scare, bake };
+  window.haunt = { thunder, bleed, clot, die, rise, bake };
 })();
