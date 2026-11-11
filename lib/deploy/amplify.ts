@@ -9,9 +9,10 @@ import {
 import { eq } from "drizzle-orm";
 import type { Project } from "../contracts";
 import { db, schema } from "../db/client";
+import { envOf } from "../console/name";
 import { amplify, region } from "./aws";
 import { deployEnv } from "./env";
-import { getHooks } from "./hooks";
+import { getHooks, sqlFor } from "./hooks";
 
 export const PROD = "main";
 export const previewBranch = (n: number) => `preview/${n}`;
@@ -19,8 +20,8 @@ export const previewNumber = (branch: string) => {
   const m = /^preview\/(\d+)$/.exec(branch);
   return m ? Number(m[1]) : null;
 };
-/** rv-<app>-<prod|pv<n>|dev> environment of a branch, as blocks/name.ts computes it. */
-export const envOf = (branch: string) => (branch === PROD ? "prod" : previewNumber(branch) ? `pv${previewNumber(branch)}` : "dev");
+/** rv-<app>-<prod|pv<n>|dev> environment of a branch, as blocks/name.ts computes it (one copy, in lib/console). */
+export { envOf };
 
 const notFound = (e: unknown) => e instanceof NotFoundException || (e as Error).name === "NotFoundException";
 
@@ -35,6 +36,8 @@ async function vars(project: Project, appId?: string): Promise<Record<string, st
   const compute = (await h.computeRole?.(project)) ?? deployEnv.RV_APPS_COMPUTE_ROLE_ARN;
   if (compute) out.RV_COMPUTE_ROLE_ARN = compute;
   if (appId) out.RV_AMPLIFY_APP_ID = appId;
+  const sql = await sqlFor(project);
+  if (sql) Object.assign(out, await sql.appEnv(project));
   return out;
 }
 

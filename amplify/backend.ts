@@ -11,6 +11,7 @@ import { FilterPattern, LogGroup, RetentionDays, SubscriptionFilter } from "aws-
 import { LambdaDestination } from "aws-cdk-lib/aws-logs-destinations";
 import { AuroraPostgresEngineVersion, ClusterInstance, Credentials, DatabaseCluster, DatabaseClusterEngine } from "aws-cdk-lib/aws-rds";
 import { BlockPublicAccess, Bucket, BucketEncryption } from "aws-cdk-lib/aws-s3";
+import { Secret } from "aws-cdk-lib/aws-secretsmanager";
 import { CfnApplication } from "aws-cdk-lib/aws-servicecatalogappregistry";
 import { AwsCustomResource, AwsCustomResourcePolicy, PhysicalResourceId } from "aws-cdk-lib/custom-resources";
 import { auth } from "./auth/resource";
@@ -234,6 +235,9 @@ const runner = new CfnProject(runnerStack, "Runner", {
 });
 
 // ---------- repair: EventBridge failure rules (lib/repair/construct.ts, lane L4) ----------
+const kiroSecretArn = process.env.RV_KIRO_SECRET_ARN?.startsWith("arn:")
+  ? process.env.RV_KIRO_SECRET_ARN
+  : Secret.fromSecretNameV2(runnerStack, "KiroSecret", "rv-revenant-kiro").secretArn;
 {
   const fn = backend.repair.resources.lambda as import("aws-cdk-lib/aws-lambda").Function;
   fn.addEnvironment("RV_DB_CLUSTER_ARN", cluster.clusterArn);
@@ -242,8 +246,10 @@ const runner = new CfnProject(runnerStack, "Runner", {
   fn.addEnvironment("RV_RUNNER_PROJECT", runner.ref);
   fn.addEnvironment("RV_PROMPT_BUCKET", prompts.bucketName);
   fn.addEnvironment("RV_TIMELINE_FUNCTION", backend.timeline.resources.lambda.functionName);
-  // RV_KIRO_SECRET_ARN: the company Kiro key from infra/install.yaml (passed as a backend secret at integration).
-  fn.addEnvironment("RV_KIRO_SECRET_ARN", process.env.RV_KIRO_SECRET_ARN ?? "arn:aws:secretsmanager:unset");
+  // The company Kiro key (infra/install.yaml KiroSecret, output KiroSecretArn). The install sets
+  // RV_KIRO_SECRET_ARN on the Amplify app, so the backend build sees it; a sandbox without it
+  // uses the install's fixed secret name (a partial ARN, which Secrets Manager accepts).
+  fn.addEnvironment("RV_KIRO_SECRET_ARN", kiroSecretArn);
 }
 new RepairRules(backend.createStack("repair"), "Repair", {
   handler: backend.repair.resources.lambda,

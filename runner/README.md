@@ -9,17 +9,18 @@ checks as scripts (`check.sh`: install, lint, synth, cfn-lint, guard), then push
 
 | Name | Required | Meaning |
 |---|---|---|
-| `MODE` | yes | `spec`, `build`, `change` or `repair` |
+| `MODE` | yes | `spec`, `build`, `change`, `repair`, or `check` (checks only on `COMMIT`, no Kiro, no push: Code tab commits) |
 | `APP` | yes | app name, lowercase kebab-case (`fineprint`) |
 | `REPO` | yes | CodeCommit repository name |
 | `BRANCH` | yes | branch to push (`preview/3`, `revenant/fix-2`); never `main` |
+| `COMMIT` | `check` only | full commit id on `BRANCH` to check |
 | `BASE_BRANCH` | no | branch to start a new `BRANCH` from (default `main`) |
 | `AWS_REGION` | yes | set by CodeBuild |
 | `RV_PROJECT_ID` | yes | Revenant project id; every log line carries it |
 | `RUN_ID` | no | Revenant run id (`runs.id`); default: the CodeBuild build id |
 | `PROMPT_BUCKET`, `PROMPT_S3_KEY` | yes, except `build` | the request, change or repair context as plain text, under `runs/<app>/` |
 | `ATTACH_S3_PREFIX` | no | attachments under `runs/<app>/`, copied to `.rv/attachments/` (not committed) |
-| `KIRO_SECRET_ARN` | yes | Secrets Manager ARN of the Kiro key: the company key or `rv/kiro/<user>` |
+| `KIRO_SECRET_ARN` | yes, except `check` | Secrets Manager ARN of the Kiro key: the company key or `rv/kiro/<user>` |
 | `KIRO_PAYER` | no | `company` or `own`, recorded on `credits` lines |
 | `MODEL` | no | Kiro model id; default `auto` |
 | `TIME_LIMIT_MIN` | no | whole run, default 45. The agent stops early enough to leave time for checks |
@@ -31,6 +32,10 @@ The agent and the checks run without AWS credentials and cannot push. Only the r
 itself reads the secret and the prompt and pushes.
 
 ## Branches
+
+Every lane uses the same names: `preview/<n>` for changes (deployed by Revenant, auto build off),
+`revenant/fix-<n>` for repairs (merged into the failed branch, never deployed), `rv/run-<RUN_ID>`
+hold branches (never deployed), `main` only through publish.
 
 - Every new commit is pushed to `rv/run-<RUN_ID>` at once, so a stopped run keeps its commits.
   Amplify must not auto-build `rv/*`.

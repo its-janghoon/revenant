@@ -131,15 +131,15 @@ Resources:
                 Resource: !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:rv-revenant-*-timeline
               - Sid: AppRepos
                 Effect: Allow
-                Action: [codecommit:CreateRepository, codecommit:GetRepository, codecommit:GetBranch, codecommit:GetFile, codecommit:GetFolder, codecommit:CreateCommit, codecommit:CreateBranch, codecommit:GetDifferences, codecommit:MergeBranchesByFastForward, codecommit:MergeBranchesBySquash, codecommit:TagResource]
+                Action: [codecommit:CreateRepository, codecommit:GetRepository, codecommit:GetBranch, codecommit:GetFile, codecommit:GetFolder, codecommit:CreateCommit, codecommit:CreateBranch, codecommit:GetDifferences, codecommit:MergeBranchesByFastForward, codecommit:MergeBranchesBySquash, codecommit:TagResource, codecommit:GetCommit, codecommit:GetMergeOptions, codecommit:DeleteRepository]
                 Resource: !Sub arn:${AWS::Partition}:codecommit:${AWS::Region}:${AWS::AccountId}:rv-*
               - Sid: Runs
                 Effect: Allow
-                Action: [codebuild:StartBuild, codebuild:StopBuild, codebuild:BatchGetBuilds]
+                Action: [codebuild:StartBuild, codebuild:StopBuild, codebuild:BatchGetBuilds, codebuild:ListBuildsForProject]
                 Resource: !Sub arn:${AWS::Partition}:codebuild:${AWS::Region}:${AWS::AccountId}:project/rv-*
               - Sid: CostRead
                 Effect: Allow
-                Action: [ce:GetCostAndUsage, ce:GetCostForecast]
+                Action: [ce:GetCostAndUsage, ce:GetCostForecast, ce:UpdateCostAllocationTagsStatus]
                 Resource: "*" # Cost Explorer has no resource-level permissions
                 Condition:
                   StringEquals: { aws:RequestedRegion: us-east-1 }
@@ -163,12 +163,12 @@ Resources:
                   "Null": { aws:RequestTag/revenant:project: "false" }
               - Sid: Apps
                 Effect: Allow
-                Action: [amplify:GetApp, amplify:UpdateApp, amplify:DeleteApp, amplify:CreateBranch, amplify:GetBranch, amplify:UpdateBranch, amplify:DeleteBranch, amplify:ListBranches, amplify:StartJob, amplify:StopJob, amplify:GetJob, amplify:ListJobs, amplify:CreateDomainAssociation, amplify:GetDomainAssociation, amplify:UpdateDomainAssociation, amplify:DeleteDomainAssociation, amplify:TagResource, amplify:ListTagsForResource]
+                Action: [amplify:GetApp, amplify:UpdateApp, amplify:DeleteApp, amplify:CreateBranch, amplify:GetBranch, amplify:UpdateBranch, amplify:DeleteBranch, amplify:ListBranches, amplify:StartJob, amplify:StopJob, amplify:GetJob, amplify:ListJobs, amplify:CreateDomainAssociation, amplify:GetDomainAssociation, amplify:ListDomainAssociations, amplify:UpdateDomainAssociation, amplify:DeleteDomainAssociation, amplify:TagResource, amplify:ListTagsForResource]
                 Resource: !Sub arn:${AWS::Partition}:amplify:${AWS::Region}:${AWS::AccountId}:apps/*
               - Sid: AppsPassRole
                 Effect: Allow
                 Action: iam:PassRole
-                Resource: !GetAtt AppsServiceRole.Arn
+                Resource: [!GetAtt AppsServiceRole.Arn, !GetAtt AppsComputeRole.Arn]
                 Condition:
                   StringEquals: { iam:PassedToService: amplify.amazonaws.com }
               # Per-app runner roles rv-<app>-runner (runner/role.ts): only with the runner
@@ -214,7 +214,7 @@ Resources:
                   - !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/amplify-*
               - Sid: StacksRead
                 Effect: Allow
-                Action: [cloudformation:DescribeStacks, cloudformation:DescribeStackEvents]
+                Action: [cloudformation:DescribeStacks, cloudformation:DescribeStackEvents, cloudformation:GetTemplate, cloudformation:ListStackResources, cloudformation:DeleteStack]
                 Resource: !Sub arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/amplify-*
               # Health-check failures and repair rules (lane L4).
               - Sid: Events
@@ -222,7 +222,46 @@ Resources:
                 Action: events:PutEvents
                 Resource: !Sub arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:event-bus/default
                 Condition:
-                  StringEquals: { events:source: revenant }
+                  StringEquals: { events:source: revenant.deploy } # lib/repair/events.ts HEALTH_SOURCE
+              # SQL apps (lib/data): Revenant owns each app's rv-<app>-<prod|dev>-db stacks, runs
+              # admin SQL on those clusters, snapshots prod before a publish, serves pg_dump files.
+              - Sid: SqlStacks
+                Effect: Allow
+                Action: [cloudformation:CreateStack, cloudformation:UpdateStack, cloudformation:DescribeStacks]
+                Resource: !Sub arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/rv-*-db/*
+              - Sid: SqlStackRole
+                Effect: Allow
+                Action: iam:PassRole
+                Resource: !GetAtt DbStackRole.Arn
+                Condition:
+                  StringEquals: { iam:PassedToService: cloudformation.amazonaws.com }
+              - Sid: SqlData
+                Effect: Allow
+                Action: [rds-data:ExecuteStatement, rds-data:BatchExecuteStatement]
+                Resource: !Sub arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:rv-*
+              - Sid: SqlSecrets
+                Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:rv-*-db-*
+              - Sid: SqlSnapshots
+                Effect: Allow
+                Action: [rds:CreateDBClusterSnapshot, rds:DescribeDBClusterSnapshots, rds:DescribeDBClusters, rds:AddTagsToResource]
+                Resource:
+                  - !Sub arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:rv-*
+                  - !Sub arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster-snapshot:rv-*
+              - Sid: SqlDumps
+                Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub arn:${AWS::Partition}:s3:::rv-*-db-dumpbucket*/dumps/*
+              # Record counts of the generated apps' Amplify Data tables (publish plan, Data tab).
+              - Sid: AppTables
+                Effect: Allow
+                Action: dynamodb:Scan
+                Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/*
+              - Sid: AppTableNames
+                Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/rv/*
               - Sid: EventRules
                 Effect: Allow
                 Action: [events:DescribeRule, events:EnableRule, events:DisableRule]
@@ -279,6 +318,108 @@ Resources:
                   - !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:rv-revenant-*
                   - !GetAtt SourceRepository.Arn
 
+  # SSR compute role of every generated app (Amplify Hosting), RV_APPS_COMPUTE_ROLE_ARN.
+  # It starts with no permissions; blocks/ai.ts and blocks/db add the app's own grants from
+  # its backend. The boundary is the most any generated app's server can ever do, and never
+  # reaches Revenant's own database, secrets or source.
+  AppsComputeBoundary:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub rv-apps-compute-boundary-${AWS::Region}
+      Description: Permissions boundary of the generated apps' SSR compute role
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream]
+            Resource: "*" # blocks/ai.ts lists the model ARNs on the role itself
+          - Effect: Allow
+            Action: [rds-data:ExecuteStatement, rds-data:BatchExecuteStatement, rds-data:BeginTransaction, rds-data:CommitTransaction, rds-data:RollbackTransaction]
+            Resource: !Sub arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:rv-*
+          - Effect: Allow
+            Action: secretsmanager:GetSecretValue
+            Resource: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:rv-*-db-*
+          - Effect: Allow
+            Action: [dynamodb:GetItem, dynamodb:Query, dynamodb:Scan, dynamodb:PutItem, dynamodb:UpdateItem, dynamodb:DeleteItem, dynamodb:BatchGetItem, dynamodb:BatchWriteItem]
+            Resource: "*"
+          - Effect: Allow
+            Action: [ssm:GetParameter, ssm:GetParameters]
+            Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/amplify/*
+          - Effect: Deny
+            Action: ["rds-data:*", "secretsmanager:*", "codecommit:*"]
+            Resource:
+              - !Sub arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:rv-revenant-*
+              - !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:rv-revenant-*
+              - !GetAtt SourceRepository.Arn
+
+  AppsComputeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub rv-apps-compute-${AWS::Region}
+      Description: SSR compute role of the apps Revenant builds
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: amplify.amazonaws.com }
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals: { aws:SourceAccount: !Ref AWS::AccountId }
+      PermissionsBoundary: !Ref AppsComputeBoundary
+      Tags: [{ Key: revenant:app, Value: revenant }]
+
+  # CloudFormation role for the SQL apps' rv-<app>-<prod|dev>-db stacks (blocks/db/cluster.ts),
+  # RV_DB_STACK_ROLE_ARN: VPC, Aurora, its secret, the pg_dump CodeBuild project and bucket.
+  DbStackRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub rv-apps-db-stack-${AWS::Region}
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: cloudformation.amazonaws.com }
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals: { aws:SourceAccount: !Ref AWS::AccountId }
+      Policies:
+        - PolicyName: db-stacks
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: ["ec2:*Vpc*", "ec2:*Subnet*", "ec2:*RouteTable*", "ec2:*SecurityGroup*", "ec2:*VpcEndpoint*", ec2:DescribeAvailabilityZones, ec2:DescribePrefixLists, ec2:CreateTags, ec2:DeleteTags, ec2:Describe*]
+                Resource: "*" # EC2 creates need "*" before the resource exists
+              - Effect: Allow
+                Action: ["rds:*"]
+                Resource:
+                  - !Sub arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:rv-*
+                  - !Sub arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:db:*
+                  - !Sub arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:subgrp:*
+                  - !Sub arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster-pg:*
+                  - !Sub arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:pg:*
+              - Effect: Deny
+                Action: ["rds:*"]
+                Resource: !Sub arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:rv-revenant-*
+              - Effect: Allow
+                Action: ["secretsmanager:*"]
+                Resource: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:rv-*-db-*
+              - Effect: Allow
+                Action: [secretsmanager:GetRandomPassword]
+                Resource: "*"
+              - Effect: Allow
+                Action: [iam:CreateRole, iam:DeleteRole, iam:GetRole, iam:PutRolePolicy, iam:DeleteRolePolicy, iam:GetRolePolicy, iam:TagRole, iam:UntagRole, iam:PassRole]
+                Resource: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/rv-*-db-*
+              - Effect: Allow
+                Action: [iam:CreateServiceLinkedRole]
+                Resource: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/rds.amazonaws.com/*
+              - Effect: Allow
+                Action: ["codebuild:*"]
+                Resource: !Sub arn:${AWS::Partition}:codebuild:${AWS::Region}:${AWS::AccountId}:project/rv-*
+              - Effect: Allow
+                Action: ["s3:*"]
+                Resource: [!Sub "arn:${AWS::Partition}:s3:::rv-*-db-*", !Sub "arn:${AWS::Partition}:s3:::rv-*-db-*/*"]
+
   # ---------- the Revenant app ----------
   App:
     Type: AWS::Amplify::App
@@ -297,6 +438,8 @@ Resources:
         - { Name: RV_BUDGET_USD, Value: !Ref Budget }
         - { Name: RV_DEMO, Value: !Ref Demo }
         - { Name: RV_APPS_SERVICE_ROLE_ARN, Value: !GetAtt AppsServiceRole.Arn }
+        - { Name: RV_APPS_COMPUTE_ROLE_ARN, Value: !GetAtt AppsComputeRole.Arn }
+        - { Name: RV_DB_STACK_ROLE_ARN, Value: !GetAtt DbStackRole.Arn }
       Tags: [{ Key: revenant:app, Value: revenant }]
 
   MainBranch:
@@ -461,6 +604,12 @@ Outputs:
     Value: !Sub https://main.${App.DefaultDomain}
   AmplifyAppId:
     Value: !GetAtt App.AppId
+  KiroSecretArn:
+    Description: Company Kiro key. The Amplify build passes it to the repair function as RV_KIRO_SECRET_ARN.
+    Value: !Ref KiroSecret
+  AppsComputeRoleArn:
+    Description: SSR compute role of the generated apps (RV_APPS_COMPUTE_ROLE_ARN).
+    Value: !GetAtt AppsComputeRole.Arn
   AmplifyConsole:
     Value: !Sub https://${AWS::Region}.console.aws.amazon.com/amplify/apps/${App.AppId}/branches/main/deployments
   UpdateCommand:

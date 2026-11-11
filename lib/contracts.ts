@@ -217,7 +217,8 @@ export function lineToEvent(line: RunnerLine): TimelineEvent {
 
 export const ROUTES = {
   health: { path: "/api/health", methods: ["GET"], owner: "W0" },
-  me: { path: "/api/me", methods: ["GET"], owner: "L5" },
+  me: { path: "/api/me", methods: ["GET", "POST"], owner: "L5" }, // POST marks onboarding done
+  uploads: { path: "/api/uploads", methods: ["POST"], owner: "L5" }, // attachments before a run
 
   projects: { path: "/api/projects", methods: ["GET", "POST"], owner: "L5" },
   project: { path: "/api/projects/:id", methods: ["GET", "DELETE"], owner: "L5" },

@@ -61,7 +61,7 @@ test("a new required field needs a backfill in the same change", () => {
     head[name]!.fields.z_new = { kind, required: true };
     const without = modelFindings(diffSchemas(base, head, new Set()));
     assert.ok(without.some((x) => x.rule === "data.required" && x.resource === `${name}.z_new`));
-    const fill = backfillKeys([`amplify/backfill/${name}.z_new.ts`]);
+    const fill = backfillKeys([`amplify/data/backfill/${name}.z_new.ts`]);
     const withFill = modelFindings(diffSchemas(base, head, fill));
     assert.ok(!withFill.some((x) => x.level === "error"));
     head[name]!.fields.z_new = { kind, required: false };

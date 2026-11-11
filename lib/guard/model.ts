@@ -3,7 +3,7 @@
 //   new required field on an existing model,
 //   or an optional field made required         -> error unless a backfill is added in the same change
 //   field or model removed (a rename is one)   -> approval at publish, with the number of records
-// A backfill is the file amplify/backfill/<Model>.<field>.ts, added in the change.
+// A backfill is the file amplify/data/backfill/<Model>.<field>.ts, added in the change.
 // No TypeScript compiler here (the runner image has no node_modules): a small scanner that
 // understands strings, comments and brackets reads the `a.schema({...})` literal.
 import type { Finding } from "./types";
@@ -12,7 +12,7 @@ export interface Field { kind: string; required: boolean }
 export interface Model { identifier: string[]; fields: Record<string, Field> }
 export type Schema = Record<string, Model>;
 
-export const BACKFILL_DIR = "amplify/backfill";
+export const BACKFILL_DIR = "amplify/data/backfill";
 export const backfillPath = (model: string, field: string) => `${BACKFILL_DIR}/${model}.${field}.ts`;
 
 /** Fields that store nothing in the model's own table. */
@@ -293,11 +293,11 @@ export function modelFindings(changes: ModelChange[]): Finding[] {
   return out;
 }
 
-/** "Model.field" for each backfill file path, e.g. amplify/backfill/Note.title.ts -> Note.title. */
+/** "Model.field" for each backfill file path, e.g. amplify/data/backfill/Note.title.ts -> Note.title. */
 export function backfillKeys(paths: string[]): Set<string> {
   const out = new Set<string>();
   for (const p of paths) {
-    const m = /^amplify\/backfill\/([A-Za-z_$][\w$]*)\.([A-Za-z_$][\w$]*)\.ts$/.exec(p.replace(/\\/g, "/"));
+    const m = /^amplify\/data\/backfill\/([A-Za-z_$][\w$]*)\.([A-Za-z_$][\w$]*)\.ts$/.exec(p.replace(/\\/g, "/"));
     if (m) out.add(`${m[1]}.${m[2]}`);
   }
   return out;

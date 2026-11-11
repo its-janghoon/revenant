@@ -1,5 +1,6 @@
-// Log gathering helpers: trim, redact, and read runner lines (runner/log.ts) of a run.
-import { parse, type Line } from "../../runner/log";
+// Log gathering helpers: trim, redact, and read runner lines (lib/contracts.ts format) of a run.
+// No runner/ import: runner/log.ts has side effects on process.env meant for the runner only.
+import { parseLine, type RunnerLine } from "../contracts";
 
 const REDACT: [RegExp, string][] = [
   [/\b(AKIA|ASIA)[A-Z0-9]{16}\b/g, "<aws-key>"],
@@ -29,7 +30,7 @@ export function focus(text: string, n = 150): string {
 }
 
 export interface RunSummary {
-  lines: Line[];
+  lines: RunnerLine[];
   cause: string | null; // the agent's `Cause:` sentence (repair runs)
   files: string[];
   error: { step: string; text: string } | null; // last error line
@@ -38,22 +39,28 @@ export interface RunSummary {
 }
 
 const NO_REPAIR_STEPS = new Set(["limit", "stopped", "input", "secret"]);
+const NO_REPAIR_CODES = new Set([2, 3, 143]); // bad input, time or credits limit, stopped (runner/README.md)
 
 export function summarize(messages: string[]): RunSummary {
-  const lines = messages.map((m) => parse(m.trim())).filter((l): l is Line => l !== null);
+  const lines = messages.map((m) => parseLine(m.trim())).filter((l): l is RunnerLine => l !== null);
   let cause: string | null = null;
   let error: RunSummary["error"] = null;
+  let noRepair = false;
   const files = new Set<string>();
+  const text: string[] = [];
   for (const l of lines) {
-    const d = l.data;
-    if (l.kind === "message" && typeof d.cause === "string") cause = d.cause;
-    if (l.kind === "file_changed" && typeof d.path === "string") files.add(d.path);
-    if (l.kind === "error") error = { step: String(d.step ?? ""), text: String(d.text ?? "") };
+    if (l.t === "message") {
+      if (l.cause) cause = l.cause;
+      if (l.from !== "agent") text.push(l.text);
+    } else if (l.t === "file_changed") {
+      files.add(l.path);
+    } else if (l.t === "error") {
+      error = { step: l.step, text: l.text };
+      if (NO_REPAIR_STEPS.has(l.step)) noRepair = true;
+      text.push(`error (${l.step}): ${l.text}`);
+    } else if (l.t === "run_done" && NO_REPAIR_CODES.has(l.code)) {
+      noRepair = true;
+    }
   }
-  const noRepair = lines.some((l) => l.kind === "error" && NO_REPAIR_STEPS.has(String(l.data.step)));
-  const text = lines
-    .filter((l) => l.kind === "error" || (l.kind === "message" && l.data.from !== "agent"))
-    .map((l) => (l.kind === "error" ? `error (${String(l.data.step)}): ${String(l.data.text)}` : String(l.data.text)))
-    .join("\n");
-  return { lines, cause, files: [...files], error, noRepair, text: tail(text, 120) };
+  return { lines, cause, files: [...files], error, noRepair, text: tail(text.join("\n"), 120) };
 }
