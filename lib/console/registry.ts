@@ -1,61 +1,65 @@
-// One AppRegistry application per generated app, so myApplications shows the app and its
-// cost (Requirement 11.2). The deploy lane calls ensureApplication() before the first
-// Amplify build and puts appEnv() on the Amplify app; blocks/tags.ts then tags every
-// CDK resource with awsApplication. tagResources() covers resources made outside CDK.
+// One resource group per generated app, so the console shows the app's resources in one
+// place (Requirement 11.2). AppRegistry is closed to new accounts since 2026-07-30, so the
+// group is a tag query on revenant:project; every resource already carries that tag
+// (blocks/tags.ts for CDK, tagResources() for resources made outside CDK).
 import "server-only";
 import {
-  ConflictException,
-  CreateApplicationCommand,
-  DeleteApplicationCommand,
-  GetApplicationCommand,
-  ResourceNotFoundException,
-  ServiceCatalogAppRegistryClient,
-} from "@aws-sdk/client-service-catalog-appregistry";
+  BadRequestException,
+  CreateGroupCommand,
+  DeleteGroupCommand,
+  GetGroupCommand,
+  NotFoundException,
+  ResourceGroupsClient,
+} from "@aws-sdk/client-resource-groups";
 import { ResourceGroupsTaggingAPIClient, TagResourcesCommand } from "@aws-sdk/client-resource-groups-tagging-api";
 import { env as serverEnv } from "../env";
 import { applicationName, appTags, type AppRef, type Env } from "./name";
 
-const registry = new ServiceCatalogAppRegistryClient({ region: serverEnv.AWS_REGION });
+const groups = new ResourceGroupsClient({ region: serverEnv.AWS_REGION });
 const tagging = new ResourceGroupsTaggingAPIClient({ region: serverEnv.AWS_REGION });
 
 export interface Application {
   arn: string;
-  /** Value of the awsApplication tag (the application ARN). */
-  tag: string;
 }
 
-function toApplication(a: { arn?: string; applicationTag?: Record<string, string> } | undefined): Application {
-  if (!a?.arn) throw new Error("AppRegistry returned no application ARN");
-  return { arn: a.arn, tag: a.applicationTag?.awsApplication ?? a.arn };
-}
+const exists = (e: unknown) => e instanceof BadRequestException && /already exists/i.test(e.message);
 
-/** Creates rv-<app> once; later calls return the same application. */
+/** Creates the rv-<app> group once; later calls return the same group. */
 export async function ensureApplication(p: AppRef): Promise<Application> {
   const name = applicationName(p.name);
   try {
-    const r = await registry.send(new CreateApplicationCommand({
-      name,
-      description: `Revenant app ${p.name}`,
-      tags: { "revenant:app": p.name, "revenant:project": p.id },
-      clientToken: p.id,
+    const r = await groups.send(new CreateGroupCommand({
+      Name: name,
+      Description: `Revenant app ${p.name}`.replace(/[^\sa-zA-Z0-9_.-]/g, "-"),
+      ResourceQuery: {
+        Type: "TAG_FILTERS_1_0",
+        Query: JSON.stringify({
+          ResourceTypeFilters: ["AWS::AllSupported"],
+          TagFilters: [{ Key: "revenant:project", Values: [p.id] }],
+        }),
+      },
+      Tags: { "revenant:app": p.name, "revenant:project": p.id },
     }));
-    return toApplication(r.application);
+    if (!r.Group?.GroupArn) throw new Error("Resource Groups returned no group ARN");
+    return { arn: r.Group.GroupArn };
   } catch (e) {
-    if (!(e instanceof ConflictException)) throw e;
-    return toApplication(await registry.send(new GetApplicationCommand({ application: name })));
+    if (!exists(e)) throw e;
+    const g = await groups.send(new GetGroupCommand({ Group: name }));
+    if (!g.Group?.GroupArn) throw new Error(`resource group ${name} has no ARN`);
+    return { arn: g.Group.GroupArn };
   }
 }
 
 /** Env vars every Amplify app of a generated project needs (read by blocks/ and runner/). */
-export function appEnv(p: AppRef, application: Application, computeRoleArn?: string): Record<string, string> {
-  const v: Record<string, string> = { RV_APP: p.name, RV_PROJECT_ID: p.id, RV_AWS_APPLICATION: application.tag };
+export function appEnv(p: AppRef, computeRoleArn?: string): Record<string, string> {
+  const v: Record<string, string> = { RV_APP: p.name, RV_PROJECT_ID: p.id };
   if (computeRoleArn) v.RV_COMPUTE_ROLE_ARN = computeRoleArn;
   return v;
 }
 
-/** Adds awsApplication and revenant:* tags to resources made outside CDK. */
-export async function tagResources(arns: string[], p: AppRef, env: Env, application: Application): Promise<void> {
-  const tags = appTags(p, env, application.tag);
+/** Adds the revenant:* tags to resources made outside CDK. */
+export async function tagResources(arns: string[], p: AppRef, env: Env): Promise<void> {
+  const tags = appTags(p, env);
   for (let i = 0; i < arns.length; i += 20) {
     const r = await tagging.send(new TagResourcesCommand({ ResourceARNList: arns.slice(i, i + 20), Tags: tags }));
     const failed = Object.entries(r.FailedResourcesMap ?? {});
@@ -63,11 +67,11 @@ export async function tagResources(arns: string[], p: AppRef, env: Env, applicat
   }
 }
 
-/** Removes rv-<app>; a missing application is fine. */
+/** Removes the rv-<app> group; a missing group is fine. */
 export async function deleteApplication(app: string): Promise<void> {
   try {
-    await registry.send(new DeleteApplicationCommand({ application: applicationName(app) }));
+    await groups.send(new DeleteGroupCommand({ Group: applicationName(app) }));
   } catch (e) {
-    if (!(e instanceof ResourceNotFoundException)) throw e;
+    if (!(e instanceof NotFoundException)) throw e;
   }
 }

@@ -202,7 +202,6 @@ async function attempt(f: Failure, branch: string, n: number, tried: Repair[], d
     env: {
       RV_REPAIR: r.id, RV_TARGET: f.target, RV_PROJECT_ID: p.id,
       ...(p.amplifyAppId ? { RV_AMPLIFY_APP_ID: p.amplifyAppId } : {}),
-      ...(appEnv.RV_AWS_APPLICATION ? { RV_AWS_APPLICATION: appEnv.RV_AWS_APPLICATION } : {}),
     },
   });
   await d.store.setRunBuild(run.id, buildId);

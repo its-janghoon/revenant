@@ -1,5 +1,5 @@
 // Registers the hooks the deploy flow needs from the other lanes (lib/deploy/hooks.ts):
-//   application  lib/console: the app's AppRegistry application (RV_AWS_APPLICATION)
+//   application  lib/console: the app's resource group (rv-<app>)
 //   sql          lib/data: Aurora clusters, preview databases, migration diff, prod snapshot
 //   failed       lib/repair: a health-check event on the default bus, which the repair rules take
 // Imported for its side effect by lib/deploy/index.ts, so every caller of lib/deploy gets them.
@@ -24,13 +24,13 @@ const ref = (p: Project) => ({ id: p.id, name: p.name });
 async function sqlOn(p: Project): Promise<boolean> {
   if (await isSql(p.name)) return true;
   if (!(await sqlAllowed(p.owner))) return false;
-  const application = await ensureApplication(ref(p));
-  await Promise.all((["prod", "dev"] as const).map((c) => ensure(p.name, c, appTags(ref(p), c, application.tag))));
+  await ensureApplication(ref(p));
+  await Promise.all((["prod", "dev"] as const).map((c) => ensure(p.name, c, appTags(ref(p), c))));
   return true;
 }
 
 setHooks({
-  application: async (p) => (await ensureApplication(ref(p))).tag,
+  application: async (p) => (await ensureApplication(ref(p))).arn,
 
   sql: {
     enabled: sqlOn,

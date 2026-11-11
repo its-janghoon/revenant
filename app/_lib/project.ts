@@ -65,7 +65,7 @@ export async function deleteProject(p: ProjectRow): Promise<void> {
   const open = await db.select().from(runs).where(and(eq(runs.projectId, p.id), inArray(runs.status, ["queued", "running"])));
   for (const r of open) await stopRun(r);
   // Expires the app now: it leaves every screen at once (store.ts `visible`), and lib/cleanup (L6)
-  // removes its Amplify app, stacks, repo and AppRegistry entry, then marks it deleted.
+  // removes its Amplify app, stacks, repo and resource group, then marks it deleted.
   // Setting status "deleted" here would make cleanup skip it and leave the AWS resources behind.
   await db.update(projects).set({ expiresAt: new Date().toISOString() }).where(eq(projects.id, p.id));
 }

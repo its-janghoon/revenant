@@ -27,11 +27,10 @@ const notFound = (e: unknown) => e instanceof NotFoundException || (e as Error).
 
 async function vars(project: Project, appId?: string): Promise<Record<string, string>> {
   const h = getHooks();
-  if (!h.application) throw new Error("no AppRegistry hook: setHooks({ application }) must be registered (lib/cost)");
+  await h.application?.(project); // the app's resource group, before its first resources
   const out: Record<string, string> = {
     RV_APP: project.name,
     RV_PROJECT_ID: project.id,
-    RV_AWS_APPLICATION: await h.application(project),
   };
   const compute = (await h.computeRole?.(project)) ?? deployEnv.RV_APPS_COMPUTE_ROLE_ARN;
   if (compute) out.RV_COMPUTE_ROLE_ARN = compute;

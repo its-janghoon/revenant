@@ -62,7 +62,7 @@ const body = (app: string, c: Cluster) =>
   JSON.stringify(template({ name: clusterName(app, c), prod: c === "prod", dumpUser: DUMP_USER }));
 
 /** Starts creating (or updating) the cluster stack. Tags go on every resource:
- * awsApplication, revenant:app, revenant:env, revenant:project (lib/cost owns the values). */
+ * revenant:app, revenant:env, revenant:project (lib/cost owns the values). */
 export async function ensure(app: string, c: Cluster, tags: Record<string, string>): Promise<StackState> {
   const s = await describe(app, c);
   const now = state(s);

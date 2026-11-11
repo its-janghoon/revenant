@@ -61,7 +61,7 @@ export async function deletePreview(p: PreviewRow, reason: PreviewReason, now = 
   return left;
 }
 
-/** Deletes a whole generated app: Amplify app, every tagged stack, repo, AppRegistry application. */
+/** Deletes a whole generated app: Amplify app, every tagged stack, repo, resource group. */
 export async function deleteProject(
   p: { id: string; name: string; repo: string | null; amplifyAppId: string | null },
   actor = "cleanup",

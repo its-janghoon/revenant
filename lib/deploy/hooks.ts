@@ -20,7 +20,7 @@ export interface SqlHooks {
 
 export interface DeployHooks {
   sql?: SqlHooks;
-  /** L6 (lib/cost): the app's AppRegistry application ARN, created when missing. Required to create an Amplify app. */
+  /** L6 (lib/cost): makes sure the app's resource group exists and returns its ARN. */
   application?(project: Project): Promise<string>;
   /** L6: per app SSR compute role ARN, when the app has one. */
   computeRole?(project: Project): Promise<string | null>;

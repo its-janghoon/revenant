@@ -195,11 +195,11 @@ Resources:
                 Resource: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/rv-*-runner
                 Condition:
                   StringEquals: { iam:PassedToService: codebuild.amazonaws.com }
-              # One AppRegistry application per app, for myApplications (lane L6).
-              - Sid: AppRegistry
+              # One resource group per app, found by its revenant:project tag (lane L6).
+              - Sid: ResourceGroups
                 Effect: Allow
-                Action: [servicecatalog:CreateApplication, servicecatalog:GetApplication, servicecatalog:UpdateApplication, servicecatalog:DeleteApplication, servicecatalog:TagResource, servicecatalog:ListTagsForResource]
-                Resource: !Sub arn:${AWS::Partition}:servicecatalog:${AWS::Region}:${AWS::AccountId}:/applications/*
+                Action: [resource-groups:CreateGroup, resource-groups:GetGroup, resource-groups:DeleteGroup, resource-groups:Tag]
+                Resource: !Sub arn:${AWS::Partition}:resource-groups:${AWS::Region}:${AWS::AccountId}:group/rv-*
               - Sid: TagsRead
                 Effect: Allow
                 Action: [tag:GetResources, tag:GetTagKeys, tag:GetTagValues]

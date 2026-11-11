@@ -19,7 +19,7 @@ export function rvName(app: string, env: Env, part?: string): string {
   return n.replace(/[^a-z0-9-]/g, "-").slice(0, 63).replace(/-+$/, "");
 }
 
-/** Name of the app's AppRegistry application: rv-<app>. */
+/** Name of the app's resource group: rv-<app>. */
 export function applicationName(app: string): string {
   return `rv-${appName.parse(app)}`;
 }
@@ -30,13 +30,11 @@ export interface AppRef {
 }
 
 /** Tags for a resource Revenant creates outside CDK (CodeCommit repo, Amplify app, CodeBuild project). */
-export function appTags(p: AppRef, env: Env, application: string | null): Record<string, string> {
-  const t: Record<string, string> = {
+export function appTags(p: AppRef, env: Env): Record<string, string> {
+  return {
     "revenant:app": p.name,
     "revenant:env": env,
     "revenant:name": rvName(p.name, env),
     "revenant:project": p.id,
   };
-  if (application) t.awsApplication = application;
-  return t;
 }

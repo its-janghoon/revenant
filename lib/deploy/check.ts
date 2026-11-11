@@ -38,12 +38,10 @@ export async function checkCommit(project: Project, branch: string, commit: stri
   if (!project.repo) throw new Error(`project ${project.name} has no repository yet`);
   const [row] = await db.insert(schema.deploys).values({ projectId: project.id, branch, commit, status: "pending" }).returning();
   const deploy = row as Deploy;
-  const application = await getHooks().application?.(project);
   const vars: Record<string, string> = {
     MODE: "check", APP: project.name, REPO: project.repo, BRANCH: branch, COMMIT: commit,
     RUN_ID: checkRunId(deploy.id), RV_PROJECT_ID: project.id, TIME_LIMIT_MIN: String(CHECK_MIN),
     ...(project.amplifyAppId ? { RV_AMPLIFY_APP_ID: project.amplifyAppId } : {}),
-    ...(application ? { RV_AWS_APPLICATION: application } : {}),
   };
   try {
     await codebuild.send(new StartBuildCommand({

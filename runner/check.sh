@@ -23,9 +23,6 @@ npm run lint --if-present
 
 echo "RV-STEP synth"
 rm -rf "$out"
-# blocks/tags.ts needs the AppRegistry ARN on a branch synth. Runs before the first deploy have
-# none yet; a placeholder is fine because this output is only checked, never deployed.
-export RV_AWS_APPLICATION="${RV_AWS_APPLICATION:-arn:aws:servicecatalog:${AWS_REGION:-us-east-1}:111122223333:/applications/synth-only}"
 export RV_PROJECT_ID="${RV_PROJECT_ID:-unknown}"
 name="$(printf '%s' "$branch" | tr -c 'A-Za-z0-9-' '-')"
 npx cdk synth --quiet --no-notices \
