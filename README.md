@@ -5,7 +5,11 @@ and a Bitcoin seal (OpenTimestamps) that proves the signed file never changed.
 
 Built for Kiroween 2026 (Frankenstein category). Work in progress.
 
-- Spec: [.kiro/specs/bloodoath](.kiro/specs/bloodoath)
+Deployed by **Lazarus** (working name, same repo): an open "Vercel for your own AWS
+account" whose agent writes the CloudFormation stack, deploys it, and fixes failed
+deploys by itself.
+
+- Spec: [.kiro/specs/bloodoath](.kiro/specs/bloodoath), [.kiro/specs/lazarus](.kiro/specs/lazarus)
 - Kiro usage log: [docs/kiro-usage.md](docs/kiro-usage.md)
 - Kiro credits per message: [docs/credits.md](docs/credits.md)
 

@@ -3,7 +3,7 @@
 - [ ] 1. Project setup
   - [ ] 1.1 Next.js + TypeScript app, Drizzle (`aws-data-api`), S3 presigned URLs, env schema, `db:migrate` script
   - [ ] 1.2 Deploy `infra/stack.yaml` with `infra/deploy.sh`, SES DKIM records, SES production access
-  - [ ] 1.3 Theme tokens, fonts, reduced-motion helper
+  - [ ] 1.3 Theme tokens for light/dark x Halloween on/off, no-flash head script, copy map, reduced-motion helper
   - [ ] 1.4 Auth (email magic link) and a seeded judge account
   - _Requirements: 8, 10.4_
 

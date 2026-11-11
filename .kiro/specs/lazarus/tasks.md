@@ -1,0 +1,22 @@
+# Tasks: Lazarus
+
+- [ ] 1. Monorepo: move BloodOath to `apps/sign`, add `apps/lazarus`, shared `packages/ui` with the theme toggles
+- [ ] 2. Repair agent first (the part that wins)
+  - [ ] 2.1 Decide engine: Kiro CLI headless in CodeBuild vs Bedrock tool loop
+  - [ ] 2.2 Gather step: stack events, Amplify job log, CloudWatch tail
+  - [ ] 2.3 Diagnose + fix loop with guardrail check
+  - [ ] 2.4 CodeBuild check and PR
+  - [ ] 2.5 Run it on the 3 planted BloodOath breaks until all 3 resurrect
+  - _Requirements: 5, 7, 8.2_
+- [ ] 3. Connect stack with external id role and Budgets alarm
+  - _Requirements: 1, 7.4_
+- [ ] 4. GitHub App, detector, stack writer from building blocks
+  - _Requirements: 2, 3_
+- [ ] 5. Deployer (Step Functions) and watcher (EventBridge)
+  - _Requirements: 4_
+- [ ] 6. Timeline UI with Halloween mode (tombstone / resurrect)
+  - _Requirements: 4.4, 5.8, 9_
+- [ ] 7. Kiro Crew app: MCP tools and monitor
+  - _Requirements: 6_
+- [ ] 8. PoC: deploy BloodOath into a fresh account end to end
+  - _Requirements: 8.1_

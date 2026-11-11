@@ -86,10 +86,14 @@ Risk categories: termination, liability, auto-renewal, payment and fees, IP and 
 
 **User story:** As a judge, I want a polished, memorable product, so that it feels like a real app.
 
-1. The UI SHALL use a dark candle-lit theme, a wax seal for sealed status, and blood-red signature ink.
-2. Animations (candle flicker, ink flow, seal press) SHALL respect `prefers-reduced-motion`.
-3. Text contrast SHALL meet WCAG AA.
-4. Core flows SHALL work on mobile width (375 px).
+1. The UI SHALL have a Halloween toggle next to the light/dark toggle, in the header, on every page.
+2. WHEN Halloween mode is off THEN the UI SHALL be a clean light or dark theme that follows the system setting until the user picks one.
+3. WHEN Halloween mode is on THEN the UI SHALL use a candle-lit theme, a wax seal for sealed status, blood-red signature ink and oath wording.
+4. The system SHALL remember both choices per browser and SHALL render the saved theme on first paint with no flash.
+5. Halloween mode SHALL change only looks and wording, never behaviour or data.
+6. Animations (candle flicker, ink flow, seal press) SHALL respect `prefers-reduced-motion`.
+7. Text contrast SHALL meet WCAG AA in all four themes (light, dark, Halloween light, Halloween dark).
+8. Core flows SHALL work on mobile width (375 px).
 
 ## Requirement 9: Demo video made with Kiro
 

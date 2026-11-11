@@ -96,10 +96,17 @@ secrets vault.
 Routes: `/` (landing), `/documents`, `/documents/:id` (review + fields), `/sign/:token`,
 `/verify`, `/settings`.
 
-Theme tokens: near-black background, parchment text, blood red `#8a0303` accent
-(contrast checked for text use), candle amber for focus. Fonts: one serif for headings,
-one sans for body. Motion: candle flicker on the landing, ink drawing on signature,
-seal press on `sealed`; all off under reduced motion.
+Themes: two switches on `<html>`: `data-scheme="light|dark"` and `data-halloween="on|off"`.
+All colors are CSS variables keyed by those two attributes, so 4 themes come from one
+stylesheet. A tiny inline script in `<head>` reads `localStorage` and sets both before
+first paint. Wording that changes ("Sign" -> "Swear the oath") comes from one copy map
+keyed by `halloween`, so no component branches on the theme.
+
+Halloween tokens: near-black or parchment background, blood red `#8a0303` accent
+(contrast checked for text use), candle amber for focus, serif headings. Normal tokens:
+neutral grays, one blue accent, sans everywhere. Motion (Halloween only): candle flicker
+on the landing, ink drawing on signature, seal press on `sealed`; all off under reduced
+motion.
 
 ## Demo video
 
