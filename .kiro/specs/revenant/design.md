@@ -3,66 +3,103 @@
 ## Overview
 
 ```
-GitHub push --> Revenant API --> change set --> CloudFormation (user's account)
-                    |                               |
-                    |                    Amplify build / app health
-                    |                               | fail
-                    +<-------- repair run <---------+
-                    |   logs -> cause -> fix branch -> CodeBuild check -> PR -> redeploy
-                    v
-              timeline UI  /  Kiro Crew app (MCP)
+          user's AWS account (everything below runs here, on their credits)
+ ┌──────────────────────────────────────────────────────────────────────────┐
+ │ Revenant app (Amplify + Aurora)                                          │
+ │   ask -> spec -> build -> preview -> publish        timeline / cost      │
+ │      |        ^            |                              ^              │
+ │      v        |            v                              |              │
+ │ CodeBuild runner: kiro-cli headless on the project repo ---+ (logs)       │
+ │      |                                                                    │
+ │      v                                                                    │
+ │ project repo (GitHub) -> CloudFormation stack per app -> Amplify branch   │
+ │                                  | fail                                   │
+ │                                  v                                        │
+ │                     EventBridge -> repair run (runner again)              │
+ └──────────────────────────────────────────────────────────────────────────┘
+ Kiro Crew app (MCP) -> Revenant API
 ```
 
-Revenant runs as a second Next.js app in this repo (`apps/revenant`), deployed by its own
-stack the same way. BloodOath moves to `apps/sign`. Shared theme and UI in `packages/ui`.
+## Install stack (`infra/install.yaml`)
 
-## Parts
+Amplify app (Revenant itself, from this public repo), Aurora Serverless v2 with Data
+API, Secrets Manager entries (Kiro API key, GitHub token, app key), the CodeBuild runner
+project and its ECR image, EventBridge rules for failure events, a Budgets alarm, and
+IAM roles (compute, build, runner). The current `infra/stack.yaml` becomes the first
+set of building blocks under `blocks/`.
 
-| Part | Where | What |
-|---|---|---|
-| Connect stack | `revenant/connect.yaml` | IAM role with external id, Budgets alarm |
-| GitHub App | Revenant API | webhooks for push and PR merge, repo read, branch and PR write |
-| Detector | `revenant/detect.ts` | reads `package.json`, `next.config.*`, `process.env.*` uses, imports (`@aws-sdk/*`, `drizzle-orm`, `pdf-lib`...) |
-| Stack writer | agent + templates | starts from tested building blocks (hosting, db, files, mail, ai, cron), agent fills and joins them |
-| Deployer | Step Functions | change set -> approve if destructive -> execute -> wait -> Amplify job -> health check |
-| Watcher | EventBridge | stack status changes and Amplify job state changes trigger a repair run |
-| Repair agent | CodeBuild job | clone, read logs, fix, build, validate, push branch, open PR |
-| Timeline | Revenant UI | server-sent events from a `events` table |
+## Runner (`runner/`)
 
-## Repair agent
+- Image: Node LTS, git, AWS CLI, `cfn-lint`, Kiro CLI.
+- Inputs (env): `PROJECT_ID`, `REPO`, `BRANCH`, `MODE` (`spec`, `build`, `change`, `repair`),
+  `PROMPT_S3_KEY`. Secrets read at start from Secrets Manager.
+- Steps: clone -> copy `steering/` into the repo's `.kiro/steering/` (kept in git) ->
+  `kiro-cli chat --no-interactive` with the mode prompt -> push -> report.
+- Each mode is a prompt file in `runner/prompts/`: `spec.md`, `build.md`, `change.md`,
+  `repair.md`. The repair prompt includes the collected logs and the cause template.
+- Output lines go to CloudWatch with a JSON prefix for structured events
+  (`task_started`, `task_done`, `file_changed`, `message`), which the UI streams.
 
-Runs in CodeBuild in Revenant's own account, with a short-lived session into the user's
-role (read logs only) and a GitHub token scoped to the repo.
+## Generated app steering (`steering/`)
 
-Loop (max 3 runs per failure, max 20 tool calls per run):
+Tells Kiro how Revenant apps are built: Next.js on Amplify, Drizzle on the Data API, S3
+presigned URLs, SES, Bedrock, use only `blocks/`, guardrails, commit per task.
 
-1. **Gather.** Failed stack events (`describe-stack-events`), Amplify job log, the last 200
-   CloudWatch lines of the app, the diff of the commit that broke it.
-2. **Diagnose.** Bedrock (Claude) with tools: `read_file`, `grep`, `list_files`,
-   `aws_docs_search`. Output: cause (one sentence), files to change.
-3. **Fix.** `write_file` on a branch. Guardrail check (Requirement 7) runs on the result;
-   a violation sends the run back to step 2 with the reason.
-4. **Check.** `npm ci && npm run build`; for stack changes `cfn-lint` and
-   `validate-template`. Fail -> back to step 2 with the new error.
-5. **Ship.** PR with cause, diff and check log. Auto-merge if the repo allows it.
+## Building blocks (`blocks/`)
 
-Kiro CLI is the preferred engine for steps 2-4 if it can run headless in CodeBuild with
-our steering; otherwise the Bedrock tool loop above. Decide in task 2.1.
+| Block | Resources |
+|---|---|
+| `hosting` | Amplify app + branch, compute role |
+| `db` | Aurora Serverless v2 (min 0), Data API, managed secret |
+| `files` | S3 private bucket, CORS for presigned upload |
+| `mail` | SES identity, DKIM outputs |
+| `ai` | Bedrock invoke permissions on the compute role |
+| `cron` | EventBridge rule -> API destination with generated key |
+
+The agent copies the blocks it needs into the app's `infra/stack.yaml`. `cfn-lint` and
+the guardrail check (`lib/guard.ts`) run on every stack before deploy.
+
+## Deploy
+
+Step Functions: create change set -> classify (add/update vs replace/delete) -> wait for
+approval if needed -> execute -> wait -> start Amplify job -> health check -> record.
+
+## Repair
+
+EventBridge rules on CloudFormation `Stack Status Change` (failed), Amplify job state
+`FAILED`, CodeBuild build `FAILED`, plus the health check, start a repair run with the
+gathered logs. Max 3 runs per failure; each run is a runner job in `repair` mode.
+
+## Cost
+
+A daily job reads Cost Explorer `GetCostAndUsage` grouped by the `revenant:project` tag,
+with `RecordType` filters for Usage and Credit, and caches the result. The home screen
+also shows `GetCostForecast`.
 
 ## Data
 
 | Table | Key columns |
 |---|---|
-| `accounts` | id, user_id, aws_account_id, role_arn, external_id, budget_usd |
-| `projects` | id, account_id, repo, branch, stack_name, app_url, auto_merge |
-| `deploys` | id, project_id, commit, change_set, status, started_at, ended_at |
-| `repairs` | id, deploy_id, attempt, cause, branch, pr_url, check_status, outcome |
-| `events` | id, deploy_id, at, kind, text (timeline) |
+| `projects` | id, name, request, repo, stack_name, prod_url, status, created_at |
+| `runs` | id, project_id, mode, commit, codebuild_id, status, started_at, ended_at |
+| `tasks` | id, project_id, number, title, state |
+| `deploys` | id, project_id, branch, commit, change_set, status, url |
+| `repairs` | id, deploy_id or run_id, attempt, cause, branch, check_status, outcome, recovered_s |
+| `events` | id, project_id, at, kind, text (timeline) |
+| `costs` | project_id, day, usage_usd, credit_usd |
 
-## Planted breaks for the demo
+## UI
 
-| Break | Expected repair |
-|---|---|
-| Remove `REVIEW_MODEL` from the stack env vars | Add it back with the default model id |
-| `EngineVersion: "13.4"` (no auto-pause) | Bump to a version that supports MinCapacity 0 |
-| Migration with a typo in a column type | Fix the migration SQL |
+Routes: `/` (ask + credits), `/p/:id/spec`, `/p/:id` (workspace: chat and tasks on the
+left, preview on the right, deploy status on top), `/p/:id/timeline`, `/settings`.
+
+Themes: `data-scheme="light|dark"` and `data-halloween="on|off"` on `<html>`, CSS
+variables per pair, a head script sets both before first paint, one copy map for words.
+
+## Testing
+
+Property-based tests (fast-check) where they pay:
+- Guardrail check: any stack with `"Action": "*"` or a data resource without a deletion
+  policy is rejected.
+- Change set classifier: any replace or delete is marked destructive.
+- Event parser: any runner log line round-trips to the same structured event.

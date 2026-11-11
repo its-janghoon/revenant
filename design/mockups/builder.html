@@ -1,0 +1,212 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Revenant builder mockups</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=IM+Fell+English:ital@0;1&family=Archivo+Black&family=Archivo:wght@400;600&family=Cinzel:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #d9d9d6; font: 13px/1.4 Inter, sans-serif; padding: 20px; }
+  h1.sheet { font: 600 18px Inter; margin: 0 0 14px; color: #222; }
+  .grid { display: grid; grid-template-columns: repeat(2, 720px); gap: 18px; }
+  .cap { font: 600 12px Inter; color: #333; margin: 0 0 6px; }
+  .panel { width: 720px; height: 460px; overflow: hidden; border-radius: 10px; position: relative; background: var(--bg); color: var(--fg); font-family: var(--body); box-shadow: 0 1px 3px #0003; display: flex; flex-direction: column; }
+  .muted { color: var(--muted); }
+  .bar { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 14px; border-bottom: 1px solid var(--line); background: var(--bar); flex: none; }
+  .logo { font-family: var(--head); font-weight: var(--headw); font-size: 16px; letter-spacing: var(--track); }
+  .sp { flex: 1; }
+  .tog { display: flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; font-size: 10.5px; }
+  .tog span { padding: 3px 7px; }
+  .tog .on { background: var(--accent); color: var(--onaccent); }
+  .btn { background: var(--accent); color: var(--onaccent); border-radius: var(--r); padding: 7px 13px; font-weight: 600; font-size: 12px; display: inline-block; font-family: var(--btnfont); letter-spacing: var(--track); }
+  .ghost { border: 1px solid var(--line); border-radius: var(--r); padding: 6px 11px; font-size: 12px; display: inline-block; }
+  .card { border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; background: var(--card); }
+  .chip { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 99px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .03em; }
+  .c-t { background: var(--toxicbg); color: var(--toxic); } .c-w { background: var(--watchbg); color: var(--watch); } .c-s { background: var(--safebg); color: var(--safe); }
+  .mono { font-family: var(--mono); font-size: 11px; }
+  .h { font-family: var(--head); font-weight: var(--headw); letter-spacing: var(--track); }
+  .tl { position: relative; padding-left: 20px; }
+  .tl .ev { position: relative; padding: 0 0 11px; }
+  .tl .ev::before { content: ""; position: absolute; left: -16px; top: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--dot, var(--muted)); }
+  .tl::before { content: ""; position: absolute; left: 8px; top: 6px; bottom: 10px; width: 1px; background: var(--line); }
+  .ev.bad { --dot: var(--toxic); } .ev.ok { --dot: var(--safe); } .ev.fix { --dot: var(--watch); }
+  .stone { display: inline-block; width: 14px; height: 16px; border-radius: 7px 7px 2px 2px; background: var(--muted); vertical-align: -3px; margin-right: 5px; }
+  .candle { position: absolute; width: 160px; height: 160px; border-radius: 50%; background: radial-gradient(circle, #ffb34730 0%, transparent 70%); pointer-events: none; }
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); }
+  .tabs span { padding: 6px 12px; font-size: 12px; }
+  .tabs .on { border-bottom: 2px solid var(--accent); font-weight: 600; }
+  .prompt { border: 1.5px solid var(--line); border-radius: calc(var(--r) * 2); background: var(--card); padding: 12px 14px; font-size: 14px; min-height: 84px; position: relative; }
+  .prompt .send { position: absolute; right: 10px; bottom: 10px; }
+  .task { display: flex; gap: 8px; align-items: center; font-size: 12px; padding: 3px 0; }
+  .box { width: 12px; height: 12px; border-radius: 3px; border: 1.5px solid var(--muted); flex: none; }
+  .box.done { background: var(--safe); border-color: var(--safe); }
+  .box.run { border-color: var(--watch); background: repeating-linear-gradient(45deg, var(--watch) 0 2px, transparent 2px 4px); }
+  .frame { border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: #fff; height: 100%; display: flex; flex-direction: column; }
+  .frame .url { background: var(--bar); border-bottom: 1px solid var(--line); font: 10px var(--mono); color: var(--muted); padding: 5px 8px; }
+  .mini { flex: 1; background: #f6f4ef; color: #1b1a17; padding: 14px; font: 11px Inter; }
+  .mini.spooky { background: #120c09; color: #ecdcc0; }
+  .mini h3 { font: 600 17px Fraunces, serif; margin-bottom: 6px; }
+  .mini .pg { background: #fff; color: #222; border: 1px solid #ddd; padding: 8px; font: 9px/1.5 Fraunces, serif; margin-top: 8px; }
+  .mini .pg i { background: #f6dcd8; outline: 1px solid #b3261e; font-style: normal; }
+  .mini .b { display: inline-block; background: #b3261e; color: #fff; padding: 5px 10px; border-radius: 4px; margin-top: 8px; font-weight: 600; }
+  .cost { font-family: var(--head); font-size: 22px; font-weight: var(--headw); }
+</style>
+</head>
+<body>
+<h1 class="sheet" id="title"></h1>
+<div class="grid" id="grid"></div>
+<script>
+const OPT = new URLSearchParams(location.search).get("opt") || "a";
+const OPTIONS = {
+  a: {
+    name: "A. Ledger: paper and ink, one red",
+    layout: "rail",
+    base: { head: "Fraunces, serif", headw: 600, body: "Inter, sans-serif", doc: "Fraunces, serif", mono: "'JetBrains Mono', monospace", cardhead: "Inter, sans-serif", btnfont: "Inter, sans-serif", r: "6px", track: "0", pageshadow: "0 1px 2px #0001" },
+    themes: {
+      light: { bg: "#f6f4ef", bar: "#f6f4ef", fg: "#1b1a17", muted: "#6b675e", line: "#dcd7cc", card: "#fffdf8", paper: "#ffffff", paperfg: "#1b1a17", accent: "#b3261e", onaccent: "#fff", toxic: "#b3261e", toxicbg: "#f6dcd8", watch: "#8a5a00", watchbg: "#f5e7c6", safe: "#2f6b3a", safebg: "#dcebdc" },
+      dark:  { bg: "#151412", bar: "#151412", fg: "#ece8df", muted: "#9a9488", line: "#2e2b26", card: "#1d1b18", paper: "#24221e", paperfg: "#e6e1d6", accent: "#e0574c", onaccent: "#160b0a", toxic: "#ff7b70", toxicbg: "#3a1a17", watch: "#e5b45a", watchbg: "#3a2c12", safe: "#7cc48a", safebg: "#18301d" },
+      hlight:{ head: "'IM Fell English', serif", headw: 400, doc: "'IM Fell English', serif", cardhead: "'IM Fell English', serif", btnfont: "Cinzel, serif", track: ".04em", bg: "#ece0c8", bar: "#e4d4b5", fg: "#2a1a12", muted: "#6e5440", line: "#c9b28c", card: "#f3e8d2", paper: "#f7eedb", paperfg: "#2a1a12", accent: "#8a0303", onaccent: "#f7eedb", toxic: "#8a0303", toxicbg: "#e9c3b3", watch: "#7a4b06", watchbg: "#ead6a8", safe: "#3d5a2a", safebg: "#d6dcc0", pageshadow: "0 6px 18px #5a3a1a33" },
+      hdark: { head: "'IM Fell English', serif", headw: 400, doc: "'IM Fell English', serif", cardhead: "'IM Fell English', serif", btnfont: "Cinzel, serif", track: ".04em", bg: "#0e0a08", bar: "#140e0b", fg: "#ecdcc0", muted: "#a08a6c", line: "#3a2a1e", card: "#1a120d", paper: "#e9dbbd", paperfg: "#2a1a12", accent: "#a40c0c", onaccent: "#f3e3c3", ptoxbg: "#e9b8a8", pwatbg: "#ecd59c", toxic: "#ff5a4a", toxicbg: "#3d0d0a", watch: "#f0b04a", watchbg: "#3a2510", safe: "#a8c37a", safebg: "#1f2a14", pageshadow: "0 0 40px #ffb34722" }
+    }
+  },
+  b: {
+    name: "B. Console: dense tool, sidebar, mono status",
+    layout: "side",
+    base: { head: "Inter, sans-serif", headw: 600, body: "Inter, sans-serif", doc: "Inter, sans-serif", mono: "'JetBrains Mono', monospace", cardhead: "Inter, sans-serif", btnfont: "Inter, sans-serif", r: "4px", track: "-.01em", pageshadow: "none" },
+    themes: {
+      light: { bg: "#ffffff", bar: "#fafafa", fg: "#111111", muted: "#6f6f6f", line: "#e6e6e6", card: "#ffffff", paper: "#ffffff", paperfg: "#111", accent: "#111111", onaccent: "#fff", toxic: "#d1242f", toxicbg: "#ffebe9", watch: "#9a6700", watchbg: "#fff8c5", safe: "#1a7f37", safebg: "#dafbe1" },
+      dark:  { bg: "#0a0a0a", bar: "#111111", fg: "#ededed", muted: "#8f8f8f", line: "#262626", card: "#111111", paper: "#161616", paperfg: "#e5e5e5", accent: "#ededed", onaccent: "#0a0a0a", toxic: "#ff6369", toxicbg: "#3c1618", watch: "#f2c94c", watchbg: "#33290c", safe: "#4ade80", safebg: "#0f2e1a" },
+      hlight:{ head: "'JetBrains Mono', monospace", bg: "#eef0e6", bar: "#e3e6d6", fg: "#141a10", muted: "#5d6650", line: "#c8ceb4", card: "#f6f7f0", paper: "#fbfcf6", paperfg: "#141a10", accent: "#3f6b12", onaccent: "#f6f7f0", toxic: "#9b1d6a", toxicbg: "#f1d4e6", watch: "#8a6100", watchbg: "#f2e3b5", safe: "#3f6b12", safebg: "#dbe8c4" },
+      hdark: { head: "'JetBrains Mono', monospace", bg: "#070906", bar: "#0b0f09", fg: "#d8f5c4", muted: "#7b9468", line: "#1d2a16", card: "#0d120b", paper: "#10170d", paperfg: "#cfeebc", accent: "#8cff4a", onaccent: "#071003", toxic: "#ff4fb3", toxicbg: "#3a0f2a", watch: "#ffd34f", watchbg: "#30270b", safe: "#8cff4a", safebg: "#142a0b", pageshadow: "0 0 0 1px #8cff4a22, 0 0 30px #8cff4a14" }
+    }
+  },
+  c: {
+    name: "C. Poster: big type, split screen, high contrast",
+    layout: "split",
+    base: { head: "'Archivo Black', sans-serif", headw: 400, body: "Archivo, sans-serif", doc: "Archivo, sans-serif", mono: "'JetBrains Mono', monospace", cardhead: "Archivo, sans-serif", btnfont: "'Archivo Black', sans-serif", r: "0px", track: "0", pageshadow: "6px 6px 0 var(--fg)" },
+    themes: {
+      light: { bg: "#f2efe6", bar: "#f2efe6", fg: "#101010", muted: "#555", line: "#101010", card: "#f2efe6", paper: "#ffffff", paperfg: "#101010", accent: "#ff4d00", onaccent: "#101010", toxic: "#d91a00", toxicbg: "#ffd4c4", watch: "#7a5500", watchbg: "#ffe58a", safe: "#0b6b3a", safebg: "#c9f0d6" },
+      dark:  { bg: "#101010", bar: "#101010", fg: "#f2efe6", muted: "#a7a39a", line: "#f2efe6", card: "#101010", paper: "#1c1c1c", paperfg: "#f2efe6", accent: "#ff6a26", onaccent: "#101010", toxic: "#ff6a4d", toxicbg: "#3d140a", watch: "#ffd24a", watchbg: "#3b2f08", safe: "#5fe39a", safebg: "#0e3020", pageshadow: "6px 6px 0 #ff6a26" },
+      hlight:{ head: "Cinzel, serif", headw: 700, btnfont: "Cinzel, serif", track: ".06em", bg: "#e8e0d2", bar: "#e8e0d2", fg: "#1a0f14", muted: "#5a4650", line: "#1a0f14", card: "#e8e0d2", paper: "#f5efe4", paperfg: "#1a0f14", accent: "#6b0f1a", onaccent: "#f5efe4", pop: "#e05a6a", toxic: "#6b0f1a", toxicbg: "#e7c3c3", watch: "#6e4a00", watchbg: "#ecd9a0", safe: "#2e4a30", safebg: "#cfdcc8", pageshadow: "6px 6px 0 #6b0f1a" },
+      hdark: { head: "Cinzel, serif", headw: 700, btnfont: "Cinzel, serif", track: ".06em", bg: "#0c0609", bar: "#0c0609", fg: "#efe3d0", muted: "#a08f86", line: "#efe3d0", card: "#0c0609", paper: "#1a0f13", paperfg: "#efe3d0", accent: "#b3122a", onaccent: "#efe3d0", toxic: "#ff4d5e", toxicbg: "#3a0b13", watch: "#e8b44c", watchbg: "#33240a", safe: "#9fc79a", safebg: "#17261a", pageshadow: "6px 6px 0 #b3122a" }
+    }
+  }
+};
+const o = OPTIONS[OPT];
+document.getElementById("title").textContent = o.name.replace(/:.*/, "") + ": Revenant builder";
+const H = (t) => t === "hlight" || t === "hdark";
+const w = (t, a, b) => H(t) ? b : a;
+
+function toggles(t) {
+  const dark = t === "dark" || t === "hdark";
+  return `<div class="tog"><span class="${dark ? "" : "on"}">Light</span><span class="${dark ? "on" : ""}">Dark</span></div>
+    <div class="tog"><span class="${H(t) ? "on" : ""}">${H(t) ? "🎃 Halloween" : "Halloween"}</span></div>`;
+}
+const credits = (t) => `<span class="mono muted">${w(t, "AWS credits", "Credits in the crypt")} <b style="color:var(--fg)">$4,812</b> · $38 this month</span>`;
+
+// ---------- screen bodies ----------
+const REQ = "Build me a contract signing site where an AI flags toxic clauses before you sign.";
+
+const home = (t) => `
+  <div style="padding:34px 60px 0;text-align:${o.layout === "split" ? "left" : "center"}">
+    <div class="h" style="font-size:30px;line-height:1.1;margin-bottom:6px">${w(t, "What should we build?", "What shall we raise tonight?")}</div>
+    <div class="muted" style="margin-bottom:16px">${w(t, "Built by Kiro. Deployed to your AWS. Paid with your credits.", "Built by Kiro. Buried in your AWS. Paid with your credits.")}</div>
+    <div class="prompt" style="text-align:left">${REQ}<span class="btn send">${w(t, "Write the spec", "Write the spell")}</span></div>
+    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;justify-content:${o.layout === "split" ? "flex-start" : "center"}">
+      ${["Booking site for my clinic", "Waitlist with Stripe", "Internal admin for orders"].map(x => `<span class="ghost" style="font-size:11px">${x}</span>`).join("")}
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:22px 60px 0">
+    ${[["bloodoath", w(t, "Live", "Risen"), "c-s", "$6.10"], ["clinic-book", w(t, "Building", "Summoning"), "c-w", "$0.40"], ["waitlist", w(t, "Failed · fixing", "Died · ritual"), "c-t", "$1.20"]].map(([n, s, c, m]) => `
+      <div class="card"><div style="display:flex;justify-content:space-between"><b>${n}</b><span class="chip ${c}">${s}</span></div><div class="mono muted" style="margin-top:6px">${m} this month</div></div>`).join("")}
+  </div>`;
+
+const spec = (t) => `
+  <div style="padding:14px 18px;display:grid;grid-template-columns:1fr 210px;gap:16px;flex:1">
+    <div>
+      <div class="h" style="font-size:18px;margin-bottom:8px">bloodoath · ${w(t, "spec", "the grimoire")}</div>
+      <div class="tabs"><span class="on">Requirements</span><span>Design</span><span>Tasks · 11</span></div>
+      <div style="padding:10px 2px;font-size:12px;line-height:1.6">
+        <b>In plain words</b>
+        <ul style="margin:4px 0 8px 16px">
+          <li>Upload a PDF. AI marks each clause safe, watch or ${w(t, "toxic", "cursed")}.</li>
+          <li>Send to signers by email. They see the review before they sign.</li>
+          <li>The signed PDF is sealed on Bitcoin. Anyone can verify it.</li>
+        </ul>
+        <div class="mono muted" style="border-top:1px solid var(--line);padding-top:8px;line-height:1.5">2. WHEN clauses are split THEN the review agent SHALL rate each clause safe, watch or toxic.<br>3. WHEN a clause is watch or toxic THEN the system SHALL show the reason and a fairer rewrite.</div>
+      </div>
+    </div>
+    <div>
+      <div class="card"><div class="muted" style="font-size:11px">${w(t, "AWS parts", "Bones")}</div>
+        ${["hosting · Amplify", "db · Aurora (to 0)", "files · S3", "mail · SES", "ai · Bedrock"].map(x => `<div class="mono" style="padding:2px 0">${x}</div>`).join("")}</div>
+      <div class="card" style="margin-top:8px"><div class="muted" style="font-size:11px">${w(t, "Est. cost", "Blood price")}</div><div class="cost">~$6 / mo</div><div class="mono muted">from your credits</div></div>
+      <div style="margin-top:10px"><span class="btn" style="width:100%;text-align:center">${w(t, "Build it", "Summon it")}</span></div>
+    </div>
+  </div>`;
+
+const work = (t) => `
+  <div style="display:flex;gap:10px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line);font-size:12px">
+    <b>bloodoath</b><span class="chip c-w">${w(t, "building", "summoning")}</span><span class="mono muted">task 6 / 11 · 4m 12s</span><span class="sp"></span><span class="ghost">Stop</span><span class="btn">Publish</span>
+  </div>
+  <div style="display:grid;grid-template-columns:270px 1fr;gap:12px;padding:12px 14px;flex:1;min-height:0">
+    <div style="display:flex;flex-direction:column;gap:8px;min-height:0">
+      <div class="card" style="padding:8px 10px">
+        ${[["1 Skeleton and theme", "done"], ["2 Upload and preview", "done"], ["3 Review agent", "done"], ["4 Fields and sending", "done"], ["5 Signing", "done"], ["6 Final PDF and seal", "run"], ["7 Verify page", ""]].map(([n, s]) => `<div class="task"><span class="box ${s}"></span>${n}</div>`).join("")}
+      </div>
+      <div class="card mono" style="padding:8px 10px;line-height:1.5;flex:1"><span class="muted">kiro ›</span> stamping signatures with pdf-lib, adding the audit page<br><span class="muted">+ lib/seal.ts  + lib/pdf.ts  ~ app/sign/[token]/page.tsx</span></div>
+      <div class="prompt" style="min-height:40px;font-size:12px;padding:8px 10px" ><span class="muted">${w(t, "Ask for a change…", "Whisper a change…")}</span></div>
+    </div>
+    <div class="frame"><div class="url">preview-5.d3x9k.amplifyapp.com</div>
+      <div class="mini ${H(t) ? "spooky" : ""}"><h3>${H(t) ? "Swear the oath" : "Review before you sign"}</h3>
+        <div style="opacity:.75">lease-2026.pdf · 1 toxic · 1 watch</div>
+        <div class="pg"><b>12. Liability.</b> <i>Tenant shall indemnify Landlord against any and all claims, without limit.</i></div>
+        <span class="b">${H(t) ? "Swear the oath" : "Sign document"}</span></div></div>
+  </div>`;
+
+const heal = (t) => `
+  <div style="padding:16px 18px;display:grid;grid-template-columns:1fr 200px;gap:16px">
+    <div class="tl">
+      <div class="ev bad"><b>${H(t) ? '<span class="stone"></span>Deploy #14 died' : "Deploy #14 failed"}</b> <span class="mono muted">12:41</span>
+        <div class="mono muted">CREATE_FAILED Db: EngineVersion 13.4 does not support MinCapacity 0</div></div>
+      <div class="ev fix"><b>${w(t, "Repair 1", "Ritual 1")}</b> <span class="mono muted">12:42 · kiro-cli</span>
+        <div>Cause: the Aurora version is too old to pause at zero.</div>
+        <div class="mono muted">infra/stack.yaml  EngineVersion "13.4" → "16.6"</div></div>
+      <div class="ev ok"><b>Check passed</b> <span class="mono muted">12:43 · cfn-lint ✓ build ✓</span></div>
+      <div class="ev ok"><b>${w(t, "Deploy #15 live", "Risen")}</b> <span class="mono muted">12:44</span>
+        <div class="mono">bloodoath.d3x9k.amplifyapp.com  200 OK</div></div>
+    </div>
+    <div><div class="card"><div class="muted" style="font-size:11px">${w(t, "Time to recover", "Time in the grave")}</div><div class="cost">3m 04s</div></div>
+      <div class="card" style="margin-top:8px"><div class="muted" style="font-size:11px">${w(t, "Fixed by agent", "Raised by agent")}</div><div class="cost">3 / 3</div><div class="mono muted">this week</div></div></div>
+  </div>`;
+
+// ---------- shells per layout ----------
+const NAV = ["Home", "Projects", "Timeline", "Cost", "Settings"];
+function shell(t, title, body, nav) {
+  if (o.layout === "side") return `<div style="display:grid;grid-template-columns:140px 1fr;height:100%">
+    <div style="border-right:1px solid var(--line);background:var(--bar);padding:13px 9px;font-size:12px"><div class="logo" style="margin-bottom:14px">revenant</div>
+      ${NAV.map((n, i) => `<div style="padding:5px 8px;border-radius:var(--r);${i === nav ? "background:var(--card);border:1px solid var(--line)" : ""}">${n}</div>`).join("")}
+      <div style="position:absolute;bottom:12px;left:10px;width:120px" class="mono muted">$4,812<br>credits left</div></div>
+    <div style="display:flex;flex-direction:column;min-height:0"><div class="bar"><b style="font-size:13px">${title}</b><span class="sp"></span>${toggles(t)}</div>${body}</div></div>`;
+  if (o.layout === "split") return `<div style="display:grid;grid-template-columns:150px 1fr;height:100%">
+    <div style="background:var(--accent);color:var(--onaccent);padding:16px;display:flex;flex-direction:column"><div class="logo" style="font-size:19px;line-height:1">${H(t) ? "REVE<br>NANT" : "Reve<br>nant"}</div><span class="sp"></span>
+      <div style="font-family:var(--head);font-size:26px;line-height:1">$4,812</div><div style="font-size:11px;font-weight:600">${w(t, "credits left", "credits in the crypt")}</div></div>
+    <div style="display:flex;flex-direction:column;min-height:0"><div class="bar" style="border-bottom:2px solid var(--line)"><b>${title}</b><span class="sp"></span>${toggles(t)}</div>${body}</div></div>`;
+  return `<div class="bar"><span class="logo">Revenant</span><span class="muted">/ ${title}</span><span class="sp"></span>${nav === 0 ? "" : credits(t)}${toggles(t)}</div>${body}`;
+}
+
+const shots = [
+  ["1 Ask · Light", "light", "Home", home, 0],
+  ["2 Spec · Halloween dark", "hdark", "bloodoath", spec, 1],
+  ["3 Build + preview · Dark", "dark", "bloodoath", work, 1],
+  ["4 Self-repair · Halloween light", "hlight", "timeline", heal, 2],
+];
+const grid = document.getElementById("grid");
+for (const [cap, t, title, fn, nav] of shots) {
+  const vars = { ...o.base, ...o.themes[t] };
+  const style = Object.entries(vars).map(([k, v]) => `--${k}:${v}`).join(";");
+  const glow = t === "hdark" ? `<div class="candle" style="left:-50px;top:-40px"></div><div class="candle" style="right:-60px;bottom:-70px"></div>` : "";
+  grid.insertAdjacentHTML("beforeend", `<div><div class="cap">${cap}</div><div class="panel" style="${style}">${glow}${shell(t, title, fn(t), nav)}</div></div>`);
+}
+</script>
+</body>
+</html>

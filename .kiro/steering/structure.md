@@ -5,18 +5,20 @@ inclusion: always
 # Structure
 
 ```
-app/            Next.js routes (UI + route handlers under app/api)
-lib/            server logic: pdf, review, seal (OpenTimestamps), mail, db
-crew-app/       Kiro Crew app: manifest, agent, skill, MCP server, cron
+app/            Revenant Next.js app (UI + route handlers under app/api)
+lib/            server logic: projects, builds, deploys, repairs, cost, github, aws
+runner/         CodeBuild image and buildspec that run Kiro CLI headless
+blocks/         CloudFormation building blocks for generated apps (hosting, db, files, mail, ai, cron)
+steering/       steering files Revenant gives Kiro CLI inside generated projects
+infra/          install stack for Revenant itself + deploy script
+crew-app/       Kiro Crew app
 video/          Remotion project for the demo video
-infra/          CloudFormation stack and deploy script (all AWS resources)
-scripts/        small helper scripts (credits.py)
-docs/           submission notes, the Kiro usage log, the credits log
+design/         mockups
+docs/           submission notes, Kiro usage log, credits log
 .kiro/          specs, steering, hooks (must stay committed, never gitignored)
 ```
 
-- One word kebab-case names for files and routes where possible (`seal.ts`, `/verify`).
+- One word kebab-case names for files and routes where possible (`repair.ts`, `/projects`).
 - Every notable Kiro or Kiro Crew use goes into `docs/kiro-usage.md` the same day,
   with date, tool and what it produced. This file feeds the Devpost write-up.
-- At the start of every message, run `python3 scripts/credits.py` and commit
-  `docs/credits.md`, so the credits used per message stay on record.
+- `docs/credits.md` is rebuilt hourly by a Kiro Crew cron (`scripts/credits-sync.sh`).

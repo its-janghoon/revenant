@@ -1,32 +1,22 @@
 # Revenant
 
-An open "Vercel for your own AWS account". Revenant's agent writes the CloudFormation
-stack for your repo, deploys it into your AWS account, and when a deploy dies, it reads
-the logs, fixes the code or the stack, and brings it back.
+Lovable on your own AWS account. Say what you want, a Kiro agent writes the spec,
+builds the app, and deploys it into your AWS account, paid with your AWS credits.
+When a build or deploy dies, the agent reads the logs, fixes it, and brings it back.
 
 Built for Kiroween 2026 (Frankenstein category). Work in progress.
 
-## First app: BloodOath
+- You own everything: code in your GitHub, one CloudFormation stack per app.
+- Paid by your AWS credits, with cost per app on screen.
+- Spec first: requirements, design and tasks before any code.
+- Fixes itself: failed builds and deploys are repaired with the cause on record.
 
-Open-source e-signature with an agent that reads the contract for toxic clauses before
-you swear the oath, and a Bitcoin seal (OpenTimestamps) that proves the signed file never
-changed. Revenant deploys BloodOath; BloodOath is the proof that Revenant works.
-Not legal advice.
+Demo request: "Build me a contract signing site where an AI flags toxic clauses before you sign."
 
-- Specs: [.kiro/specs/revenant](.kiro/specs/revenant), [.kiro/specs/bloodoath](.kiro/specs/bloodoath)
+- Spec: [.kiro/specs/revenant](.kiro/specs/revenant)
+- Mockups: [design/mockups](design/mockups)
 - Kiro usage log: [docs/kiro-usage.md](docs/kiro-usage.md)
 - Kiro credits per message: [docs/credits.md](docs/credits.md)
-
-## Deploy BloodOath to your AWS account
-
-Everything (Amplify, Aurora Serverless, S3, SES, Bedrock access, cron) is one
-CloudFormation stack:
-
-```bash
-GITHUB_TOKEN=<repo read token> MAIL_FROM=oath@your-domain.com ./infra/deploy.sh us-east-1
-```
-
-Then add the 3 DKIM CNAME records from the stack output to your mail domain.
 
 ## License
 

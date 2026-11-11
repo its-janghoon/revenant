@@ -2,49 +2,52 @@
 inclusion: always
 ---
 
-# Product: BloodOath
+# Product: Revenant
 
-BloodOath is an open-source e-signature app (a DocuSign alternative) with two extras
-stitched on:
+Revenant is an open-source, self-hosted "Lovable on your own AWS account".
+You say what you want ("build me a contract signing site"), a Kiro agent writes the spec,
+builds the app, and deploys it into **your** AWS account. When a build or deploy dies,
+the agent reads the logs, fixes it, and brings it back.
 
-1. **An agent that reads the contract before you sign.** It splits the document into
-   clauses, flags toxic clauses (one-sided termination, unlimited liability, auto-renewal
-   traps, hidden fees, IP grabs, non-competes, forced arbitration), explains each in
-   plain words, and proposes a fairer rewrite.
-2. **A blockchain seal.** The SHA-256 hash of the final signed PDF is anchored to Bitcoin
-   through OpenTimestamps. Anyone can later prove the file existed, unchanged, at that
-   time. No wallet, no token, no fees for the user.
+## Whose problem
 
-This repo also holds **Revenant**, the second half of the Frankenstein:
-an open, self-hosted "Vercel for your own AWS account". An agent reads a repo, writes the
-CloudFormation stack, deploys it, watches the build and the running app, and **fixes
-failures by itself** (reads the logs, patches the code or the stack, redeploys). BloodOath
-is Revenant's first app (the PoC): Revenant deploys BloodOath, and BloodOath is the proof.
+Startups that have AWS credits (AWS Activate, often $1k to $100k) but still pay Lovable,
+Vercel and a database vendor every month, because building and shipping on AWS is hard.
+Revenant lets them build the same way and spend the credits they already have.
 
-Theme: Halloween is a **toggle**, like dark/light. Normal mode is a clean light/dark UI
-that follows the system setting. Halloween mode: signing is "swearing a blood oath",
-candle-lit, wax seals, blood-red ink; in Revenant, failed deploys "die" and the agent
-"resurrects" them. The spooky layer must make the real function clearer, never hide it.
+Secondary: agencies and freelancers who build sites for clients and must hand over
+code and hosting the client owns.
+
+## What makes it different from Lovable, Bolt, v0
+
+1. **You own everything.** Code in your GitHub, infra in your AWS account, one
+   CloudFormation stack per app. Uninstalling Revenant leaves every app running.
+2. **Paid by your AWS credits.** Every screen shows credits left and what each app costs.
+3. **Spec first.** Kiro writes requirements, design and tasks before code. You edit the
+   spec, not the prompt history.
+4. **It fixes itself.** Failed builds and deploys are repaired by the agent, with the
+   cause, the fix and the evidence on record.
+
+## Demo story
+
+"Build me a contract signing site where an AI flags toxic clauses before you sign."
+Revenant writes the BloodOath spec, builds it, deploys it to AWS, a deploy dies on a
+planted break, the agent resurrects it, the site is live. BloodOath is the example app,
+not a separate product.
+
+## Theme
+
+Halloween is a **toggle**, like dark/light. Normal mode is a clean light/dark UI that
+follows the system setting. Halloween mode changes looks and words only: failed deploys
+"die" (tombstone), repairs are "rituals", live apps have "risen". It never changes behaviour.
 
 ## Hackathon
 
-- Event: Kiroween 2026 (Devpost). Category: **Frankenstein**.
+- Event: Kiroween 2026 (Devpost). Category: **Frankenstein** (Lovable-style builder +
+  Kiro CLI + CloudFormation + a self-healing agent, stitched into one).
 - Deadline: 2026-12-04 14:00 PT (2026-12-05 07:00 KST). No extensions.
-- Bonus prizes targeted: Best Startup Project (McKinley Rice), Best Kiro Crew App,
-  Best Demo, Bonus Blog Prize, Social Blitz.
-- All code in this repo must be written on or after 2026-10-30. Do not import code from
-  other McKinley Rice / Redrob repositories. Frameworks, libraries and starter templates
-  are fine; anything else pre-existing must be declared in the submission.
+- Bonus prizes: Best Startup Project (McKinley Rice), Best Kiro Crew App, Best Demo,
+  Bonus Blog Prize, Social Blitz.
+- All code in this repo is written on or after 2026-10-30. Do not import code from other
+  McKinley Rice / Redrob repositories. Libraries and starter templates are fine.
 - All submission material is in English.
-
-## Users
-
-- Primary: small business owners and freelancers who sign contracts without a lawyer
-  (lease, supplier, freelance, NDA, employment offer).
-- Secondary: anyone who sends a document for signature and wants tamper evidence.
-
-## Non-negotiables
-
-- The review is advice, not legal advice. Every review screen says so.
-- A document is never sent to a third party except the LLM provider used for review.
-- The signed PDF and its audit trail are downloadable and verifiable without BloodOath.

@@ -6,25 +6,22 @@ inclusion: always
 
 | Part | Choice |
 |---|---|
-| Web app | Next.js (App Router) + TypeScript on AWS Amplify Hosting (`WEB_COMPUTE`) |
-| DB | Aurora Serverless v2 Postgres (scales to 0) through the RDS Data API, Drizzle ORM `aws-data-api` driver |
-| Files | S3, private, presigned upload and download (original PDF, signed PDF, OTS proof) |
-| PDF | `pdf-lib` for stamping signatures and the audit page; `pdfjs-dist` for text extraction and rendering |
-| Review agent | Amazon Bedrock (Anthropic Claude) through the AI SDK Bedrock provider, structured output with zod schemas |
-| Blockchain | OpenTimestamps (`javascript-opentimestamps`), anchored to Bitcoin via public calendars |
-| Email | Amazon SES, signing links with single-use tokens |
-| Cron | EventBridge rule (every 30 min) -> API destination -> `POST /api/cron` with `x-cron-key` |
-| Infra | One CloudFormation stack: `infra/stack.yaml`, deployed by `infra/deploy.sh` |
-| Kiro Crew app | `crew-app/` in this repo: page, agent, skill, MCP server, cron |
-| Demo video | Playwright recording of the real app + Remotion composition, scripted by Kiro |
+| Revenant app (control plane) | Next.js (App Router) + TypeScript on Amplify Hosting (`WEB_COMPUTE`), installed into the user's own AWS account by one CloudFormation stack |
+| Revenant DB | Aurora Serverless v2 Postgres (scales to 0) via the RDS Data API, Drizzle ORM |
+| Agent engine | Kiro CLI headless (`kiro-cli chat --no-interactive`) in a CodeBuild container, with Revenant's steering and the project's `.kiro/` |
+| Live log stream | CodeBuild -> CloudWatch Logs -> Revenant API -> server-sent events |
+| Generated apps | One GitHub repo + one CloudFormation stack each, built from tested building blocks in `blocks/` |
+| Previews | One Amplify branch per change (`preview/<n>`), production on `main` |
+| Credits and cost | Cost Explorer (`RecordType` Credit and Usage) and per-app cost allocation tags |
+| Secrets | Secrets Manager only: Kiro API key, GitHub token, generated app keys |
+| Kiro Crew app | `crew-app/`: MCP tools, agent, skill, page, monitor |
+| Demo video | Playwright recording of the real app + Remotion composition |
 
 ## Rules
 
 - Keep it small. Prefer the platform and the standard library before a new dependency.
-- Every AWS resource lives in `infra/stack.yaml`. No click-ops in the console.
-- The server gets AWS access only from the Amplify compute role. No AWS keys in env vars.
-- Secrets are generated in Secrets Manager by the stack and read at runtime by ARN.
-  Never commit `.env*`. Never log document text or tokens.
+- Every AWS resource lives in a CloudFormation template. No click-ops.
+- The server's AWS access comes only from IAM roles. No AWS keys in env vars.
+- Never commit `.env*`. Never log secrets, tokens or prompt contents with personal data.
 - Validate every request body with zod at the route boundary.
-- The hash that gets anchored is the hash of the exact bytes the user downloads.
-- Respect `prefers-reduced-motion` for every animation (candles, ink, seal).
+- Respect `prefers-reduced-motion` for every animation.
