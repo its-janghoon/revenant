@@ -93,5 +93,7 @@ One row per Kiro turn (chat message, loop cycle or subagent turn). Rebuilt by `s
 | 87 | 2026-11-11 20:08 | chat | claude-opus-5.5 | 2.21 | 1370.73 | 30s |
 | 88 | 2026-11-11 20:13 | chat | claude-opus-5.5 | 0.98 | 1371.71 | 53s |
 | 89 | 2026-11-11 21:04 | chat | claude-opus-5.5 | 28.84 | 1400.55 | 2988s |
+| 90 | 2026-11-11 21:13 | chat | claude-opus-5.5 | 8.49 | 1409.04 | 533s |
+| 91 | 2026-11-11 22:05 | chat | claude-opus-5.5 | 41.41 | 1450.45 | 2293s |
 
-**Total: 1400.55 credits over 89 turns.**
+**Total: 1450.45 credits over 91 turns.**
