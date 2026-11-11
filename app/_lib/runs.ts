@@ -13,7 +13,7 @@ import type { User } from "./auth";
 import { HttpError, busy } from "./http";
 import { kiroFor } from "./keys";
 import { head } from "./repo";
-import { getSettings, sqlAllowedFor, toProject, workBranch, type ProjectRow, type RunRow } from "./store";
+import { getSettings, projectRuns, sqlAllowedFor, toProject, workBranch, type ProjectRow, type RunRow } from "./store";
 import { event, putEvents } from "./timeline";
 
 const { runs, projects } = schema;
@@ -128,21 +128,51 @@ export async function syncRuns(projectId: string): Promise<void> {
   }
 }
 
-/** Credits and last commit from the run's `run_done` line; the runner only writes them to its log. */
-async function reported(b: Build): Promise<{ credits?: number; commit?: string | null }> {
+/** Runner lines of a build that match `pattern` (a CloudWatch filter pattern), oldest first. */
+async function runnerLines(b: Build, pattern: string) {
   const group = b.logs?.groupName;
   const stream = b.logs?.streamName;
-  if (!group || !stream) return {};
+  if (!group || !stream) return [];
+  const r = await logs.send(new FilterLogEventsCommand({ logGroupName: group, logStreamNames: [stream], filterPattern: pattern, limit: 20 }));
+  return (r.events ?? []).map((e) => parseLine((e.message ?? "").trim())).filter((l) => l !== null);
+}
+
+/** Credits and last commit from the run's `run_done` line; the runner only writes them to its log. */
+async function reported(b: Build): Promise<{ credits?: number; commit?: string | null }> {
   try {
-    const r = await logs.send(new FilterLogEventsCommand({ logGroupName: group, logStreamNames: [stream], filterPattern: '"run_done"', limit: 5 }));
-    for (const e of (r.events ?? []).reverse()) {
-      const line = parseLine((e.message ?? "").trim());
-      if (line?.t === "run_done") return { ...(typeof line.credits === "number" ? { credits: line.credits } : {}), ...(line.commit ? { commit: line.commit } : {}) };
-    }
+    const line = (await runnerLines(b, '"run_done"')).filter((l) => l.t === "run_done").pop();
+    if (line?.t === "run_done") return { ...(typeof line.credits === "number" ? { credits: line.credits } : {}), ...(line.commit ? { commit: line.commit } : {}) };
   } catch (e) {
     console.error("run credits not read", (e as Error).name, (e as Error).message);
   }
   return {};
+}
+
+/**
+ * Where a new build continues after a failed one: the newest run whose work was saved on its hold
+ * branch rv/run-<id> (repair gave up or the user stopped it), with the error that stopped it.
+ * Null when there is nothing to continue, so the build starts from the spec.
+ */
+export async function resume(p: ProjectRow): Promise<{ base: string; why: string } | null> {
+  if (!p.repo) return null;
+  for (const r of await projectRuns(p.id, 10)) {
+    if (r.mode === "spec" || r.status === "queued" || r.status === "running") continue;
+    if (r.status === "succeeded") return null;
+    const hold = `rv/run-${r.id}`;
+    if (!(await head(p.repo, hold))) continue;
+    let why = "";
+    if (r.codebuildId) {
+      try {
+        const { builds = [] } = await codebuild.send(new BatchGetBuildsCommand({ ids: [r.codebuildId] }));
+        const err = builds[0] ? (await runnerLines(builds[0], '"step"')).filter((l) => l.t === "error").pop() : undefined;
+        if (err?.t === "error") why = `The last run stopped at ${err.step}:\n${err.text}`;
+      } catch (e) {
+        console.error("run error not read", (e as Error).name, (e as Error).message);
+      }
+    }
+    return { base: hold, why };
+  }
+  return null;
 }
 
 export async function endRun(run: RunRow, status: RunStatus, at?: string, extra: { credits?: number; commit?: string | null } = {}): Promise<void> {

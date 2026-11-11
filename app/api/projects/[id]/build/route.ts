@@ -2,7 +2,7 @@ import { z } from "zod";
 import { needUser } from "@/app/_lib/auth";
 import { HttpError, accepted, optionalBody, route } from "@/app/_lib/http";
 import { head } from "@/app/_lib/repo";
-import { assertIdle, startRun } from "@/app/_lib/runs";
+import { assertIdle, resume, startRun } from "@/app/_lib/runs";
 import { SPEC_BRANCH, findProject, livePreviews, toProject } from "@/app/_lib/store";
 import { nextPreview } from "@/lib/deploy";
 
@@ -19,8 +19,12 @@ export const POST = route<{ id: string }>(async (req, { id }) => {
   await assertIdle(p.id);
   const [cur] = await livePreviews(p.id);
   const branch = cur?.branch ?? (await nextPreview(toProject(p))).branch;
-  // A preview whose first build failed has no git branch yet: start it again from the spec.
-  const base = cur && (await head(p.repo, cur.branch)) ? branch : SPEC_BRANCH;
-  const run = await startRun({ project: p, user: u, mode: "build", branch, base, prompt: b.notes });
+  // A preview whose first build failed has no git branch yet: continue the last saved work
+  // (with the error that stopped it), or start again from the spec.
+  const live = cur && (await head(p.repo, cur.branch));
+  const back = live ? null : await resume(p);
+  const base = live ? branch : back?.base ?? SPEC_BRANCH;
+  const prompt = [back?.why, b.notes].filter(Boolean).join("\n\n") || undefined;
+  const run = await startRun({ project: p, user: u, mode: "build", branch, base, prompt });
   return accepted({ project: { ...toProject(p), status: "building" }, run });
 });
