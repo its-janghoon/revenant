@@ -395,12 +395,13 @@ function checks(): Promise<void> {
   const keep = (line: string) => {
     if (line.startsWith('RV-STEP ')) {
       step = line.slice(8).trim() as ErrorStep;
+      out = ''; // report only the failing step's output, not the install warnings before it
       say(`check: ${step}`);
       return;
     }
     process.stdout.write(`${relay(line)}\n`);
     if (line.startsWith(RUNNER_PREFIX)) return;
-    out = tail(`${out}\n${line}`, 40);
+    out = tail(`${out}\n${line}`, 120);
   };
   createInterface({ input: c.stdout }).on('line', keep);
   createInterface({ input: c.stderr }).on('line', keep);
@@ -409,9 +410,18 @@ function checks(): Promise<void> {
     c.on('close', (code) => {
       child = null;
       if (code === 0) resolve();
-      else reject(new Step(step, out || `check failed at ${step}`));
+      else reject(new Step(step, focus(out) || `check failed at ${step}`));
     });
   });
+}
+
+// The error text is cut to MAX_TEXT (runner/log.ts), so the lines that name the problem go
+// first; otherwise a long warning at the top of the output hides the real cause from repair.
+const KEY = /\b(error|Error|ERROR|cause|Caused by|cannot|Cannot|failed|FAILED|not found|Missing)\b/;
+function focus(out: string): string {
+  const lines = out.split('\n').filter((l) => l.trim() && !l.startsWith('npm warn'));
+  const key = lines.filter((l) => KEY.test(l) && !/serializedError|resolution:/.test(l)).slice(0, 12);
+  return key.length ? `${key.join('\n')}\n---\n${lines.slice(-12).join('\n')}` : lines.join('\n');
 }
 
 function specOnly(start: string): void {
