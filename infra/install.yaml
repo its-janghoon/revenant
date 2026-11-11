@@ -80,7 +80,7 @@ Resources:
             Principal: { Service: amplify.amazonaws.com }
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        - !Sub arn:${AWS::Partition}:iam::aws:policy/AmplifyBackendDeployFullAccess
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AmplifyBackendDeployFullAccess
       Policies:
         - PolicyName: source-and-migrations
           PolicyDocument:
@@ -296,7 +296,7 @@ Resources:
             Condition:
               StringEquals: { aws:SourceAccount: !Ref AWS::AccountId }
       ManagedPolicyArns:
-        - !Sub arn:${AWS::Partition}:iam::aws:policy/AmplifyBackendDeployFullAccess
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AmplifyBackendDeployFullAccess
       Policies:
         - PolicyName: source-and-migrations
           PolicyDocument:
