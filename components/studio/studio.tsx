@@ -3,11 +3,12 @@
 // on the right. Live data by polling; a deploy that dies calls die(), one that comes back rise().
 import { Activity, BookOpen, Code2, Database, Eye, GitBranch, Monitor, Rocket, Smartphone } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { TimelineEvent } from "@/lib/contracts";
 import type { Detail, InspectOut } from "@/app/_lib/types";
 import { readEvent } from "@/app/_lib/events";
 import { useHaunt } from "@/lib/haunt";
+import { Word } from "@/lib/theme/word";
 import { api } from "../api";
 import { usePoll, useTimeline } from "../poll";
 import { W } from "../words";
@@ -18,11 +19,15 @@ import { Preview } from "./preview";
 import { deployNo, fast, previewNo, pulse } from "./state";
 
 export type Tab = "preview" | "code" | "spec" | "data" | "timeline";
-const TABS: [Tab, string, typeof Eye][] = [["preview", "Preview", Eye], ["code", "Code", Code2], ["spec", "Spec", BookOpen], ["data", "Data", Database], ["timeline", "Timeline", Activity]];
+// Preview, Spec and Timeline have Haunted words in the copy map (lib/theme/copy.ts); Code and Data stay plain.
+const TABS: [Tab, ReactNode, typeof Eye][] = [
+  ["preview", <Word key="p" k="preview" />, Eye], ["code", "Code", Code2], ["spec", <Word key="s" k="spec" />, BookOpen],
+  ["data", "Data", Database], ["timeline", <Word key="t" k="timeline" />, Activity],
+];
 
 export function Studio({ initial, events: ev0, tab: tab0 = "preview" }: { initial: Detail; events: TimelineEvent[]; tab?: Tab }) {
   const id = initial.project.id;
-  const { data: d, refresh } = usePoll<Detail>(`/api/projects/${id}`, initial, (x) => (fast(x) ? 3000 : 15000));
+  const { data: d, refresh, error: pollErr } = usePoll<Detail>(`/api/projects/${id}`, initial, (x) => (fast(x) ? 3000 : 15000));
   const { events: raw, pull } = useTimeline<TimelineEvent>(id, ev0, fast(d));
   const events = useMemo(() => raw.map(readEvent), [raw]);
   const [tab, setTab] = useState<Tab>(tab0);
@@ -92,6 +97,7 @@ export function Studio({ initial, events: ev0, tab: tab0 = "preview" }: { initia
             <Rocket size={14} aria-hidden /> <W k="publishNow" />
           </Link>
         </div>
+        {pollErr ? <div className="warnbar" role="status">Live updates paused: {pollErr}. Retrying…</div> : null}
         {tab === "preview" ? (
           <Preview url={viewUrl} state={state} deployNo={lastDeploy ? deployNo(d, lastDeploy.id) : d.deploys.length + 1} reason={reason} phone={phone}
             selectOn={selectOn} selection={selection} onSelect={setSelection}

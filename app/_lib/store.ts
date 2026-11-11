@@ -1,15 +1,16 @@
 // Revenant's own data for the screens, always scoped to the owner.
 import "server-only";
 import { and, desc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
-import type { Project, Settings } from "@/lib/contracts";
+import type { Project, Repair, Settings } from "@/lib/contracts";
 import { nextPreview } from "@/lib/deploy";
 import { getSettings as policySettings, isSqlAllowed } from "@/lib/policy";
+import { repairsFor } from "@/lib/repair/store";
 import { db, schema } from "@/lib/db/client";
 import type { User } from "./auth";
 import { byNumber } from "./repo";
 import { notFound } from "./http";
 
-const { projects, runs, tasks, deploys, repairs, previews, costs, settings } = schema;
+const { projects, runs, tasks, deploys, previews, costs, settings } = schema;
 
 export type ProjectRow = typeof projects.$inferSelect;
 export type RunRow = typeof runs.$inferSelect;
@@ -38,17 +39,20 @@ export async function setFlag(u: User, flag: string, value: unknown): Promise<vo
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** By id or by name, only the owner's, never deleted ones. */
+/** Projects the owner can see: not deleted, and not handed to the cleanup job (expires_at passed). */
+const visible = sql`${projects.status} <> 'deleted' and (${projects.expiresAt} is null or ${projects.expiresAt} > now())`;
+
+/** By id or by name, only the owner's, never deleted or expired ones. */
 export async function findProject(u: User, idOrName: string): Promise<ProjectRow> {
   const by = UUID.test(idOrName) ? eq(projects.id, idOrName) : eq(projects.name, idOrName);
-  const [p] = await db.select().from(projects).where(and(by, eq(projects.owner, u.sub)));
-  if (!p || p.status === "deleted") throw notFound("No such app");
+  const [p] = await db.select().from(projects).where(and(by, eq(projects.owner, u.sub), visible));
+  if (!p) throw notFound("No such app");
   return p;
 }
 
 export async function listProjects(u: User): Promise<ProjectRow[]> {
   return db.select().from(projects)
-    .where(and(eq(projects.owner, u.sub), sql`${projects.status} <> 'deleted'`))
+    .where(and(eq(projects.owner, u.sub), visible))
     .orderBy(desc(projects.createdAt));
 }
 
@@ -87,13 +91,8 @@ export async function projectDeploys(id: string, limit = 30) {
 export async function projectPreviews(id: string) {
   return db.select().from(previews).where(eq(previews.projectId, id)).orderBy(desc(previews.createdAt));
 }
-export async function projectRepairs(id: string, limit = 30) {
-  const rows = await db.select({ r: repairs }).from(repairs)
-    .leftJoin(deploys, eq(repairs.deployId, deploys.id))
-    .leftJoin(runs, eq(repairs.runId, runs.id))
-    .where(sql`coalesce(${deploys.projectId}, ${runs.projectId})::text = ${id}`)
-    .orderBy(desc(repairs.createdAt)).limit(limit);
-  return rows.map((x) => x.r);
+export async function projectRepairs(id: string, limit = 30): Promise<Repair[]> {
+  return (await repairsFor(db, id)).slice(0, limit);
 }
 
 export async function livePreviews(id: string) {

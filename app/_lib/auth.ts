@@ -11,6 +11,7 @@ import { db, schema } from "@/lib/db/client";
 import { env } from "@/lib/env";
 import { secrets } from "./aws";
 import { HttpError } from "./http";
+import type { CrewToken } from "./types";
 
 export interface User { sub: string; email: string; name: string; admin: boolean }
 
@@ -65,7 +66,7 @@ export async function needMachine(req: Request): Promise<void> {
 // Stored in the settings table (no migration): key "crew:<sha256 of token>", value below.
 // The token itself is shown once and never stored.
 
-export interface CrewToken { id: string; owner: string; email: string; label: string; createdAt: string; lastUsedAt: string | null }
+export type { CrewToken };
 const PREFIX = "crew:";
 const hash = (t: string) => createHash("sha256").update(t).digest("hex");
 

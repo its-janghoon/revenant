@@ -12,8 +12,9 @@ export function Domain({ projectId }: { projectId: string }) {
   const [v, setV] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [loadErr, setLoadErr] = useState("");
   useEffect(() => {
-    api<DomainAnswer>(`/api/projects/${projectId}/domain`).then(setA).catch(() => setA({ domain: null }));
+    api<DomainAnswer>(`/api/projects/${projectId}/domain`).then(setA).catch((e: Error) => { setA({ domain: null }); setLoadErr(e.message); });
   }, [projectId]);
 
   async function save() {
@@ -37,9 +38,11 @@ export function Domain({ projectId }: { projectId: string }) {
           <button type="submit" className="btn" disabled={busy || v.trim().length < 3}>{busy ? <Loader size={13} className="spin" aria-hidden /> : <Check size={13} aria-hidden />} Save</button>
           <button type="button" className="ghost" onClick={() => setEdit(false)}>Cancel</button>
         </form>
+      ) : a === null ? (
+        <div className="t sp muted"><Loader size={12} className="spin" aria-hidden /> Reading the domain…</div>
       ) : (
         <>
-          <div className="t sp"><b>{a?.domain ?? "No custom domain"}</b><span>{a?.domain ? `custom domain · ${ok ? "DNS ok" : a.status ?? "checking DNS"}` : "Point your own domain at this app"}</span></div>
+          <div className="t sp"><b>{a.domain ?? "No custom domain"}</b><span>{a.domain ? `custom domain · ${ok ? "DNS ok" : a.status ?? "checking DNS"}` : loadErr ? `Could not read the domain: ${loadErr}` : "Point your own domain at this app"}</span></div>
           {a?.domain ? <span className={`chip ${ok ? "c-ok" : "c-warn"}`}>{ok ? "ok" : "pending"}</span> : null}
           <button type="button" className="ghost" style={{ padding: "4px 10px" }} onClick={() => { setV(a?.domain ?? ""); setEdit(true); }}><Globe size={13} aria-hidden /> {a?.domain ? "Change" : "Add"}</button>
         </>

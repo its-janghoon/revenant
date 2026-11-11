@@ -120,6 +120,7 @@ export function Spec({ initial, spec: spec0 }: { initial: Detail; spec: SpecView
             <button type="submit" className="ghost" disabled={busy !== "" || writing || !ask.trim()}>{busy === "ask" ? <Loader size={13} className="spin" aria-hidden /> : <ArrowUp size={13} aria-hidden />} Send</button>
           </form>
           {err ? <div className="err" role="alert">{err}</div> : null}
+          {det.error || sp.error ? <div className="muted" role="status" style={{ fontSize: 12, marginTop: 8 }}>Live updates paused: {det.error ?? sp.error}. Retrying…</div> : null}
         </div>
         <div>
           <div className="card" style={{ marginBottom: 14 }}>

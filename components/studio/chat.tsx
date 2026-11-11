@@ -144,7 +144,7 @@ function RunBlock({ d, run, until, events, openFile }: { d: Detail; run: Run; un
       {said.map((s, i) => <div key={i} className="say">{s}</div>)}
       {(run.mode === "build" || run.mode === "change") && d.tasks.length && run === d.runs[0] ? (
         <div className="edit">
-          <div className="eh"><ListChecks size={14} aria-hidden /><b>Plan</b><span className="sp" /><span className="muted">{done} / {d.tasks.length}</span></div>
+          <div className="eh"><ListChecks size={14} aria-hidden /><b><Word k="tasks" vars={{ n: d.tasks.length }} /></b><span className="sp" /><span className="muted">{done} / {d.tasks.length}</span></div>
           <div className="eb tasks">
             {d.tasks.map((x) => (
               <div key={x.id} className="task"><span className={`box ${x.state === "done" ? "done" : x.state === "running" ? "run" : x.state === "failed" ? "failed" : ""}`} />{x.number}. {x.title}</div>
