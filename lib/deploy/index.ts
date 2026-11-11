@@ -4,7 +4,10 @@
 //   settle(project, deploy) / settleAll    follow open deploys to live or failed (+ health check)
 //   plan / publish / approve               publish a live preview to production
 //   getDomain / setDomain                  custom domain records
-//   setHooks({ sql, application, computeRole, failed })  what this lane needs from L3, L6, L4
+//   checkCommit(project, branch, commit)  Code tab: synth + guard in the runner, then the preview deploy
+//   setHooks({ sql, application, computeRole, failed })  what this lane needs from L3, L6, L4;
+//                                         ./wire registers the real ones on import
+import "./wire";
 export { PROD, branchUrl, ensureApp, ensureBranch, envOf, previewBranch, previewNumber } from "./amplify";
 export { getDomain, setDomain } from "./domain";
 export { health } from "./health";

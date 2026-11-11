@@ -1,5 +1,5 @@
-// What the deploy flow needs from other lanes, as one interface each. Register once at startup
-// (for example in the module that owns the feature): setHooks({ sql: ..., application: ... }).
+// What the deploy flow needs from other lanes, as one interface each. lib/deploy/wire.ts
+// registers the real ones when lib/deploy is imported; tests can replace them with setHooks().
 import type { Deploy, Project } from "../contracts";
 
 /** L3 (lib/data): the SQL path, only for apps that got Aurora from blocks/db. */
@@ -12,8 +12,10 @@ export interface SqlHooks {
   snapshot(project: Project, id: string): Promise<void>;
   /** True once snapshot `id` is available. */
   snapshotReady(project: Project, id: string): Promise<boolean>;
-  /** Creates <app>_pv<n> from <app>_dev and returns its name. */
+  /** Creates <app>_pv<n> from <app>_dev and returns its name. Throws while the dev cluster is still being created. */
   previewDb(project: Project, n: number): Promise<string>;
+  /** RV_DB_* variables for blocks/db on the Amplify app ({} until both clusters are ready). */
+  appEnv(project: Project): Promise<Record<string, string>>;
 }
 
 export interface DeployHooks {

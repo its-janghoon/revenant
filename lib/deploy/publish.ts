@@ -97,7 +97,12 @@ export async function plan(project: Project, branch?: string): Promise<PublishDe
   const data = await affected(prod, model);
 
   const sql = await sqlFor(project);
-  const migrationSql = sql ? await sql.migrationDiff(project, src.branch) : [];
+  let migrationSql: string[] = [];
+  try {
+    if (sql) migrationSql = await sql.migrationDiff(project, src.branch);
+  } catch (e) {
+    findings.push({ rule: "sql.migrations", level: "error", message: (e as Error).message });
+  }
 
   const lost = [...destructive(changes).map(describe), ...data.map(affectedLine)];
   const errors = findings.filter((f) => f.level === "error");

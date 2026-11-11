@@ -24,6 +24,19 @@ export async function startSnapshot(app: string, reason = "publish"): Promise<st
   return id;
 }
 
+/** Starts a manual snapshot of the prod cluster named `id`. A second call with the same id does nothing. */
+export async function ensureSnapshot(app: string, id: string, reason = "publish"): Promise<void> {
+  try {
+    await client().send(new CreateDBClusterSnapshotCommand({
+      DBClusterIdentifier: clusterName(app, "prod"),
+      DBClusterSnapshotIdentifier: id,
+      Tags: [{ Key: "revenant:app", Value: app }, { Key: "revenant:reason", Value: reason }],
+    }));
+  } catch (e) {
+    if ((e as Error).name !== "DBClusterSnapshotAlreadyExistsFault") throw e;
+  }
+}
+
 export async function snapshotStatus(id: string): Promise<"creating" | "available" | "failed"> {
   const r = await client().send(new DescribeDBClusterSnapshotsCommand({ DBClusterSnapshotIdentifier: id }));
   const s = r.DBClusterSnapshots?.[0]?.Status ?? "";
