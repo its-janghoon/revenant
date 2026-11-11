@@ -39,8 +39,10 @@ export function SignIn() {
 
   const fail = (e: unknown) => {
     const n = (e as Error).name;
+    const m = (e as Error).message ?? "";
     setErr(
-      n === "UserNotFoundException" || n === "NotAuthorizedException" ? "No invite for this email. Revenant is invite only: ask your admin."
+      n === "NotAuthorizedException" && /session/i.test(m) ? "This sign-in timed out (3 minutes). Send a new code."
+        : n === "UserNotFoundException" || n === "NotAuthorizedException" ? "No invite for this email. Revenant is invite only: ask your admin."
         : n === "CodeMismatchException" ? "That code is wrong. Check the latest email."
         : n === "ExpiredCodeException" ? "That code expired. Send a new one."
         : n === "NotAllowedError" ? "The passkey prompt was closed."
