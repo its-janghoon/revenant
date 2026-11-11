@@ -12,7 +12,7 @@ import { LambdaDestination } from "aws-cdk-lib/aws-logs-destinations";
 import { AuroraPostgresEngineVersion, ClusterInstance, Credentials, DatabaseCluster, DatabaseClusterEngine } from "aws-cdk-lib/aws-rds";
 import { BlockPublicAccess, Bucket, BucketEncryption } from "aws-cdk-lib/aws-s3";
 import { Secret } from "aws-cdk-lib/aws-secretsmanager";
-import { CfnApplication } from "aws-cdk-lib/aws-servicecatalogappregistry";
+import { CfnApplication, CfnResourceAssociation } from "aws-cdk-lib/aws-servicecatalogappregistry";
 import { AwsCustomResource, AwsCustomResourcePolicy, PhysicalResourceId } from "aws-cdk-lib/custom-resources";
 import { auth } from "./auth/resource";
 import { data } from "./data/resource";
@@ -98,8 +98,12 @@ const application = new CfnApplication(backend.stack, "Application", {
   name,
   description: "Revenant, the app builder (this install)",
 });
-Tags.of(backend.stack).add("awsApplication", application.attrArn, {
-  excludeResourceTypes: ["AWS::ServiceCatalogAppRegistry::Application"],
+// A stack tag must be plain text, and the ARN is only known at deploy time, so
+// associate the stack instead; AppRegistry then adds the awsApplication tag itself.
+new CfnResourceAssociation(backend.stack, "ApplicationStack", {
+  application: application.attrId,
+  resource: backend.stack.stackId,
+  resourceType: "CFN_STACK",
 });
 
 // ---------- runner: the shared CodeBuild project every run uses (runner/) ----------
