@@ -6,7 +6,7 @@ When a build or deploy dies, the agent reads the logs, fixes it, and brings it b
 
 Built for Kiroween 2026 (Frankenstein category). Work in progress.
 
-- You own everything: code in your GitHub, one CloudFormation stack per app.
+- You own everything: code in CodeCommit, one CloudFormation stack per app. Nothing leaves AWS.
 - Paid by your AWS credits, with cost per app on screen.
 - Spec first: requirements, design and tasks before any code.
 - Fixes itself: failed builds and deploys are repaired with the cause on record.

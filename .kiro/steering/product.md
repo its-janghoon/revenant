@@ -22,7 +22,7 @@ no seats, their VPC, their IAM, their bill (and their AWS credits, if they have 
 
 ## What makes it different from Lovable, Bolt, v0
 
-1. **You own everything.** Code in your GitHub, infra in your AWS account, one
+1. **You own everything.** Code in CodeCommit and infra in your AWS account, one
    CloudFormation stack per app. Uninstalling Revenant leaves every app running.
 2. **Paid by your AWS credits.** Every screen shows credits left and what each app costs.
 3. **Spec first.** Kiro writes requirements, design and tasks before code. You edit the
@@ -33,8 +33,8 @@ no seats, their VPC, their IAM, their bill (and their AWS credits, if they have 
 ## Demo story
 
 "Build me a contract signing site where an AI flags toxic clauses before you sign."
-Revenant writes the BloodOath spec, builds it, deploys it to AWS, a deploy dies on a
-planted break, the agent resurrects it, the site is live. BloodOath is the example app,
+Revenant writes the FinePrint spec, builds it, deploys it to AWS, a deploy dies on a
+planted break, the agent resurrects it, the site is live. FinePrint ("Blood Oath" in Haunted) is the example app,
 not a separate product.
 
 ## Theme

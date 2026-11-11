@@ -1,7 +1,7 @@
 # Host your own Revenant on AWS
 
 The default install is **public**: the Revenant dashboard runs on Amplify Hosting with a
-public URL and email sign-in. That is what the hosted demo uses.
+public URL and Cognito sign-in. That is what the hosted demo uses.
 
 Companies that want the dashboard reachable only inside their network can run it
 **private** instead. The generated apps are not affected; each app still chooses public
@@ -15,7 +15,7 @@ or private on its own.
 
 | Part | Where |
 |---|---|
-| Dashboard | Amplify Hosting, public URL, email sign-in |
+| Dashboard | Amplify Hosting, public URL, Cognito sign-in |
 | Build runner | CodeBuild |
 | Database | Aurora Serverless v2 in private subnets, Data API |
 
@@ -30,7 +30,7 @@ containers behind an internal load balancer.
 | Name | Route 53 private hosted zone, for example `revenant.internal` |
 | Way in | AWS Verified Access (company SSO, no VPN) or your existing Client VPN |
 | Build runner | CodeBuild in the same VPC |
-| Way out | NAT gateway (or your existing egress) for GitHub and the Kiro API |
+| Way out | NAT gateway (or your existing egress) for the Kiro API (CodeCommit and AWS APIs can use VPC endpoints) |
 | Database | Aurora Serverless v2 in private subnets |
 
 Verified Access, Client VPN and NAT gateways have fixed monthly charges. Check the AWS

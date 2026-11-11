@@ -7,7 +7,7 @@ account. Each lane owns its folders and works on its own branch from `develop`
 
 ## Wave 0: skeleton (one worker, before any lane)
 
-- [ ] 0.1 Next.js app, TypeScript, Drizzle on the Data API, zod env schema, email sign-in
+- [ ] 0.1 Next.js app, TypeScript, Drizzle on the Data API, zod env schema, Cognito sign-in
 - [ ] 0.2 DB schema: projects, runs, tasks, deploys, repairs, events, costs
 - [ ] 0.3 API contracts in `lib/contracts.ts` (types every lane codes against) and the runner log-line format
 - [ ] 0.4 Shell layout and the theme module from `design/mockups/live.html` (Light / Haunted, Calm, copy map, no-flash head script)
@@ -30,7 +30,7 @@ account. Each lane owns its folders and works on its own branch from `develop`
 ## Wave 2: integration (real AWS)
 
 - [ ] 2.1 Install Revenant into the target account with `infra/install.yaml`
-- [ ] 2.2 Build BloodOath end to end from the request, publish it
+- [ ] 2.2 Build FinePrint end to end from the request, publish it
 - [ ] 2.3 Run the 3 planted breaks; record time to recover for each
 - [ ] 2.4 Fix whatever the run finds; repeat until 2.2 and 2.3 pass in one go
 - [ ] 2.5 Judge account

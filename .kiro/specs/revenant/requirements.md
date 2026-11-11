@@ -12,18 +12,18 @@ user's AWS credits.
 **User story:** As a startup founder, I want Revenant in my own AWS account in one click, so that I own everything and spend my credits.
 
 1. The README SHALL offer a CloudFormation quick-create link that installs Revenant.
-2. The install stack SHALL ask only for: a Kiro API key, a GitHub token (or GitHub App install), an admin email, and a monthly budget.
-3. WHEN the stack finishes THEN the output SHALL be the Revenant URL and the admin SHALL get a sign-in email.
+2. The install stack SHALL ask only for: a Kiro API key, an admin email, and a monthly budget. No GitHub token and no mail domain.
+3. WHEN the stack finishes THEN the output SHALL be the Revenant URL and the admin SHALL get a Cognito invite email (Cognito's own sender).
 4. The install stack SHALL create an AWS Budgets alarm at the chosen monthly budget.
 5. WHEN Revenant is uninstalled THEN every generated app SHALL keep running (separate stacks and repos).
-6. The default install SHALL be public (Amplify Hosting, email sign-in). `docs/self-host.md` SHALL describe the private layout (ECS Fargate, internal ALB, Route 53 private zone, Verified Access or Client VPN).
+6. The default install SHALL be public (Amplify Hosting, Cognito sign-in). `docs/self-host.md` SHALL describe the private layout (ECS Fargate, internal ALB, Route 53 private zone, Verified Access or Client VPN).
 
 ## Requirement 2: Ask
 
 **User story:** As a user, I want to say what I need in plain words, so that I don't write code.
 
 1. The home screen SHALL show one prompt box, example requests, AWS credits left and this month's spend.
-2. WHEN a user sends a request THEN Revenant SHALL create a project with a GitHub repo in the user's account or org.
+2. WHEN a user sends a request THEN Revenant SHALL create a project with an AWS CodeCommit repository in the same account. GitHub MAY be connected later as an option.
 3. The user MAY attach images or files (logo, a screenshot, a sample PDF) to the request.
 
 ## Requirement 3: Spec first
@@ -118,7 +118,7 @@ user's AWS credits.
 
 ## Requirement 11: Demo
 
-1. The demo SHALL build BloodOath from the request: "Build me a contract signing site where an AI flags toxic clauses before you sign."
+1. The demo SHALL build FinePrint from the request: "Build me a contract signing site where an AI flags toxic clauses before you sign."
 2. The demo SHALL include one real repair on a planted break and show the time to recover.
 3. The video SHALL be under 3 minutes, show the three differences from Lovable in the first 20 seconds, and contain no unlicensed trademarks or music.
 4. The storyboard SHALL be approved by Janghoon before rendering.

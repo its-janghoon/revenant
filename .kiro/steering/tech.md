@@ -10,10 +10,10 @@ inclusion: always
 | Revenant DB | Aurora Serverless v2 Postgres (scales to 0) via the RDS Data API, Drizzle ORM |
 | Agent engine | Kiro CLI headless (`kiro-cli chat --no-interactive`) in a CodeBuild container, with Revenant's steering and the project's `.kiro/` |
 | Live log stream | CodeBuild -> CloudWatch Logs -> Revenant API -> server-sent events |
-| Generated apps | One GitHub repo + one CloudFormation stack each, built from tested building blocks in `blocks/` |
+| Generated apps | One CodeCommit repo + one CloudFormation stack each (GitHub optional), built from tested building blocks in `blocks/` |
 | Previews | One Amplify branch per change (`preview/<n>`), production on `main` |
 | Credits and cost | Cost Explorer (`RecordType` Credit and Usage) and per-app cost allocation tags |
-| Secrets | Secrets Manager only: Kiro API key, GitHub token, generated app keys |
+| Secrets | Secrets Manager only: Kiro API key, generated app keys |
 | Kiro Crew app | `crew-app/`: MCP tools, agent, skill, page, monitor |
 | Demo video | Playwright recording of the real app + Remotion composition |
 

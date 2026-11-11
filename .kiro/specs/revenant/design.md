@@ -12,7 +12,7 @@
  │ CodeBuild runner: kiro-cli headless on the project repo ---+ (logs)       │
  │      |                                                                    │
  │      v                                                                    │
- │ project repo (GitHub) -> CloudFormation stack per app -> Amplify branch   │
+ │ project repo (CodeCommit) -> CloudFormation stack per app -> Amplify   │
  │                                  | fail                                   │
  │                                  v                                        │
  │                     EventBridge -> repair run (runner again)              │
@@ -23,7 +23,7 @@
 ## Install stack (`infra/install.yaml`)
 
 Amplify app (Revenant itself, from this public repo), Aurora Serverless v2 with Data
-API, Secrets Manager entries (Kiro API key, GitHub token, app key), the CodeBuild runner
+API, Secrets Manager entries (Kiro API key, app key), a Cognito user pool for sign-in, the CodeBuild runner
 project and its ECR image, EventBridge rules for failure events, a Budgets alarm, and
 IAM roles (compute, build, runner). The current `infra/stack.yaml` becomes the first
 set of building blocks under `blocks/`.

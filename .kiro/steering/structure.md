@@ -6,7 +6,7 @@ inclusion: always
 
 ```
 app/            Revenant Next.js app (UI + route handlers under app/api)
-lib/            server logic: projects, builds, deploys, repairs, cost, github, aws
+lib/            server logic: projects, builds, deploys, repairs, cost, repo (CodeCommit), aws
 runner/         CodeBuild image and buildspec that run Kiro CLI headless
 blocks/         CloudFormation building blocks for generated apps (hosting, db, files, mail, ai, cron)
 steering/       steering files Revenant gives Kiro CLI inside generated projects
