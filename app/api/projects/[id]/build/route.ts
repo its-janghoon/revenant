@@ -19,6 +19,8 @@ export const POST = route<{ id: string }>(async (req, { id }) => {
   await assertIdle(p.id);
   const [cur] = await livePreviews(p.id);
   const branch = cur?.branch ?? (await nextPreview(toProject(p))).branch;
-  const run = await startRun({ project: p, user: u, mode: "build", branch, base: cur ? branch : SPEC_BRANCH, prompt: b.notes });
+  // A preview whose first build failed has no git branch yet: start it again from the spec.
+  const base = cur && (await head(p.repo, cur.branch)) ? branch : SPEC_BRANCH;
+  const run = await startRun({ project: p, user: u, mode: "build", branch, base, prompt: b.notes });
   return accepted({ project: { ...toProject(p), status: "building" }, run });
 });

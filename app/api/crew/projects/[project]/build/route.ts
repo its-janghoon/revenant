@@ -16,8 +16,10 @@ export const POST = route<{ project: string }>(async (req, { project }) => {
   await assertIdle(p.id);
   const [cur] = await livePreviews(p.id);
   const branch = cur?.branch ?? (await nextPreview(toProject(p))).branch;
+  // A preview whose first build failed has no git branch yet: start it again from the spec.
+  const from = cur && (await head(p.repo, cur.branch)) ? branch : SPEC_BRANCH;
   try {
-    const run = await startRun({ project: p, user: u, mode: "build", branch, base: cur ? branch : SPEC_BRANCH });
+    const run = await startRun({ project: p, user: u, mode: "build", branch, base: from });
     const d = await crewDetail(base, u, p);
     return accepted({ project: crewProject(d), run: d.lastRun ?? { id: run.id, mode: run.mode, status: "running", startedAt: run.startedAt, endedAt: null } });
   } catch (e) {

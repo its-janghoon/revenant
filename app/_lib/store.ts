@@ -5,7 +5,7 @@ import type { Project, Settings } from "@/lib/contracts";
 import { getSettings as policySettings, isSqlAllowed } from "@/lib/policy";
 import { db, schema } from "@/lib/db/client";
 import type { User } from "./auth";
-import { byNumber } from "./repo";
+import { byNumber, head } from "./repo";
 import { notFound } from "./http";
 
 const { projects, runs, tasks, deploys, previews, costs, settings } = schema;
@@ -91,10 +91,15 @@ export async function livePreviews(id: string) {
   return db.select().from(previews).where(and(eq(previews.projectId, id), isNull(previews.deletedAt))).orderBy(desc(previews.createdAt));
 }
 
-/** The branch the agent and the Code tab work on: newest live preview, else the spec branch. */
+/** The branch the agent and the Code tab work on: newest live preview, else the spec branch.
+ * A preview whose first build failed has no git branch yet (the work stayed on the run's hold
+ * branch), so until it exists the spec branch is still the work branch. */
 export async function workBranch(id: string): Promise<string> {
   const [p] = await livePreviews(id);
-  return p?.branch ?? SPEC_BRANCH;
+  if (!p) return SPEC_BRANCH;
+  const [row] = await db.select({ repo: projects.repo }).from(projects).where(eq(projects.id, id));
+  if (row?.repo && !(await head(row.repo, p.branch))) return SPEC_BRANCH;
+  return p.branch;
 }
 
 // Spec runs push here; Amplify does not build rv/* branches.
