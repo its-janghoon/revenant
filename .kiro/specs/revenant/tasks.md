@@ -2,7 +2,7 @@
 
 - [ ] 1. Skeleton
   - [ ] 1.1 Next.js app, Drizzle on the Data API, auth (email link), env schema
-  - [ ] 1.2 Theme: light/dark x Halloween, no-flash head script, copy map
+  - [ ] 1.2 Theme: Light / Haunted (+ Calm), no-flash head script, copy map, effects module, heartbeat line
   - [ ] 1.3 `infra/install.yaml` (from today's `infra/stack.yaml`) and `infra/deploy.sh`
   - _Requirements: 1, 10_
 

@@ -39,9 +39,12 @@ not a separate product.
 
 ## Theme
 
-Halloween is a **toggle**, like dark/light. Normal mode is a clean light/dark UI that
-follows the system setting. Halloween mode changes looks and words only: failed deploys
-"die" (tombstone), repairs are "rituals", live apps have "risen". It never changes behaviour.
+One switch: **Light** (default, plain, no effects) or **Haunted** (dark, Halloween words,
+effects). Haunted has a **Calm** option that turns the effects off. The theme never follows
+the OS setting. Failed deploys "die" (tombstone), repairs are "rituals", live apps have
+"risen". The theme never changes behaviour. Avoid purple/orange and ghost icons: that is
+what every other entry does. Use horror-film grammar instead: darkness, a flashlight,
+grain, a heartbeat that flatlines and comes back.
 
 ## Hackathon
 

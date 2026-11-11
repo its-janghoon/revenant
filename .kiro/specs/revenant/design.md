@@ -93,8 +93,10 @@ also shows `GetCostForecast`.
 Routes: `/` (ask + credits), `/p/:id/spec`, `/p/:id` (workspace: chat and tasks on the
 left, preview on the right, deploy status on top), `/p/:id/timeline`, `/settings`.
 
-Themes: `data-scheme="light|dark"` and `data-halloween="on|off"` on `<html>`, CSS
-variables per pair, a head script sets both before first paint, one copy map for words.
+Themes: `data-mode="light|haunted"` and `data-calm="on|off"` on `<html>`, CSS variables
+per mode, a head script sets both before first paint, one copy map for words. Effects
+(flashlight, grain, flash, flicker, shake, glitch) live in one module that does nothing in
+Light or Calm. Reference: `design/mockups/live.html`.
 
 ## Testing
 

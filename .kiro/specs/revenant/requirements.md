@@ -97,11 +97,14 @@ user's AWS credits.
 
 ## Requirement 10: Theme
 
-1. The header SHALL have a light/dark switch and a Halloween switch on every page.
-2. WHEN Halloween is off THEN the UI SHALL follow the system light/dark setting until the user picks one.
-3. WHEN Halloween is on THEN the UI SHALL use the Halloween look and words (died, ritual, risen, tombstone).
-4. Both choices SHALL be remembered per browser and rendered on first paint with no flash.
-5. Text contrast SHALL meet WCAG AA in all four themes; animations SHALL respect `prefers-reduced-motion`.
+1. The header SHALL have one switch on every page: **Light** or **Haunted**. Light is the default.
+2. The theme SHALL NOT follow the OS light/dark setting.
+3. Light SHALL be a plain light UI with no effects. A failure shows a red state and a flat heartbeat only.
+4. Haunted SHALL be dark with the Halloween words (died, ritual, risen, tombstone) and effects: a flashlight that follows the mouse (before any mouse move it lights the active area), film grain, flicker, a red flash and shake when a deploy dies, a glitch on the state word, a tombstone over the dead preview, and a light bloom when it rises.
+5. Inside Haunted, a **Full / Calm** switch SHALL turn every effect off while keeping the dark look and words. Calm SHALL be on by default WHEN `prefers-reduced-motion` is set.
+6. The app's health SHALL be drawn as a heartbeat line in both themes: beats while live, flat while dead.
+7. Both choices SHALL be remembered per browser and rendered on first paint with no flash.
+8. Text contrast SHALL meet WCAG AA in Light and in Haunted Calm.
 
 ## Requirement 11: Demo
 

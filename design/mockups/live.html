@@ -122,6 +122,10 @@ body.dying #flash{animation:flash 1.2s ease-out}
 @keyframes risen{0%{filter:blur(14px);opacity:0;letter-spacing:.3em}100%{filter:blur(0);opacity:1}}
 [data-mode=spooky] .vitals.alive::before{content:"";position:absolute;inset:-40%;background:radial-gradient(circle at 18% 50%,rgba(233,226,210,.16),transparent 40%);animation:bloom 2.4s ease-out}
 @keyframes bloom{0%{opacity:0}20%{opacity:1}100%{opacity:0}}
+/* calm: same haunted look, no flashlight, grain, flash, flicker or shake */
+.seg.calm{display:none} [data-mode=spooky] .seg.calm{display:flex}
+[data-calm=on] #grain,[data-calm=on] #dark,[data-calm=on] #flash{display:none!important}
+[data-calm=on] main,[data-calm=on] body.dying main,[data-calm=on] .state{animation:none!important;filter:none!important}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -134,8 +138,8 @@ body.dying #flash{animation:flash 1.2s ease-out}
   <div class="crumb">/ <b>bloodoath</b></div>
   <div class="sp"></div>
   <div class="credits" data-t="credits"></div>
-  <div class="seg scheme"><button data-scheme="light">Light</button><button data-scheme="dark">Dark</button></div>
-  <div class="seg mode"><button data-mode="normal">Normal</button><button data-mode="spooky" data-t="spookyBtn"></button></div>
+  <div class="seg mode"><button data-mode="normal">Light</button><button data-mode="spooky">Haunted</button></div>
+  <div class="seg calm" id="calmseg"><button data-calm="off">Full</button><button data-calm="on">Calm</button></div>
 </header>
 
 <main>
@@ -174,8 +178,10 @@ body.dying #flash{animation:flash 1.2s ease-out}
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
 const q = new URLSearchParams(location.search);
-root.dataset.scheme = q.get("scheme") || "dark";
-root.dataset.mode = q.get("mode") || "normal";
+// one switch: Light = normal, Haunted = dark + effects. Never follows the OS setting.
+function setMode(m) { root.dataset.mode = m; root.dataset.scheme = m === "spooky" ? "dark" : "light"; }
+setMode(q.get("mode") === "spooky" ? "spooky" : "normal");
+root.dataset.calm = q.get("calm") === "on" || matchMedia("(prefers-reduced-motion: reduce)").matches ? "on" : "off";
 
 /* ---------------- one copy map, keyed by mode ---------------- */
 const COPY = {
@@ -191,10 +197,11 @@ const COPY = {
 const C = () => COPY[root.dataset.mode];
 function paintCopy() {
   document.querySelectorAll("[data-t]").forEach((el) => (el.innerHTML = C()[el.dataset.t]));
-  document.querySelectorAll(".seg button").forEach((b) => b.classList.toggle("on", root.dataset[b.dataset.scheme ? "scheme" : "mode"] === (b.dataset.scheme || b.dataset.mode)));
+  document.querySelectorAll(".seg.mode button").forEach((b) => b.classList.toggle("on", root.dataset.mode === b.dataset.mode));
+  document.querySelectorAll(".seg.calm button").forEach((b) => b.classList.toggle("on", root.dataset.calm === b.dataset.calm));
   renderState(false);
 }
-document.querySelectorAll(".seg button").forEach((b) => b.onclick = () => { if (b.dataset.scheme) root.dataset.scheme = b.dataset.scheme; else root.dataset.mode = b.dataset.mode; paintCopy(); });
+document.querySelectorAll(".seg button").forEach((b) => b.onclick = () => { if (b.dataset.calm) root.dataset.calm = b.dataset.calm; else setMode(b.dataset.mode); paintCopy(); });
 
 /* ---------------- ECG: the app's heartbeat ---------------- */
 const cv = $("#ecg"), g = cv.getContext("2d");
@@ -233,14 +240,14 @@ let mx = null, my = null, lastMove = 0, fx = innerWidth * .7, fy = innerHeight *
 addEventListener("mousemove", (e) => { mx = e.clientX; my = e.clientY; lastMove = performance.now(); });
 function light() {
   let tx, ty;
-  if (mx !== null && performance.now() - lastMove < 2500) { tx = mx; ty = my; }
+  if (mx !== null) { tx = mx; ty = my; } // follows the hand; before any mouse move, it shows the action
   else { const r = $(target).getBoundingClientRect(); tx = r.left + r.width / 2; ty = r.top + r.height / 2; }
   fx += (tx - fx) * .08; fy += (ty - fy) * .08;
   $("#dark").style.setProperty("--x", fx + "px"); $("#dark").style.setProperty("--y", fy + "px");
 }
 
 let frame = 0;
-(function loop() { frame++; drawEcg(); if (root.dataset.mode === "spooky") { if (frame % 3 === 0) grain(); light(); } requestAnimationFrame(loop); })();
+(function loop() { frame++; drawEcg(); if (root.dataset.mode === "spooky" && root.dataset.calm === "off") { if (frame % 3 === 0) grain(); light(); } requestAnimationFrame(loop); })();
 
 /* ---------------- the scripted run: build -> die -> ritual -> risen ---------------- */
 const TASKS = ["Skeleton and theme", "Upload and preview", "Review agent", "Fields and sending", "Signing", "Final PDF and seal", "Verify page"];
@@ -249,9 +256,9 @@ function renderState(anim) {
   window.__state = state; const el = $("#state");
   el.innerHTML = C()[state] + `<small>${C().sub[state].replace("{n}", n)}</small>`;
   el.classList.remove("glitch", "risen", "bleed");
-  if (anim === "die" && root.dataset.mode === "spooky") { void el.offsetWidth; el.classList.add("glitch", "bleed"); }
+  if (anim === "die" && root.dataset.mode === "spooky" && root.dataset.calm === "off") { void el.offsetWidth; el.classList.add("glitch", "bleed"); }
   if (anim === "rise") { void el.offsetWidth; el.classList.add("risen"); }
-  if (state === "dead" && root.dataset.mode === "spooky") el.classList.add("bleed");
+  if (state === "dead" && root.dataset.mode === "spooky" && root.dataset.calm === "off") el.classList.add("bleed");
   $("#tombtxt").textContent = C().tomb;
 }
 const log = (html, cls = "") => { const d = document.createElement("div"); d.className = "ln " + cls; d.innerHTML = html; $("#log").append(d); while ($("#log").children.length > 14) $("#log").firstChild.remove(); };
