@@ -203,8 +203,13 @@ function secrets(at: string, r: Resource): Finding[] {
   return out;
 }
 
+// Buckets Amplify Data makes for itself: generated client code and the model schema, which every
+// deploy writes again. They hold no user data, so they may go with their stack.
+const AMPLIFY_BUILD_BUCKET = /(AmplifyCodegenAssetsBucket|modelIntrospectionSchemaBucket)[0-9A-F]{8}$/;
+
 function retain(at: string, r: Resource): Finding[] {
   if (!isData(r) || keepsData(r)) return [];
+  if (r.Type === "AWS::S3::Bucket" && AMPLIFY_BUILD_BUCKET.test(at)) return [];
   const want = SNAPSHOT_TYPES.has(r.Type) ? "Retain or Snapshot" : "Retain";
   return [{
     rule: "retain",

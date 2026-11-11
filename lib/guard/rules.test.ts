@@ -84,6 +84,17 @@ test("any data resource without retain or snapshot is rejected", () => {
   }));
 });
 
+test("Amplify's own build buckets may be deleted; a user bucket may not", () => {
+  const b: Resource = { Type: "AWS::S3::Bucket", DeletionPolicy: "Delete" };
+  const s = { "data.nested.template.json": { Resources: {
+    amplifyDataAmplifyCodegenAssetsAmplifyCodegenAssetsBucket9CCB4ACA: b,
+    modelIntrospectionSchemaBucketF566B665: b,
+    UploadsBucketA1B2C3D4: b,
+  } } };
+  const hits = rules(s).filter((x) => x.rule === "retain").map((x) => x.resource);
+  assert.deepEqual(hits, ["data.nested.template.json/UploadsBucketA1B2C3D4"]);
+});
+
 test("a secret in a plain env var or parameter is rejected", () => {
   const name = fc.constantFrom("API_KEY", "STRIPE_SECRET", "DB_PASSWORD", "GITHUB_TOKEN", "OPENAI_API_KEY");
   const value = fc.stringMatching(/^[A-Za-z0-9]{1,30}$/);

@@ -27,11 +27,12 @@ npm run lint --if-present
 echo "RV-STEP synth"
 rm -rf "$out"
 export RV_PROJECT_ID="${RV_PROJECT_ID:-unknown}"
-name="$(printf '%s' "$branch" | tr -c 'A-Za-z0-9-' '-')"
+# Synth as prod (main): the guard checks what prod would get, for example that data is retained.
+# Preview stacks keep nothing on purpose (blocks/data), and nothing synthesized here is deployed.
 npx cdk synth --quiet --no-notices \
   --app 'npx tsx amplify/backend.ts' \
   --context amplify-backend-namespace="${RV_AMPLIFY_APP_ID:-rv-$RV_APP}" \
-  --context amplify-backend-name="$name" \
+  --context amplify-backend-name=main \
   --context amplify-backend-type=branch \
   --output "$out"
 
