@@ -67,12 +67,12 @@ export class RepairRules extends Construct {
     const at = `${region}:${account}`;
     const allow = (actions: string[], resources: string[]) =>
       handler.addToRolePolicy(new PolicyStatement({ actions, resources }));
-    allow(["amplify:GetApp", "amplify:GetBranch", "amplify:UpdateBranch", "amplify:GetJob", "amplify:ListJobs", "amplify:StartJob"],
+    allow(["amplify:GetApp", "amplify:GetBranch", "amplify:ListBranches", "amplify:UpdateBranch", "amplify:GetJob", "amplify:ListJobs", "amplify:StartJob"],
       [`arn:${partition}:amplify:${at}:apps/*`]);
     allow(["cloudformation:DescribeStackEvents"], [`arn:${partition}:cloudformation:${at}:stack/amplify-*`]);
     allow(["codebuild:StartBuild", "codebuild:BatchGetBuilds"], [`arn:${partition}:codebuild:${at}:project/${props.runnerProject}`]);
     allow(["logs:GetLogEvents"], [`arn:${partition}:logs:${at}:log-group:*`]);
-    allow(["codecommit:GetBranch", "codecommit:GetCommit", "codecommit:GetDifferences"], [`arn:${partition}:codecommit:${at}:rv-*`]);
+    allow(["codecommit:GetBranch", "codecommit:GetCommit", "codecommit:GetDifferences", "codecommit:MergeBranchesByThreeWay"], [`arn:${partition}:codecommit:${at}:rv-*`]);
     allow(["ssm:GetParameter", "ssm:PutParameter"], [`arn:${partition}:ssm:${at}:parameter/amplify/*`]);
     allow(["s3:PutObject"], [`arn:${partition}:s3:::${props.promptBucket}/runs/*`]);
     allow(["iam:PassRole"], [`arn:${partition}:iam::${account}:role/rv-*-runner`]);

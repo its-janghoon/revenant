@@ -5,8 +5,8 @@ import type {
 } from "../contracts";
 
 /**
- * Lane L2 (lib/deploy) provides this. Merging into a branch that Amplify auto-builds
- * (main, preview/<n>) starts the redeploy; on main it is the publish path (snapshot, migrations).
+ * Lane L2 (lib/deploy/repair-port.ts) provides this. Amplify auto build is off on generated
+ * apps, so merge() starts the redeploy itself when the target (main, preview/<n>) is an Amplify branch.
  */
 export interface Deployer {
   merge(i: { projectId: string; from: string; into: string }): Promise<{ commit: string }>;

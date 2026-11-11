@@ -13,7 +13,7 @@ import { rules } from "./guard/rules";
 import type { Finding, GuardInput, GuardResult, Stacks } from "./guard/types";
 
 export { classify, describe, destructive, normalize, type Action, type Change } from "./guard/classify";
-export { backfillKeys, backfillPath, diffSchemas, modelFindings, parseSchema, type ModelChange, type Schema } from "./guard/model";
+export { BACKFILL_DIR, backfillKeys, backfillPath, diffSchemas, modelFindings, parseSchema, type ModelChange, type Schema } from "./guard/model";
 export { isData, keepsData, rules } from "./guard/rules";
 export type { Finding, GuardInput, GuardResult, Level, Resource, Stacks, Template } from "./guard/types";
 

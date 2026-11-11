@@ -14,13 +14,15 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { backfillPath } from "../guard/model";
 
 export type Finding = { rule: string; resource?: string; message: string };
 export type Approval = { kind: "model-removed" | "field-removed" | "field-type"; model: string; field?: string; message: string };
 export type DataGuardResult = { ok: boolean; findings: Finding[]; approvals: Approval[] };
 
 export const SCHEMA = "amplify/data/resource.ts";
-export const backfillPath = (model: string, field: string) => `amplify/data/backfill/${model}.${field}.ts`;
+// One place for the backfill path (amplify/data/backfill/<Model>.<field>.ts): lib/guard/model.ts.
+export { backfillPath };
 
 type Field = { type: string; required: boolean; defaulted: boolean };
 type Model = { identifier: string[]; fields: Record<string, Field> };
