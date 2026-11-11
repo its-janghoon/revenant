@@ -1,7 +1,7 @@
 // Runner log lines in the format of lib/contracts.ts (RUNNER_PREFIX + RunnerLine as JSON).
 // CodeBuild sends stdout to CloudWatch; the timeline function parses the lines with parseLine.
 // The runner image has no node_modules, so this file imports only types from the contract
-// and repeats the prefix; the type annotation fails the typecheck if the two ever differ.
+// and repeats the prefix; its type annotation makes a typecheck fail if the two ever differ.
 
 import type { RUNNER_PREFIX as ContractPrefix, RunnerLine } from '../lib/contracts.ts';
 
