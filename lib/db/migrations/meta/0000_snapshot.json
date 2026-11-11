@@ -236,7 +236,7 @@
         },
         "number": {
           "name": "number",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
