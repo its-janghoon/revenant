@@ -131,7 +131,7 @@ Resources:
                 Resource: !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:rv-revenant-*-timeline
               - Sid: AppRepos
                 Effect: Allow
-                Action: [codecommit:CreateRepository, codecommit:GetRepository, codecommit:GetBranch, codecommit:GetFile, codecommit:GetFolder, codecommit:CreateCommit, codecommit:CreateBranch, codecommit:GetDifferences, codecommit:MergeBranchesByFastForward, codecommit:MergeBranchesBySquash, codecommit:TagResource]
+                Action: [codecommit:CreateRepository, codecommit:GetRepository, codecommit:GetBranch, codecommit:GetFile, codecommit:GetFolder, codecommit:CreateCommit, codecommit:CreateBranch, codecommit:GetDifferences, codecommit:MergeBranchesByFastForward, codecommit:MergeBranchesBySquash, codecommit:TagResource, codecommit:GetCommit, codecommit:GetMergeOptions, codecommit:DeleteRepository]
                 Resource: !Sub arn:${AWS::Partition}:codecommit:${AWS::Region}:${AWS::AccountId}:rv-*
               - Sid: Runs
                 Effect: Allow
@@ -139,7 +139,7 @@ Resources:
                 Resource: !Sub arn:${AWS::Partition}:codebuild:${AWS::Region}:${AWS::AccountId}:project/rv-*
               - Sid: CostRead
                 Effect: Allow
-                Action: [ce:GetCostAndUsage, ce:GetCostForecast]
+                Action: [ce:GetCostAndUsage, ce:GetCostForecast, ce:UpdateCostAllocationTagsStatus]
                 Resource: "*" # Cost Explorer has no resource-level permissions
                 Condition:
                   StringEquals: { aws:RequestedRegion: us-east-1 }
@@ -214,7 +214,7 @@ Resources:
                   - !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/amplify-*
               - Sid: StacksRead
                 Effect: Allow
-                Action: [cloudformation:DescribeStacks, cloudformation:DescribeStackEvents]
+                Action: [cloudformation:DescribeStacks, cloudformation:DescribeStackEvents, cloudformation:GetTemplate, cloudformation:ListStackResources, cloudformation:DeleteStack]
                 Resource: !Sub arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/amplify-*
               # Health-check failures and repair rules (lane L4).
               - Sid: Events
@@ -253,6 +253,15 @@ Resources:
                 Effect: Allow
                 Action: s3:GetObject
                 Resource: !Sub arn:${AWS::Partition}:s3:::rv-*-db-dumpbucket*/dumps/*
+              # Record counts of the generated apps' Amplify Data tables (publish plan, Data tab).
+              - Sid: AppTables
+                Effect: Allow
+                Action: dynamodb:Scan
+                Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/*
+              - Sid: AppTableNames
+                Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/rv/*
               - Sid: EventRules
                 Effect: Allow
                 Action: [events:DescribeRule, events:EnableRule, events:DisableRule]
