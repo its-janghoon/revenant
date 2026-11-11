@@ -191,6 +191,6 @@ export async function bake(events: Strike[], dur: number): Promise<ArrayBuffer> 
   v.setUint16(34, 16, true);
   w(36, "data");
   v.setUint32(40, d.length * 2, true);
-  for (let i = 0; i < d.length; i++) v.setInt16(44 + i * 2, Math.max(-1, Math.min(1, d[i])) * 32767, true);
+  for (let i = 0; i < d.length; i++) v.setInt16(44 + i * 2, Math.max(-1, Math.min(1, d[i] ?? 0)) * 32767, true);
   return v.buffer;
 }

@@ -9,10 +9,10 @@ const fieldName = fc.stringMatching(/^[a-z][A-Za-z0-9]{0,8}$/).filter((n) => n !
 const modelName = fc.stringMatching(/^[A-Z][A-Za-z0-9]{0,8}$/);
 const field = fc.record({ kind: fc.constantFrom(...KINDS), required: fc.boolean() });
 
-const model: fc.Arbitrary<Model> = fc.dictionary(fieldName, field, { minKeys: 1, maxKeys: 6 }).chain((fields) =>
-  fc.oneof(fc.constant(["id"]), fc.subarray(Object.keys(fields), { minLength: 1, maxLength: 2 })).map((identifier) => ({ identifier, fields })),
+const model: fc.Arbitrary<Model> = fc.dictionary(fieldName, field, { minKeys: 1, maxKeys: 6 }).map((d) => JSON.parse(JSON.stringify(d)) as Model["fields"]).chain((fields) =>
+  fc.oneof(fc.constant<string[]>(["id"]), fc.subarray(Object.keys(fields), { minLength: 1, maxLength: Math.min(2, Object.keys(fields).length) })).map((identifier) => ({ identifier, fields })),
 );
-const schema: fc.Arbitrary<Schema> = fc.dictionary(modelName, model, { minKeys: 1, maxKeys: 4 });
+const schema: fc.Arbitrary<Schema> = fc.dictionary(modelName, model, { minKeys: 1, maxKeys: 4 }).map((d) => JSON.parse(JSON.stringify(d)) as Schema);
 
 /** Writes a schema the way the agent writes amplify/data/resource.ts, with noise the scanner must skip. */
 function render(s: Schema, style: number): string {

@@ -65,9 +65,11 @@ function jag(x: number, y: number, toY: number, spread: number) {
 function strike(big: boolean): void {
   if (!els || !active()) return;
   const main = jag(15 + Math.random() * 70, 0, 100, 9);
-  els.bolt[0].setAttribute("d", main.d);
-  els.bolt[1].setAttribute("d", jag(main.x * 0.9 + 5, 20 + Math.random() * 20, 60, 14).d);
-  els.bolt[2].setAttribute("d", jag(main.x * 1.05, 40 + Math.random() * 20, 85, 14).d);
+  const [b0, b1, b2] = els.bolt;
+  if (!b0 || !b1 || !b2) return;
+  b0.setAttribute("d", main.d);
+  b1.setAttribute("d", jag(main.x * 0.9 + 5, 20 + Math.random() * 20, 60, 14).d);
+  b2.setAttribute("d", jag(main.x * 1.05, 40 + Math.random() * 20, 85, 14).d);
   restart(els.thunder, "strike", "big");
   els.thunder.classList.add(big ? "big" : "strike");
   pulse("rv-lit", big ? 600 : 380); // lightning lights the whole screen, past the flashlight
