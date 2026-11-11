@@ -1,0 +1,224 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Revenant / BloodOath theme mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=IM+Fell+English:ital@0;1&family=Archivo+Black&family=Archivo:wght@400;600&family=Cinzel:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #d9d9d6; font: 13px/1.4 Inter, sans-serif; padding: 20px; }
+  h1.sheet { font: 600 18px Inter; margin: 0 0 14px; color: #222; }
+  .grid { display: grid; grid-template-columns: repeat(2, 720px); gap: 18px; }
+  .cap { font: 600 12px Inter; color: #333; margin: 0 0 6px; letter-spacing: .02em; }
+  .panel { width: 720px; height: 460px; overflow: hidden; border-radius: 10px; position: relative;
+           background: var(--bg); color: var(--fg); font-family: var(--body); box-shadow: 0 1px 3px #0003; }
+  .muted { color: var(--muted); }
+  .bar { display: flex; align-items: center; gap: 12px; height: 46px; padding: 0 16px; border-bottom: 1px solid var(--line); background: var(--bar); }
+  .logo { font-family: var(--head); font-weight: var(--headw); font-size: 17px; letter-spacing: var(--track); }
+  .logo b { color: var(--accent); }
+  .sp { flex: 1; }
+  .tog { display: flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; font-size: 11px; }
+  .tog span { padding: 4px 8px; }
+  .tog .on { background: var(--accent); color: var(--onaccent); }
+  .btn { background: var(--accent); color: var(--onaccent); border-radius: var(--r); padding: 8px 14px; font-weight: 600; font-size: 12px; display: inline-block; font-family: var(--btnfont); letter-spacing: var(--track); }
+  .ghost { border: 1px solid var(--line); border-radius: var(--r); padding: 7px 12px; font-size: 12px; display: inline-block; }
+  .page { background: var(--paper); color: var(--paperfg); border: 1px solid var(--line); border-radius: calc(var(--r) / 2); padding: 16px 18px; font-family: var(--doc); font-size: 10.5px; line-height: 1.55; box-shadow: var(--pageshadow); }
+  .page h4 { font-family: var(--head); font-size: 13px; margin-bottom: 8px; }
+  .page p { margin-bottom: 6px; }
+  .hl-t { background: var(--ptoxbg, var(--toxicbg)); outline: 1.5px solid var(--toxic); border-radius: 2px; }
+  .hl-w { background: var(--pwatbg, var(--watchbg)); border-radius: 2px; }
+  .chip { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 99px; letter-spacing: .03em; text-transform: uppercase; font-family: var(--mono); }
+  .c-t { background: var(--toxicbg); color: var(--toxic); }
+  .c-w { background: var(--watchbg); color: var(--watch); }
+  .c-s { background: var(--safebg); color: var(--safe); }
+  .card { border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; background: var(--card); }
+  .card + .card { margin-top: 8px; }
+  .card h5 { font-size: 12.5px; font-weight: 600; margin: 4px 0 3px; font-family: var(--cardhead); }
+  .card .re { font-size: 11px; border-left: 2px solid var(--safe); padding-left: 8px; margin-top: 6px; }
+  .mono { font-family: var(--mono); font-size: 11px; }
+  .tl { position: relative; padding-left: 20px; }
+  .tl .ev { position: relative; padding: 0 0 12px; }
+  .tl .ev::before { content: ""; position: absolute; left: -16px; top: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--dot, var(--muted)); }
+  .tl::before { content: ""; position: absolute; left: 8px; top: 6px; bottom: 10px; width: 1px; background: var(--line); }
+  .ev.bad { --dot: var(--toxic); } .ev.ok { --dot: var(--safe); } .ev.fix { --dot: var(--watch); }
+  .ico { font-family: var(--head); }
+  .seal { width: 54px; height: 54px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #c0392b, #7a0a0a 70%); color: #f3d9c8; display: grid; place-items: center; font: 700 9px Cinzel, serif; letter-spacing: .08em; box-shadow: 0 2px 0 #4a0505, inset 0 0 0 4px #9b1c1c, inset 0 0 0 5px #5c0808; transform: rotate(-8deg); }
+  .candle { position: absolute; width: 140px; height: 140px; border-radius: 50%; background: radial-gradient(circle, #ffb34733 0%, transparent 70%); pointer-events: none; }
+  .stone { display: inline-block; width: 16px; height: 18px; border-radius: 8px 8px 2px 2px; background: var(--muted); vertical-align: -3px; margin-right: 6px; }
+</style>
+</head>
+<body>
+<h1 class="sheet" id="title"></h1>
+<div class="grid" id="grid"></div>
+
+<script>
+const OPT = new URLSearchParams(location.search).get("opt") || "a";
+
+// --- design options: tokens per theme + layout ---
+const OPTIONS = {
+  a: {
+    name: "A. Ledger: paper and ink, one red",
+    layout: "rail",
+    base: { head: "Fraunces, serif", headw: 600, body: "Inter, sans-serif", doc: "Fraunces, serif", mono: "'JetBrains Mono', monospace", cardhead: "Inter, sans-serif", btnfont: "Inter, sans-serif", r: "6px", track: "0", pageshadow: "0 1px 2px #0001" },
+    themes: {
+      light: { bg: "#f6f4ef", bar: "#f6f4ef", fg: "#1b1a17", muted: "#6b675e", line: "#dcd7cc", card: "#fffdf8", paper: "#ffffff", paperfg: "#1b1a17", accent: "#b3261e", onaccent: "#fff", toxic: "#b3261e", toxicbg: "#f6dcd8", watch: "#8a5a00", watchbg: "#f5e7c6", safe: "#2f6b3a", safebg: "#dcebdc" },
+      dark:  { bg: "#151412", bar: "#151412", fg: "#ece8df", muted: "#9a9488", line: "#2e2b26", card: "#1d1b18", paper: "#24221e", paperfg: "#e6e1d6", accent: "#e0574c", onaccent: "#160b0a", toxic: "#ff7b70", toxicbg: "#3a1a17", watch: "#e5b45a", watchbg: "#3a2c12", safe: "#7cc48a", safebg: "#18301d" },
+      hlight:{ head: "'IM Fell English', serif", headw: 400, doc: "'IM Fell English', serif", cardhead: "'IM Fell English', serif", btnfont: "Cinzel, serif", track: ".04em", bg: "#ece0c8", bar: "#e4d4b5", fg: "#2a1a12", muted: "#6e5440", line: "#c9b28c", card: "#f3e8d2", paper: "#f7eedb", paperfg: "#2a1a12", accent: "#8a0303", onaccent: "#f7eedb", toxic: "#8a0303", toxicbg: "#e9c3b3", watch: "#7a4b06", watchbg: "#ead6a8", safe: "#3d5a2a", safebg: "#d6dcc0", pageshadow: "0 6px 18px #5a3a1a33" },
+      hdark: { head: "'IM Fell English', serif", headw: 400, doc: "'IM Fell English', serif", cardhead: "'IM Fell English', serif", btnfont: "Cinzel, serif", track: ".04em", bg: "#0e0a08", bar: "#140e0b", fg: "#ecdcc0", muted: "#a08a6c", line: "#3a2a1e", card: "#1a120d", paper: "#e9dbbd", paperfg: "#2a1a12", accent: "#a40c0c", onaccent: "#f3e3c3", ptoxbg: "#e9b8a8", pwatbg: "#ecd59c", toxic: "#ff5a4a", toxicbg: "#3d0d0a", watch: "#f0b04a", watchbg: "#3a2510", safe: "#a8c37a", safebg: "#1f2a14", pageshadow: "0 0 40px #ffb34722" }
+    }
+  },
+  b: {
+    name: "B. Console: dense tool, sidebar, mono status",
+    layout: "side",
+    base: { head: "Inter, sans-serif", headw: 600, body: "Inter, sans-serif", doc: "Inter, sans-serif", mono: "'JetBrains Mono', monospace", cardhead: "Inter, sans-serif", btnfont: "Inter, sans-serif", r: "4px", track: "-.01em", pageshadow: "none" },
+    themes: {
+      light: { bg: "#ffffff", bar: "#fafafa", fg: "#111111", muted: "#6f6f6f", line: "#e6e6e6", card: "#ffffff", paper: "#ffffff", paperfg: "#111", accent: "#111111", onaccent: "#fff", toxic: "#d1242f", toxicbg: "#ffebe9", watch: "#9a6700", watchbg: "#fff8c5", safe: "#1a7f37", safebg: "#dafbe1" },
+      dark:  { bg: "#0a0a0a", bar: "#111111", fg: "#ededed", muted: "#8f8f8f", line: "#262626", card: "#111111", paper: "#161616", paperfg: "#e5e5e5", accent: "#ededed", onaccent: "#0a0a0a", toxic: "#ff6369", toxicbg: "#3c1618", watch: "#f2c94c", watchbg: "#33290c", safe: "#4ade80", safebg: "#0f2e1a" },
+      hlight:{ head: "'JetBrains Mono', monospace", bg: "#eef0e6", bar: "#e3e6d6", fg: "#141a10", muted: "#5d6650", line: "#c8ceb4", card: "#f6f7f0", paper: "#fbfcf6", paperfg: "#141a10", accent: "#3f6b12", onaccent: "#f6f7f0", toxic: "#9b1d6a", toxicbg: "#f1d4e6", watch: "#8a6100", watchbg: "#f2e3b5", safe: "#3f6b12", safebg: "#dbe8c4" },
+      hdark: { head: "'JetBrains Mono', monospace", bg: "#070906", bar: "#0b0f09", fg: "#d8f5c4", muted: "#7b9468", line: "#1d2a16", card: "#0d120b", paper: "#10170d", paperfg: "#cfeebc", accent: "#8cff4a", onaccent: "#071003", toxic: "#ff4fb3", toxicbg: "#3a0f2a", watch: "#ffd34f", watchbg: "#30270b", safe: "#8cff4a", safebg: "#142a0b", pageshadow: "0 0 0 1px #8cff4a22, 0 0 30px #8cff4a14" }
+    }
+  },
+  c: {
+    name: "C. Poster: big type, split screen, high contrast",
+    layout: "split",
+    base: { head: "'Archivo Black', sans-serif", headw: 400, body: "Archivo, sans-serif", doc: "Archivo, sans-serif", mono: "'JetBrains Mono', monospace", cardhead: "Archivo, sans-serif", btnfont: "'Archivo Black', sans-serif", r: "0px", track: "0", pageshadow: "6px 6px 0 var(--fg)" },
+    themes: {
+      light: { bg: "#f2efe6", bar: "#f2efe6", fg: "#101010", muted: "#555", line: "#101010", card: "#f2efe6", paper: "#ffffff", paperfg: "#101010", accent: "#ff4d00", onaccent: "#101010", toxic: "#d91a00", toxicbg: "#ffd4c4", watch: "#7a5500", watchbg: "#ffe58a", safe: "#0b6b3a", safebg: "#c9f0d6" },
+      dark:  { bg: "#101010", bar: "#101010", fg: "#f2efe6", muted: "#a7a39a", line: "#f2efe6", card: "#101010", paper: "#1c1c1c", paperfg: "#f2efe6", accent: "#ff6a26", onaccent: "#101010", toxic: "#ff6a4d", toxicbg: "#3d140a", watch: "#ffd24a", watchbg: "#3b2f08", safe: "#5fe39a", safebg: "#0e3020", pageshadow: "6px 6px 0 #ff6a26" },
+      hlight:{ head: "Cinzel, serif", headw: 700, btnfont: "Cinzel, serif", track: ".06em", bg: "#e8e0d2", bar: "#e8e0d2", fg: "#1a0f14", muted: "#5a4650", line: "#1a0f14", card: "#e8e0d2", paper: "#f5efe4", paperfg: "#1a0f14", accent: "#6b0f1a", onaccent: "#f5efe4", pop: "#e05a6a", toxic: "#6b0f1a", toxicbg: "#e7c3c3", watch: "#6e4a00", watchbg: "#ecd9a0", safe: "#2e4a30", safebg: "#cfdcc8", pageshadow: "6px 6px 0 #6b0f1a" },
+      hdark: { head: "Cinzel, serif", headw: 700, btnfont: "Cinzel, serif", track: ".06em", bg: "#0c0609", bar: "#0c0609", fg: "#efe3d0", muted: "#a08f86", line: "#efe3d0", card: "#0c0609", paper: "#1a0f13", paperfg: "#efe3d0", accent: "#b3122a", onaccent: "#efe3d0", toxic: "#ff4d5e", toxicbg: "#3a0b13", watch: "#e8b44c", watchbg: "#33240a", safe: "#9fc79a", safebg: "#17261a", pageshadow: "6px 6px 0 #b3122a" }
+    }
+  }
+};
+
+const o = OPTIONS[OPT];
+document.getElementById("title").textContent = o.name;
+
+const H = (t) => t === "hlight" || t === "hdark";
+const word = (t, plain, spooky) => H(t) ? spooky : plain;
+
+function toggles(t) {
+  const dark = t === "dark" || t === "hdark";
+  return `<div class="tog"><span class="${dark ? "" : "on"}">Light</span><span class="${dark ? "on" : ""}">Dark</span></div>
+          <div class="tog"><span class="${H(t) ? "on" : ""}">${H(t) ? "🎃 Halloween" : "Halloween"}</span></div>`;
+}
+
+function doc(t) {
+  return `<div class="page">
+    <h4>${word(t, "Commercial Lease Agreement", "Commercial Lease Agreement")}</h4>
+    <p><b>7. Term.</b> <span class="hl-w">This Lease renews automatically for successive 3-year terms unless Tenant gives notice 180 days before expiry.</span></p>
+    <p><b>8. Rent.</b> Tenant shall pay $4,200 per month on the first day of each month.</p>
+    <p><b>12. Liability.</b> <span class="hl-t">Tenant shall indemnify Landlord against any and all claims, without limit, including those caused by Landlord's own negligence.</span></p>
+    <p><b>13. Repairs.</b> Landlord shall keep the roof and structure in good repair.</p>
+  </div>`;
+}
+
+function findings(t) {
+  return `
+    <div class="card"><span class="chip c-t">${word(t, "Toxic", "Cursed")}</span>
+      <h5>§12 Unlimited liability, even for the landlord's fault</h5>
+      <div class="muted" style="font-size:11px">You pay for damage the landlord causes. No cap.</div>
+      <div class="re">Rewrite: "…except claims caused by Landlord's negligence. Liability capped at 12 months' rent."</div></div>
+    <div class="card"><span class="chip c-w">${word(t, "Watch", "Haunted")}</span>
+      <h5>§7 Auto-renews for 3 years, 180-day notice</h5></div>
+    <div class="card" style="display:flex;gap:8px;align-items:center"><span class="chip c-s">${word(t, "Safe", "Blessed")}</span><span class="muted" style="font-size:11px">14 clauses look fine</span></div>`;
+}
+
+function signRow(t) {
+  return `<div style="display:flex;gap:8px;align-items:center;margin-top:12px">
+    <span class="btn">${word(t, "Sign document", "Swear the oath")}</span>
+    <span class="ghost">${word(t, "Decline", "Refuse")}</span>
+    <span class="sp"></span>
+    ${H(t) ? `<div class="seal">SEALED</div>` : `<span class="mono muted">⛓ Bitcoin seal after signing</span>`}
+  </div>`;
+}
+
+function timeline(t) {
+  return `<div class="tl">
+    <div class="ev bad"><div><b>${H(t) ? '<span class="stone"></span>Deploy #14 died' : "Deploy #14 failed"}</b> <span class="muted mono">12:41</span></div>
+      <div class="mono muted">CREATE_FAILED Db: EngineVersion 13.4 does not support MinCapacity 0</div></div>
+    <div class="ev fix"><div><b>${word(t, "Repair run 1", "Ritual 1")}</b> <span class="muted mono">12:42</span></div>
+      <div>Cause: the Aurora version is too old to pause at zero.</div>
+      <div class="mono muted">infra/stack.yaml  EngineVersion "13.4" → "16.6"</div></div>
+    <div class="ev ok"><div><b>Check passed</b> <span class="muted mono">12:43</span> <span class="mono muted">validate-template ✓ build ✓</span></div>
+      <div class="mono muted">PR #31 merged</div></div>
+    <div class="ev ok"><div><b>${word(t, "Deploy #15 live", "Resurrected")}</b> <span class="muted mono">12:44</span></div>
+      <div class="mono">main.d3x9k.amplifyapp.com  200 OK</div></div>
+  </div>`;
+}
+
+function candle(t) { return H(t) && t === "hdark" ? `<div class="candle" style="left:-40px;top:-30px"></div><div class="candle" style="right:-50px;bottom:-60px"></div>` : ""; }
+
+// --- layouts ---
+const L = {
+  rail: {
+    sign: (t) => `<div class="bar"><span class="logo">Blood<b>Oath</b></span><span class="sp"></span>${toggles(t)}</div>
+      <div style="display:grid;grid-template-columns:1fr 290px;gap:16px;padding:16px">
+        <div>${doc(t)}${signRow(t)}</div>
+        <div><div class="muted" style="font-size:11px;margin-bottom:6px">${word(t, "Review · 1 toxic, 1 watch", "The reading · 1 curse, 1 haunting")}</div>${findings(t)}</div>
+      </div>`,
+    deploy: (t) => `<div class="bar"><span class="logo">Revenant</span><span class="muted">/ bloodoath</span><span class="sp"></span>${toggles(t)}</div>
+      <div style="display:grid;grid-template-columns:1fr 230px;gap:16px;padding:18px">
+        <div>${timeline(t)}</div>
+        <div><div class="card"><div class="muted" style="font-size:11px">${word(t, "Status", "Condition")}</div><h5 style="font-size:18px">${word(t, "Live", "Risen")}</h5><div class="mono muted">us-east-1 · 9 resources</div></div>
+        <div class="card"><div class="muted" style="font-size:11px">${word(t, "Repairs this week", "Resurrections")}</div><h5 style="font-size:18px">3 / 3</h5></div></div>
+      </div>`
+  },
+  side: {
+    shell: (t, title, body, active) => `<div style="display:grid;grid-template-columns:150px 1fr;height:100%">
+      <div style="border-right:1px solid var(--line);background:var(--bar);padding:14px 10px;font-size:12px">
+        <div class="logo" style="margin-bottom:16px">${active === "sign" ? "blood<b>oath</b>" : "revenant"}</div>
+        ${(active === "sign" ? ["Documents", "Review", "Signers", "Seals", "Verify"] : ["Projects", "Deploys", "Repairs", "Accounts", "Logs"]).map((n, i) => `<div style="padding:5px 8px;border-radius:var(--r);${i === 1 ? "background:var(--card);border:1px solid var(--line)" : ""}">${n}</div>`).join("")}
+      </div>
+      <div><div class="bar"><b style="font-size:13px">${title}</b><span class="sp"></span>${toggles(t)}</div><div style="padding:14px">${body}</div></div></div>`,
+    sign: (t) => L.side.shell(t, "lease-2026.pdf", `<div style="display:grid;grid-template-columns:1fr 250px;gap:12px">
+        <div>${doc(t)}${signRow(t)}</div><div>${findings(t)}</div></div>`, "sign"),
+    deploy: (t) => L.side.shell(t, "bloodoath · deploys", `
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          ${["#15 live|ok", "#14 " + word(t, "failed", "died") + "|bad", "#13 live|ok"].map(s => { const [a, k] = s.split("|"); return `<div class="card mono" style="flex:1;padding:8px"><span class="chip ${k === "ok" ? "c-s" : "c-t"}">${k === "ok" ? "ok" : "fail"}</span> ${a}</div>`; }).join("")}
+        </div>${timeline(t)}`, "deploy")
+  },
+  split: {
+    sign: (t) => `<div style="display:grid;grid-template-columns:260px 1fr;height:100%">
+      <div style="background:var(--accent);color:var(--onaccent);padding:20px;display:flex;flex-direction:column">
+        <div class="logo" style="font-size:22px;line-height:1">${H(t) ? "BLOOD<br>OATH" : "Blood<br>Oath"}</div>
+        <div class="sp"></div>
+        <div style="font-family:var(--head);font-size:44px;line-height:.95">1</div>
+        <div style="font-weight:600">${word(t, "toxic clause", "cursed clause")}</div>
+        <div style="font-family:var(--head);font-size:44px;line-height:.95;margin-top:10px">1</div>
+        <div style="font-weight:600">${word(t, "to watch", "haunting")}</div>
+        <div style="margin-top:14px;font-size:11px;opacity:.85">${word(t, "Read this before you sign.", "Know what you swear to.")}</div>
+      </div>
+      <div><div class="bar" style="border-bottom:2px solid var(--line)"><b>lease-2026.pdf</b><span class="sp"></span>${toggles(t)}</div>
+        <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:14px"><div>${doc(t)}</div><div>${findings(t).replace(/class="card"/g, 'class="card" style="border-width:2px"')}</div></div>
+        <div style="padding:0 16px">${signRow(t)}</div></div></div>`,
+    deploy: (t) => `<div style="display:grid;grid-template-columns:260px 1fr;height:100%">
+      <div style="background:var(--fg);color:var(--bg);padding:20px;display:flex;flex-direction:column">
+        <div class="logo" style="font-size:22px">${H(t) ? "REVENANT" : "Revenant"}</div>
+        <div class="sp"></div>
+        <div style="font-size:11px;opacity:.7">bloodoath · #15</div>
+        <div style="font-family:var(--head);font-size:40px;line-height:1;color:var(--pop, var(--accent))">${word(t, "LIVE", "RISEN")}</div>
+        <div style="font-size:11px;margin-top:8px;opacity:.8">${word(t, "Fixed by agent in 3 min", "Brought back in 3 min")}</div>
+      </div>
+      <div><div class="bar" style="border-bottom:2px solid var(--line)"><b>${word(t, "Timeline", "Chronicle")}</b><span class="sp"></span>${toggles(t)}</div>
+        <div style="padding:18px">${timeline(t)}</div></div></div>`
+  }
+};
+
+const shots = [
+  ["BloodOath review · Light", "light", "sign"],
+  ["BloodOath review · Halloween dark", "hdark", "sign"],
+  ["Revenant timeline · Dark", "dark", "deploy"],
+  ["Revenant timeline · Halloween light", "hlight", "deploy"],
+];
+
+const grid = document.getElementById("grid");
+for (const [cap, t, screen] of shots) {
+  const vars = { ...o.base, ...o.themes[t] };
+  const style = Object.entries(vars).map(([k, v]) => `--${k}:${v}`).join(";");
+  grid.insertAdjacentHTML("beforeend", `<div><div class="cap">${cap}</div><div class="panel" style="${style}">${candle(t)}${L[o.layout][screen](t)}</div></div>`);
+}
+</script>
+</body>
+</html>
