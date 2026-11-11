@@ -96,7 +96,7 @@ Resources:
                 Action: secretsmanager:GetSecretValue
                 Resource: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:rv-revenant-*-db-*
 
-  # Compute role: what the Revenant server (Next.js SSR) may do. Lanes extend it here.
+  # Compute role: what the Revenant server (Next.js SSR) may do. Lanes list what they need; lane X adds it here.
   ComputeRole:
     Type: AWS::IAM::Role
     Properties:
@@ -149,6 +149,135 @@ Resources:
                 Resource: !Sub arn:${AWS::Partition}:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/*
                 Condition:
                   StringEquals: { aws:ResourceTag/revenant:app: revenant }
+              - Sid: Prompts
+                Effect: Allow
+                Action: [s3:PutObject, s3:GetObject, s3:DeleteObject]
+                Resource: !Sub arn:${AWS::Partition}:s3:::rv-revenant-*-prompts-${AWS::AccountId}-${AWS::Region}/runs/*
+              # Generated apps on Amplify Hosting (lane L2). CreateApp must carry revenant:project;
+              # Revenant's own app is denied in ComputeRoleOwnApp below.
+              - Sid: AppsCreate
+                Effect: Allow
+                Action: amplify:CreateApp
+                Resource: !Sub arn:${AWS::Partition}:amplify:${AWS::Region}:${AWS::AccountId}:apps/*
+                Condition:
+                  "Null": { aws:RequestTag/revenant:project: "false" }
+              - Sid: Apps
+                Effect: Allow
+                Action: [amplify:GetApp, amplify:UpdateApp, amplify:DeleteApp, amplify:CreateBranch, amplify:GetBranch, amplify:UpdateBranch, amplify:DeleteBranch, amplify:ListBranches, amplify:StartJob, amplify:StopJob, amplify:GetJob, amplify:ListJobs, amplify:CreateDomainAssociation, amplify:GetDomainAssociation, amplify:UpdateDomainAssociation, amplify:DeleteDomainAssociation, amplify:TagResource, amplify:ListTagsForResource]
+                Resource: !Sub arn:${AWS::Partition}:amplify:${AWS::Region}:${AWS::AccountId}:apps/*
+              - Sid: AppsPassRole
+                Effect: Allow
+                Action: iam:PassRole
+                Resource: !GetAtt AppsServiceRole.Arn
+                Condition:
+                  StringEquals: { iam:PassedToService: amplify.amazonaws.com }
+              # Per-app runner roles rv-<app>-runner (runner/role.ts): only with the runner
+              # boundary and only the runner base policy attached (amplify/backend.ts).
+              - Sid: RunnerRoles
+                Effect: Allow
+                Action: [iam:CreateRole, iam:PutRolePolicy, iam:DeleteRolePolicy, iam:AttachRolePolicy, iam:DetachRolePolicy]
+                Resource: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/rv-*-runner
+                Condition:
+                  ArnLike: { iam:PermissionsBoundary: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/rv-revenant-*-runner-boundary" }
+              - Sid: RunnerRolesAttach
+                Effect: Deny
+                Action: [iam:AttachRolePolicy, iam:DetachRolePolicy]
+                Resource: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/rv-*-runner
+                Condition:
+                  ArnNotLike: { iam:PolicyARN: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/rv-revenant-*-runner-base" }
+              - Sid: RunnerRolesRead
+                Effect: Allow
+                Action: [iam:GetRole, iam:GetRolePolicy, iam:ListAttachedRolePolicies, iam:ListRolePolicies, iam:TagRole, iam:DeleteRole]
+                Resource: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/rv-*-runner
+              - Sid: RunnerPassRole
+                Effect: Allow
+                Action: iam:PassRole
+                Resource: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/rv-*-runner
+                Condition:
+                  StringEquals: { iam:PassedToService: codebuild.amazonaws.com }
+              # One AppRegistry application per app, for myApplications (lane L6).
+              - Sid: AppRegistry
+                Effect: Allow
+                Action: [servicecatalog:CreateApplication, servicecatalog:GetApplication, servicecatalog:UpdateApplication, servicecatalog:DeleteApplication, servicecatalog:TagResource, servicecatalog:ListTagsForResource]
+                Resource: !Sub arn:${AWS::Partition}:servicecatalog:${AWS::Region}:${AWS::AccountId}:/applications/*
+              - Sid: TagsRead
+                Effect: Allow
+                Action: [tag:GetResources, tag:GetTagKeys, tag:GetTagValues]
+                Resource: "*" # the Resource Groups Tagging API has no resource-level permissions
+              # Failure logs for repair and run views (lanes L4, L5).
+              - Sid: LogsRead
+                Effect: Allow
+                Action: [logs:FilterLogEvents, logs:GetLogEvents, logs:DescribeLogStreams]
+                Resource:
+                  - !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/rv/*
+                  - !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/rv-*
+                  - !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/amplify-*
+              - Sid: StacksRead
+                Effect: Allow
+                Action: [cloudformation:DescribeStacks, cloudformation:DescribeStackEvents]
+                Resource: !Sub arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/amplify-*
+              # Health-check failures and repair rules (lane L4).
+              - Sid: Events
+                Effect: Allow
+                Action: events:PutEvents
+                Resource: !Sub arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:event-bus/default
+                Condition:
+                  StringEquals: { events:source: revenant }
+              - Sid: EventRules
+                Effect: Allow
+                Action: [events:DescribeRule, events:EnableRule, events:DisableRule]
+                Resource: !Sub arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/rv-revenant-*
+
+  # Separate from ComputeRole: App needs the role's ARN, this needs App's id.
+  ComputeRoleOwnApp:
+    Type: AWS::IAM::RolePolicy
+    Properties:
+      RoleName: !Ref ComputeRole
+      PolicyName: not-revenant-itself
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Deny
+            Action: amplify:*
+            Resource:
+              - !Sub arn:${AWS::Partition}:amplify:${AWS::Region}:${AWS::AccountId}:apps/${App.AppId}
+              - !Sub arn:${AWS::Partition}:amplify:${AWS::Region}:${AWS::AccountId}:apps/${App.AppId}/*
+
+  # Service role of every generated app's Amplify build (ampx pipeline-deploy, CDK, migrations).
+  AppsServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub rv-apps-service-${AWS::Region}
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: amplify.amazonaws.com }
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals: { aws:SourceAccount: !Ref AWS::AccountId }
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AmplifyBackendDeployFullAccess
+      Policies:
+        - PolicyName: source-and-migrations
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: codecommit:GitPull
+                Resource: !Sub arn:${AWS::Partition}:codecommit:${AWS::Region}:${AWS::AccountId}:rv-*
+              - Effect: Allow
+                Action: [rds-data:ExecuteStatement, rds-data:BatchExecuteStatement, rds-data:BeginTransaction, rds-data:CommitTransaction, rds-data:RollbackTransaction]
+                Resource: !Sub arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:rv-*
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:rv-*-db-*
+              - Effect: Deny
+                Action: [rds-data:*, secretsmanager:*, codecommit:*]
+                Resource:
+                  - !Sub arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:rv-revenant-*
+                  - !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:rv-revenant-*
+                  - !GetAtt SourceRepository.Arn
 
   # ---------- the Revenant app ----------
   App:
@@ -167,6 +296,7 @@ Resources:
         - { Name: RV_APP_SECRET_ARN, Value: !Ref AppSecret }
         - { Name: RV_BUDGET_USD, Value: !Ref Budget }
         - { Name: RV_DEMO, Value: !Ref Demo }
+        - { Name: RV_APPS_SERVICE_ROLE_ARN, Value: !GetAtt AppsServiceRole.Arn }
       Tags: [{ Key: revenant:app, Value: revenant }]
 
   MainBranch:

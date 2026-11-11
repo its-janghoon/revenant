@@ -15,7 +15,8 @@ checks as scripts (`check.sh`: install, lint, synth, cfn-lint, guard), then push
 | `BRANCH` | yes | branch to push (`preview/3`, `revenant/fix-2`); never `main` |
 | `BASE_BRANCH` | no | branch to start a new `BRANCH` from (default `main`) |
 | `AWS_REGION` | yes | set by CodeBuild |
-| `RUN_ID` | no | run id (default: the CodeBuild build id) |
+| `RV_PROJECT_ID` | yes | Revenant project id; every log line carries it |
+| `RUN_ID` | no | Revenant run id (`runs.id`); default: the CodeBuild build id |
 | `PROMPT_BUCKET`, `PROMPT_S3_KEY` | yes, except `build` | the request, change or repair context as plain text, under `runs/<app>/` |
 | `ATTACH_S3_PREFIX` | no | attachments under `runs/<app>/`, copied to `.rv/attachments/` (not committed) |
 | `KIRO_SECRET_ARN` | yes | Secrets Manager ARN of the Kiro key: the company key or `rv/kiro/<user>` |
@@ -24,7 +25,7 @@ checks as scripts (`check.sh`: install, lint, synth, cfn-lint, guard), then push
 | `TIME_LIMIT_MIN` | no | whole run, default 45. The agent stops early enough to leave time for checks |
 | `CREDITS_LIMIT` | no | Kiro credits per run; 0 or unset means no limit |
 | `ATTEMPT` | no | repair attempt number (1 to 3) |
-| `RV_AWS_APPLICATION`, `RV_PROJECT_ID`, `RV_AMPLIFY_APP_ID` | for synth | read by `blocks/tags.ts` and `check.sh` |
+| `RV_AWS_APPLICATION`, `RV_AMPLIFY_APP_ID` | for synth | read by `blocks/tags.ts` and `check.sh` |
 
 The agent and the checks run without AWS credentials and cannot push. Only the runner
 itself reads the secret and the prompt and pushes.
@@ -43,17 +44,20 @@ itself reads the secret and the prompt and pushes.
 
 ## Log lines
 
-One JSON object per line, prefixed with `RV `: `{"kind", "at", "data"}`. Code: `log.ts`
-(`format`, `parse`). The log stream name is the CodeBuild build id (`runs.codebuild_id`).
+The format is defined in `lib/contracts.ts` (`RUNNER_PREFIX`, `runnerLine`, `parseLine`); `log.ts`
+writes it. One line per event: `rv: {"v":1,"t":"<type>","project","run","build","at",...}`.
+`run` is `RUN_ID`, `build` is the CodeBuild build id (`runs.codebuild_id`), `at` grows by at
+least 1 ms per line, strings are cut to 4000 characters.
 
-| kind | data |
+| t | fields |
 |---|---|
-| `task_started` | `number`, `title` |
-| `task_done` | `number`, `title`, `commit` |
-| `file_changed` | `path` (repo-relative), `op`: `add`, `edit` or `delete` |
-| `message` | `from`: `agent`, `runner` or `guard`; `text`; repair runs add `cause`; the last runner message adds `branch`, `commit`, `status: "ok"`, `seconds` |
-| `error` | `step`: `input`, `secret`, `prompt`, `clone`, `seed`, `kiro`, `spec`, `install`, `lint`, `synth`, `cfnlint`, `guard`, `push`, `limit`, `stopped`; `text` |
+| `task_started` | `task` (`"3"`, `"3.1"`), `title` |
+| `task_done` | `task`, `title`, `commit` |
+| `file_changed` | `path` (repo-relative), `change`: `add`, `modify` or `delete` |
+| `message` | `from`: `agent`, `runner` or `guard`; `text`; repair runs add `cause`; guard adds `rule`, `resource` |
+| `error` | `step`: `input`, `secret`, `prompt`, `clone`, `seed`, `commit`, `kiro`, `spec`, `check`, `install`, `lint`, `synth`, `cfnlint`, `guard`, `push`, `limit`, `stopped`, `runner`; `text`; guard adds `rule`, `resource` |
 | `credits` | `used` (session total), `limit`, `payer`, `model` |
+| `run_done` | last line: `status`, `code` (exit code), `credits`, `commit`, `branch` (`BRANCH`, or `rv/run-<RUN_ID>` when work was saved), `seconds` |
 
 ## Guard
 
