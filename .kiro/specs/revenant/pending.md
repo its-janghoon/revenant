@@ -27,7 +27,7 @@ Decided by Janghoon on 2026-11-11. Fold all of these into the spec in one pass.
 
 ## 4. A DB copy per preview
 
-- One shared preview Aurora cluster per app account.
+- One preview Aurora cluster **per app** (never shared between apps).
 - Each preview gets its own database: `CREATE DATABASE <app>_pv<n> TEMPLATE <app>_dev`.
 - Copies dev data, not prod data. A masked prod copy is a later option.
 
