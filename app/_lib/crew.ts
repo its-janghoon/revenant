@@ -68,6 +68,9 @@ export function crewProject(d: CrewDetail): CrewProject {
 }
 
 // ---------- events ----------
+
+// A repair belongs to a project through its deploy or its run.
+const owner = sql<string>`coalesce(${schema.deploys.projectId}, ${schema.runs.projectId})::text`;
 // The cursor is opaque: the time of the last read plus the deploys and repairs that were still
 // going then, so one that finishes later is still reported exactly once.
 
@@ -95,7 +98,7 @@ export async function crewEvents(base: string, u: User, since: string | null): P
     const r = await db.select({ id: schema.repairs.id }).from(schema.repairs)
       .leftJoin(schema.deploys, eq(schema.repairs.deployId, schema.deploys.id))
       .leftJoin(schema.runs, eq(schema.repairs.runId, schema.runs.id))
-      .where(and(eq(schema.repairs.outcome, "running"), sql`coalesce(${schema.deploys.projectId}, ${schema.runs.projectId}) in ${ids}`));
+      .where(and(eq(schema.repairs.outcome, "running"), inArray(owner, ids)));
     return [...d.map((x) => `d:${x.id}`), ...r.map((x) => `r:${x.id}`)];
   };
   if (!start || !ids.length) return { events: [], cursor: enc({ t: now, open: await openRows() }) };
@@ -122,12 +125,12 @@ export async function crewEvents(base: string, u: User, since: string | null): P
     events.push({ id: `deploy:${d.id}`, projectId: p.id, projectName: p.name, kind: "deploy", outcome: d.status === "live" ? "succeeded" : "failed", at: d.createdAt, url: d.branch === "main" ? `${base}/p/${p.id}/app` : `${base}/p/${p.id}`, detail: d.url ? `${d.branch} · ${d.url}` : d.branch });
   }
 
-  const repRows = await db.select({ r: schema.repairs, projectId: sql<string>`coalesce(${schema.deploys.projectId}, ${schema.runs.projectId})` }).from(schema.repairs)
+  const repRows = await db.select({ r: schema.repairs, projectId: owner }).from(schema.repairs)
     .leftJoin(schema.deploys, eq(schema.repairs.deployId, schema.deploys.id))
     .leftJoin(schema.runs, eq(schema.repairs.runId, schema.runs.id))
     .where(and(
       inArray(schema.repairs.outcome, ["recovered", "gave_up"]),
-      sql`coalesce(${schema.deploys.projectId}, ${schema.runs.projectId}) in ${ids}`,
+      inArray(owner, ids),
       or(gt(schema.repairs.createdAt, start.t), openR.length ? inArray(schema.repairs.id, openR) : sql`false`),
     )).limit(100);
   for (const { r, projectId } of repRows) {

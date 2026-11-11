@@ -96,7 +96,7 @@ export async function projectRepairs(id: string, limit = 30) {
   const rows = await db.select({ r: repairs }).from(repairs)
     .leftJoin(deploys, eq(repairs.deployId, deploys.id))
     .leftJoin(runs, eq(repairs.runId, runs.id))
-    .where(sql`coalesce(${deploys.projectId}, ${runs.projectId}) = ${id}`)
+    .where(sql`coalesce(${deploys.projectId}, ${runs.projectId})::text = ${id}`)
     .orderBy(desc(repairs.createdAt)).limit(limit);
   return rows.map((x) => x.r);
 }
