@@ -109,7 +109,7 @@ function header(active, opts = {}) {
     <div class="avatar">JL</div></header>`;
 }
 
-const S = {};
+const S = (window.S = {});
 
 S.signin = () => `<main style="height:100%;display:grid;place-items:center">
   <div style="width:380px">
@@ -281,8 +281,12 @@ S.audit = () => adminShell("Audit", `<div class="wrap">
   ${[["14:21", "Janghoon", "policy.sql_user_on", "mina@example.com"], ["14:05", "Kiro (repair)", "repair.merged", "waitlist · fix-3 · SEAL_SECRET"], ["13:40", "Janghoon", "publish.approved", "fineprint · remove Contract.draftNote (42 records)"], ["11:02", "Seo", "app.deleted", "old-landing"], ["09:15", "system", "preview.expired", "fineprint · preview/9"]].map(([a, b, c, d]) => `<tr><td class="mono muted">${a}</td><td>${b}</td><td class="mono">${c}</td><td class="muted">${d}</td></tr>`).join("")}</table></div>
 </div>`);
 
-document.getElementById("app").innerHTML = (S[q.get("s")] || S.home)();
-window.SCREENS = Object.keys(S);
+</script>
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="flow2.js"></script>
+<script>
+document.getElementById("app").innerHTML = (window.S[new URLSearchParams(location.search).get("s")] || window.S.home)();
+if (window.lucide) lucide.createIcons();
 </script>
 </body>
 </html>

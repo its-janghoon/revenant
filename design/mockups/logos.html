@@ -1,0 +1,46 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Revenant logo options</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Inter+Tight:wght@600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#ededea;font:13px Inter;padding:24px;color:#141414}
+h1{font:700 18px Inter;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(4,340px);gap:16px}
+.opt{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 2px #0002}
+.opt .top{height:170px;display:grid;place-items:center;background:#fbfbfa}
+.opt .dark{height:110px;display:flex;align-items:center;justify-content:center;gap:12px;background:#060607;color:#e9e2d2}
+.opt .meta{padding:12px 14px;border-top:1px solid #eee}
+.opt .meta b{display:block;font-size:14px}
+.opt .meta span{color:#6c6c68}
+.word{font:800 22px "Inter Tight";letter-spacing:-.04em;display:flex;align-items:center;gap:10px}
+.row{display:flex;gap:10px;align-items:center;margin-top:10px}
+.app{width:44px;height:44px;border-radius:11px;display:grid;place-items:center}
+.fav{width:20px;height:20px;border-radius:5px;display:grid;place-items:center}
+</style></head><body>
+<h1>Revenant logo options</h1>
+<div class="grid" id="g"></div>
+<script>
+const M = {
+  // A: a heartbeat that comes back up: flat, then one beat
+  pulse: (c = "currentColor", s = 32) => `<svg width="${s}" height="${s}" viewBox="0 0 32 32" fill="none"><path d="M3 18h7l2.5-6 4 12 3-9 1.6 3H29" stroke="${c}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  // B: arch (tombstone) with an up arrow cut out: something rises from the grave
+  rise: (c = "currentColor", s = 32) => `<svg width="${s}" height="${s}" viewBox="0 0 32 32"><path fill="${c}" fill-rule="evenodd" d="M6 28V14C6 8.5 10.5 4 16 4s10 4.5 10 10v14H6Zm10-18-6 6h4v8h4v-8h4l-6-6Z"/></svg>`,
+  // C: R built from a stack of blocks (CloudFormation-ish), last block lifted
+  stack: (c = "currentColor", s = 32) => `<svg width="${s}" height="${s}" viewBox="0 0 32 32" fill="${c}"><rect x="5" y="5" width="9" height="9" rx="2"/><rect x="5" y="18" width="9" height="9" rx="2"/><rect x="18" y="5" width="9" height="9" rx="2"/><rect x="19" y="17" width="9" height="9" rx="2" transform="rotate(-14 23.5 21.5)" opacity=".55"/></svg>`,
+  // D: a loop arrow closing on itself: build, die, fix, rise
+  loop: (c = "currentColor", s = 32) => `<svg width="${s}" height="${s}" viewBox="0 0 32 32" fill="none"><path d="M25 11.5A10 10 0 1 0 26 19" stroke="${c}" stroke-width="3.4" stroke-linecap="round"/><path d="M27 5v7h-7" stroke="${c}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="16" r="3" fill="${c}"/></svg>`,
+};
+const OPTS = [
+  ["pulse", "A. Pulse", "A flatline that beats again. Ties to the heartbeat in the app.", "#127a45", "#b3121c"],
+  ["rise", "B. Rise", "A tombstone with an arrow rising out. Halloween and deploys in one mark.", "#141414", "#b3121c"],
+  ["stack", "C. Blocks", "Infra blocks, one lifting back into place. Calm, very 'devtool'.", "#1f5fd1", "#b3121c"],
+  ["loop", "D. Loop", "Build, die, fix, rise as one loop. Most generic.", "#141414", "#b3121c"],
+];
+document.getElementById("g").innerHTML = OPTS.map(([k, n, d, c, red]) => `
+  <div class="opt">
+    <div class="top"><div><div class="word">${M[k](c, 34)}Revenant</div>
+      <div class="row"><div class="app" style="background:${c}">${M[k]("#fff", 26)}</div><div class="app" style="background:#fff;border:1px solid #e7e6e2">${M[k](c, 26)}</div><div class="fav" style="background:${c}">${M[k]("#fff", 14)}</div></div></div></div>
+    <div class="dark"><span style="color:${red}">${M[k](red, 34)}</span><span style="font:italic 700 26px 'Cormorant Garamond',serif">Revenant</span></div>
+    <div class="meta"><b>${n}</b><span>${d}</span></div>
+  </div>`).join("");
+</script></body></html>

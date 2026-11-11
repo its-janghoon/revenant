@@ -5,7 +5,7 @@ const { chromium } = require(process.env.PW || "/home/ubuntu/workplace/redrob-au
 const exe = process.env.CHROME || "/home/ubuntu/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome";
 const out = process.env.OUT || path.join(process.env.HOME, ".kiro/crew/workspace/shots/revenant-flow");
 const page = "file://" + path.join(__dirname, "flow.html");
-const order = ["signin", "welcome", "home", "spec", "build", "repair", "publish", "app", "cost", "admin", "policy", "users", "apps", "audit"];
+const order = ["signin", "welcome", "home", "spec", "studio", "code", "repair", "publish", "app", "cost", "admin", "policy", "users", "apps", "audit"];
 
 (async () => {
   require("fs").mkdirSync(out, { recursive: true });
@@ -15,7 +15,7 @@ const order = ["signin", "welcome", "home", "spec", "build", "repair", "publish"
     const files = [];
     for (const [i, s] of order.entries()) {
       await p.goto(`${page}?s=${s}&mode=${mode}`);
-      await p.waitForTimeout(500);
+      await p.waitForTimeout(900);
       const f = `${out}/${mode}-${String(i + 1).padStart(2, "0")}-${s}.png`;
       await p.screenshot({ path: f });
       files.push(f);

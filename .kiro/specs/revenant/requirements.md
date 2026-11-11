@@ -31,7 +31,8 @@ plus one demo install for judges.
 5. The install SHALL create an AWS Budgets alarm at the chosen monthly budget.
 6. WHEN Revenant is uninstalled THEN every generated app SHALL keep running (separate Amplify apps, repos and databases).
 7. The default install SHALL be public (Amplify Hosting, Cognito sign-in).
-8. WHEN the admin signs in for the first time THEN Revenant SHALL run onboarding: check the AWS account and the Kiro key, confirm the budget, pick Light or Haunted, and offer a first example request.
+8. WHEN a user signs in for the first time THEN Revenant SHALL show one onboarding screen: pick Light or Haunted, and start from the FinePrint example or a blank prompt. Account, Kiro and budget checks run in the background and show as one line of ticks.
+9. Sign-in SHALL use Amazon Cognito with an email one-time code (no password) and MAY offer passkeys. Users join by invite only.
 
 ## Requirement 2: Ask
 
@@ -62,6 +63,17 @@ plus one demo install for judges.
 4. WHEN the run finishes THEN the push SHALL start an Amplify preview build (Requirement 5) and the workspace SHALL show the preview.
 5. WHILE a preview exists THE user MAY ask for changes in chat; each change SHALL run as a new build on a new commit.
 6. The user SHALL be able to stop a run at any time; stopping keeps the commits made so far.
+
+## Requirement 4b: Studio (edit like Lovable or v0)
+
+**User story:** As a user, I want to change my app by talking, by clicking, or by editing code, so that I can work the way I like.
+
+1. The workspace SHALL have a chat on the left and tabs on the right: Preview, Code, Spec, Data, Timeline.
+2. Each agent reply SHALL show what it did as cards: a short plan, each file it changed with a diff, and the preview it deployed with time and credits.
+3. In Preview, a **Select** mode SHALL let the user click an element; Revenant SHALL show the element and its source file and line, and offer "Edit with AI" plus quick style controls (text, color, size).
+4. In Code, the user SHALL browse the repo, edit files, and commit to the current preview branch. The next agent run SHALL start from the user's commit.
+5. The Code tab SHALL show the `git clone` command for the CodeCommit repo, so the user can also work locally.
+6. Preview SHALL switch between desktop and mobile widths.
 
 ## Requirement 5: Deploy
 
@@ -122,7 +134,7 @@ Both:
 1. The home screen SHALL show AWS credits left (when Cost Explorer reports credits), month-to-date spend and forecast.
 2. Each project SHALL show its own month-to-date cost from its tags.
 3. WHEN forecast spend passes the budget THEN Revenant SHALL warn on every screen.
-4. Each run SHALL record the Kiro credits it used; the timeline and the admin dashboard SHALL show them.
+4. Each run SHALL record the Kiro credits it used and whose Kiro paid; the timeline and the admin dashboard SHALL show them.
 5. To save credits: a request that matches an example app SHALL copy that app's repo instead of building it again; new apps SHALL start from a starter template with `blocks/`; lint, synth, migrations and guardrail checks SHALL run as scripts, not as agent turns; common failures (for example a missing env var) SHALL be fixed by rules before calling the agent; steering files SHALL stay short; every run SHALL have a time limit.
 
 ## Requirement 9: Kiro Crew app
@@ -179,9 +191,11 @@ Both:
 1. Revenant SHALL have an admin dashboard at `/admin`, visible only to admins.
 2. The admin SHALL be able to turn SQL databases (Aurora) on or off for the whole install, and per user. Default: off.
 3. The admin SHALL be able to pick the Kiro model for runs. Default: **Auto**.
-4. The admin SHALL be able to set the monthly budget and an auto-delete period for apps (default: off).
-5. The admin SHALL see every user, every app, and each app's AWS cost and Kiro credits, and SHALL be able to invite, disable or delete users and delete apps.
-6. Every admin change SHALL be written to an audit log shown on the dashboard.
+4. The admin SHALL choose who pays for Kiro: **company key** (one Kiro account for everyone), **bring your own Kiro** (each user connects their own Kiro account in Settings; their runs use their credits), or both (own key if connected, else company key).
+5. A user's own Kiro key SHALL be stored in Secrets Manager under that user, used only for that user's runs, and removable by the user at any time.
+6. The admin SHALL be able to set the monthly budget and an auto-delete period for apps (default: off).
+7. The admin SHALL see every user, every app, and each app's AWS cost and Kiro credits, and SHALL be able to invite, disable or delete users and delete apps.
+8. Every admin change SHALL be written to an audit log shown on the dashboard.
 
 ## Requirement 14: Demo install for judges
 

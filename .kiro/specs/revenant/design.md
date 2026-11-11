@@ -38,6 +38,20 @@ itself, or the install template must do it.
 CloudShell one-liner (same template):
 `aws cloudformation deploy --template-url <url> --stack-name revenant --capabilities CAPABILITY_IAM --parameter-overrides KiroApiKey=... AdminEmail=... Budget=...`
 
+## Kiro keys
+
+`settings.kiro_mode` is `company`, `own` or `both`. Company key: one Secrets Manager
+secret. Own keys: `rv/kiro/<user_id>` secrets, written from Settings, read only by the
+runner role for runs started by that user (the run passes the secret ARN; the runner
+role's policy allows `rv/kiro/*` with a tag condition matching the run's owner).
+
+## Studio
+
+Select mode injects a small script into preview builds only (`NEXT_PUBLIC_RV_INSPECT`)
+that maps clicked elements to `file:line` using React dev source info, and posts it to
+the parent frame. Code tab reads and writes through the CodeCommit API
+(`GetFile`, `CreateCommit`) on the preview branch.
+
 ## Runner (`runner/`)
 
 - Image: Node LTS, git with the CodeCommit credential helper, AWS CLI, `cfn-lint`, Kiro CLI.
@@ -97,13 +111,13 @@ Revenant's own tables (Drizzle, Aurora):
 | Table | Key columns |
 |---|---|
 | `projects` | id, owner, name, request, repo, amplify_app_id, prod_url, status, created_at, expires_at |
-| `runs` | id, project_id, mode, model, commit, codebuild_id, status, credits, started_at, ended_at |
+| `runs` | id, project_id, mode, model, kiro_payer, commit, codebuild_id, status, credits, started_at, ended_at |
 | `tasks` | id, project_id, number, title, state |
 | `deploys` | id, project_id, branch, commit, status, url |
 | `repairs` | id, deploy_id or run_id, attempt, cause, branch, check_status, outcome, recovered_s |
 | `previews` | id, project_id, branch, db_name, created_at, deleted_at |
 | `costs` | project_id, day, usage_usd, credit_usd |
-| `settings` | key, value, updated_by, updated_at (sql_allowed, model, budget_usd, auto_delete_hours) |
+| `settings` | key, value, updated_by, updated_at (sql_allowed, model, kiro_mode, budget_usd, credits_per_build, auto_delete_hours) |
 | `user_policies` | user_id, sql_allowed |
 | `audit` | id, actor, action, detail, at |
 
