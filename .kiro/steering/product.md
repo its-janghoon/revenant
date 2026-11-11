@@ -11,12 +11,14 @@ the agent reads the logs, fixes it, and brings it back.
 
 ## Whose problem
 
-Startups that have AWS credits (AWS Activate, often $1k to $100k) but still pay Lovable,
-Vercel and a database vendor every month, because building and shipping on AWS is hard.
-Revenant lets them build the same way and spend the credits they already have.
+Companies that want everything on AWS:
 
-Secondary: agencies and freelancers who build sites for clients and must hand over
-code and hosting the client owns.
+1. They pay per seat for Vercel, Lovable and similar tools, and the bill grows with the team.
+2. For convenience they hand their infrastructure, code and data to those vendors, and
+   that is a burden (security review, data location, lock-in, a second cloud to audit).
+
+Revenant gives them the same build-and-ship experience inside their own AWS account:
+no seats, their VPC, their IAM, their bill (and their AWS credits, if they have them).
 
 ## What makes it different from Lovable, Bolt, v0
 
