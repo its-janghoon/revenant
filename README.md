@@ -87,7 +87,7 @@ an admin email and a monthly budget. We recommend a dedicated AWS Organizations 
 2. AWS CloudShell, one line:
 
 ```
-curl -fsSLo install.yaml https://raw.githubusercontent.com/its-janghoon/revenant/main/infra/install.yaml && aws cloudformation deploy --template-file install.yaml --stack-name revenant --capabilities CAPABILITY_NAMED_IAM --parameter-overrides KiroApiKey=YOUR_KIRO_KEY AdminEmail=you@example.com Budget=100
+curl -fsSLo install.yaml https://raw.githubusercontent.com/its-janghoon/revenant/main/infra/install.yaml && aws cloudformation deploy --template-file install.yaml --stack-name revenant --capabilities CAPABILITY_NAMED_IAM --parameter-overrides KiroApiKey=YOUR_KIRO_KEY AdminEmail=you@example.com Budget=100 --tags revenant:app=revenant revenant:install=revenant
 ```
 
 The stack copies this repository into CodeCommit in your account, bootstraps CDK, and starts
