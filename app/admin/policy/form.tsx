@@ -1,7 +1,8 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, type ReactNode } from "react";
-import type { KiroMode } from "@/lib/contracts";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import type { CompanyDesignMode, DesignCheck, KiroMode } from "@/lib/contracts";
+import { CheckLine, Mini, readDrop } from "@/components/look/mini";
 import type { Policy } from "@/lib/policy";
 import { call } from "../call";
 import { Icon, type IconName } from "../icons";
@@ -25,6 +26,12 @@ const KIRO: [KiroMode, string, string][] = [
   ["company", "Company key", "One Kiro account pays for everyone."],
   ["own", "Bring your own", "Each person connects their own Kiro."],
   ["both", "Both", "Own Kiro if connected, else the company key."],
+];
+
+const DESIGN_MODES: [CompanyDesignMode, string, string][] = [
+  ["off", "Off", "People pick any look."],
+  ["default", "Default", "New apps start with it; people can pick another."],
+  ["required", "Required", "Every app uses it."],
 ];
 
 function Card({ id, icon, title, sub, children }: { id?: string; icon: IconName; title: string; sub?: string; children: ReactNode }) {
@@ -65,6 +72,15 @@ export function PolicyForm({ policy, people }: { policy: Policy; people: Person[
   const others = people.filter((u) => !exceptions.includes(u));
   const setOne = (id: string, v: boolean | null) => setSql((m) => new Map(m).set(id, v));
 
+  const [drag, setDrag] = useState(false);
+  const [design, setCheck] = useState<DesignCheck | null>(null);
+  useEffect(() => {
+    if (!p.companyDesign) return setCheck(null);
+    const t = setTimeout(() => void call<DesignCheck>("/api/looks", "POST", { markdown: p.companyDesign }).then(setCheck, () => setCheck(null)), 400);
+    return () => clearTimeout(t);
+  }, [p.companyDesign]);
+  const setDesign = (t: string | null) => set("companyDesign", t?.trim() ? t : null);
+
   const changes = useMemo(() => {
     const patch: Partial<Policy> = {};
     const b = Number(budget), c = Number(credits);
@@ -77,6 +93,8 @@ export function PolicyForm({ policy, people }: { policy: Policy; people: Person[
 
   async function save() {
     if (!changes.valid) return setMsg({ ok: false, text: "Budget and credits must be more than 0." });
+    if (design && !design.ok) return setMsg({ ok: false, text: "Fix the DESIGN.md errors first." });
+    if (p.companyDesignMode !== "off" && !p.companyDesign) return setMsg({ ok: false, text: "Add a DESIGN.md or turn the company design off." });
     setBusy(true);
     setMsg(null);
     try {
@@ -168,6 +186,24 @@ export function PolicyForm({ policy, people }: { policy: Policy; people: Person[
                 .map(([h, t]) => <option key={String(h)} value={h ?? ""}>{t}</option>)}
             </select>
           </div>
+        </Card>
+
+        <Card id="design" icon="palette" title="Company design" sub="A DESIGN.md (Google's format) that Kiro follows when it styles apps.">
+          <label className={`lookdrop${drag ? " on" : ""}`}
+            onDragOver={(e) => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
+            onDrop={(e) => { e.preventDefault(); setDrag(false); void readDrop(e.dataTransfer.files).then((t) => t !== null && setDesign(t)); }}>
+            Drop your company DESIGN.md here, or click to pick it
+            <input type="file" accept=".md,text/markdown,text/plain" hidden onChange={(e) => void readDrop(e.target.files).then((t) => t !== null && setDesign(t))} />
+          </label>
+          <textarea className="lookedit" style={{ minHeight: 140, marginTop: 10 }} aria-label="Company DESIGN.md" spellCheck={false}
+            placeholder="or paste it here" value={p.companyDesign ?? ""} onChange={(e) => setDesign(e.target.value)} />
+          <Radio label="Company design" value={p.companyDesignMode} set={(v) => set("companyDesignMode", v)} items={DESIGN_MODES} />
+          {design ? (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ border: "1px solid var(--line)", borderRadius: 8, overflow: "hidden" }}><Mini check={design} app={design.name ?? "Company"} title="Contracts, reviewed" button="Upload" /></div>
+              <div style={{ marginTop: 8 }}><CheckLine check={design} prefix={`DESIGN.md${design.name ? ` · ${design.name}` : ""}`} /></div>
+            </div>
+          ) : null}
         </Card>
       </div>
       <div style={{ display: "flex", gap: 10, marginTop: 16, alignItems: "center" }}>

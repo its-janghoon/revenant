@@ -229,7 +229,7 @@ export const ROUTES = {
   projects: { path: "/api/projects", methods: ["GET", "POST"], owner: "L5" },
   project: { path: "/api/projects/:id", methods: ["GET", "DELETE"], owner: "L5" },
   spec: { path: "/api/projects/:id/spec", methods: ["GET", "PUT"], owner: "L1" },
-  looks: { path: "/api/looks", methods: ["GET"], owner: "L1" },
+  looks: { path: "/api/looks", methods: ["GET", "POST"], owner: "L1" },
   look: { path: "/api/projects/:id/look", methods: ["GET", "PUT"], owner: "L1" },
   build: { path: "/api/projects/:id/build", methods: ["POST"], owner: "L1" },
   change: { path: "/api/projects/:id/change", methods: ["POST"], owner: "L1" },
@@ -346,6 +346,8 @@ export interface LooksView { presets: Look[]; company: (Look & { mode: CompanyDe
 export interface ProjectLook { branch: string; look: string | null; markdown: string | null; check: DesignCheck | null; locked: boolean }
 
 /** PUT /api/projects/:id/look: writes DESIGN.md on the work branch. apply: also start a change run that restyles every screen. dry: check only. */
+/** POST /api/looks: check a DESIGN.md without saving it (the linter does not run in the browser). */
+export const lookCheckBody = z.object({ markdown: z.string().max(60_000) });
 export const lookBody = z.object({
   markdown: z.string().min(1).max(60_000),
   apply: z.boolean().default(false),

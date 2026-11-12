@@ -1,7 +1,8 @@
+import { lookCheckBody } from "@/lib/contracts";
 import { needUser } from "@/app/_lib/auth";
-import { route } from "@/app/_lib/http";
+import { body, route } from "@/app/_lib/http";
 import { getSettings } from "@/lib/policy";
-import { listLooks } from "@/lib/looks";
+import { checkDesign, listLooks } from "@/lib/looks";
 
 export const dynamic = "force-dynamic";
 
@@ -9,4 +10,10 @@ export const dynamic = "force-dynamic";
 export const GET = route(async () => {
   await needUser();
   return listLooks(await getSettings());
+});
+
+// Checks a DESIGN.md without saving it. Returns a DesignCheck.
+export const POST = route(async (req) => {
+  await needUser();
+  return checkDesign((await body(req, lookCheckBody)).markdown);
 });

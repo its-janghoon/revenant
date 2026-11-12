@@ -1,5 +1,5 @@
 // Checks a DESIGN.md with Google's linter (@google/design.md) and pulls out what previews need.
-// Pure and server-safe; the Look tab, the Design panel and the admin page all call it.
+// Server only (the linter imports node:url); the Look tab, the Design panel and the admin page all call it.
 import { lint } from "@google/design.md/linter";
 import type { DesignCheck, DesignFinding } from "../contracts";
 
