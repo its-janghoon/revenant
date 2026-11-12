@@ -1,7 +1,35 @@
 # Demo video storyboard
 
-**DRAFT, awaiting Janghoon's approval.** Nothing is recorded or rendered until this is
-approved (Requirement 15.5).
+## Recorded cut (2026-11-12)
+
+`video/revenant-demo.mp4` is not in git (36 MB); upload it to YouTube and put the link in
+`docs/devpost.md`. Length 2:21. How it was made: `video/README.md`.
+
+Changes from the draft below, decided while recording:
+
+- The voice is Amazon Polly (generative, Matthew), not a recorded take.
+- The install scenes show the README's install section, not a live CloudFormation run in a
+  fresh account.
+- The planted break on camera is the missing `RV_APP` variable (a deploy failure, fixed by a
+  rule in 5m 58s with no Kiro credits). The project went straight from failed to repairing,
+  so the tombstone never showed; the chat shows the ritual and the timeline says "It has risen".
+- No app sound (Playwright records video only).
+
+| # | Scene | Caption | Voice-over |
+|---|---|---|---|
+| 1 | Intro card | (none) | "Revenant is an open source app builder, like Lovable, that runs in your own AWS account. Your code, your data and your bill stay with you." |
+| 2 | README install | Install: one CloudFormation stack | "Install is one CloudFormation stack: a Kiro API key, an admin email, and a monthly budget. No GitHub token. No mail domain." |
+| 3 | Home, request typed | Ask in plain words | "Then just ask for an app, in plain words." |
+| 4 | Spec tabs and Look | Spec first. Pick a look. | "Kiro writes the spec first: requirements, design, and tasks, with the AWS parts and the monthly cost. You pick a look, a DESIGN dot M D file that Kiro follows. Nothing is built until you press Build." |
+| 5 | Studio, Select | Click anything: see its file and line | "Kiro CLI builds the app in CodeBuild, inside your account, one commit per task. Every change gets its own Amplify preview. Turn on Select, click anything, and you see its file and line." |
+| 6 | Design tab | Restyle with a DESIGN.md | "Change the look whenever you like. Kiro restyles every screen on a new preview." |
+| 7 | Code tab commit, then Haunted | Edit the code, commit | "You can also edit the code yourself and commit. The next Kiro run starts from your commit." then "And this is Haunted mode." |
+| 8 | Planted break, 70x | A planted break: the deploy dies, Revenant fixes it | "Now we break a deploy on purpose, by removing an environment variable the app needs. The deploy dies. Revenant reads the logs, names the cause, sets the variable, and redeploys. Nobody touches it." |
+| 9 | Timeline in Haunted | It has risen: 5m 58s to recover, 0 Kiro credits | "It has risen. Time to recover: six minutes, and not one Kiro credit." |
+| 10 | Admin policy, audit log | One policy. Every change audited. | "Admins set one policy for everyone: SQL on or off, the Kiro model, who pays for Kiro, the budget, and a company design. Every change is audited." |
+| 11 | Outro card | (none) | "Revenant. Open source, and built with Kiro." |
+
+## Draft (before recording)
 
 ## Decisions
 

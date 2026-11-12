@@ -1,0 +1,14 @@
+{
+ "v01": "Revenant is an open source app builder, like Lovable, that runs in your own AWS account. Your code, your data and your bill stay with you.",
+ "v02": "Install is one CloudFormation stack: a Kiro API key, an admin email, and a monthly budget. No GitHub token. No mail domain.",
+ "v03": "Then just ask for an app, in plain words.",
+ "v04": "Kiro writes the spec first: requirements, design, and tasks, with the AWS parts and the monthly cost. You pick a look, a DESIGN dot M D file that Kiro follows. Nothing is built until you press Build.",
+ "v05": "Kiro CLI builds the app in CodeBuild, inside your account, one commit per task. Every change gets its own Amplify preview. Turn on Select, click anything, and you see its file and line.",
+ "v06": "Change the look whenever you like. Kiro restyles every screen on a new preview.",
+ "v07": "You can also edit the code yourself and commit. The next Kiro run starts from your commit.",
+ "v08": "And this is Haunted mode.",
+ "v09": "Now we break a deploy on purpose, by removing an environment variable the app needs. The deploy dies. Revenant reads the logs, names the cause, sets the variable, and redeploys. Nobody touches it.",
+ "v10": "It has risen. Time to recover: six minutes, and not one Kiro credit.",
+ "v11": "Admins set one policy for everyone: SQL on or off, the Kiro model, who pays for Kiro, the budget, and a company design. Every change is audited.",
+ "v12": "Revenant. Open source, and built with Kiro."
+}

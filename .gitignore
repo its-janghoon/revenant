@@ -13,3 +13,6 @@ next-env.d.ts
 *.tsbuildinfo
 .npm/
 .build/
+video/state.json
+video/clips/
+video/voice/

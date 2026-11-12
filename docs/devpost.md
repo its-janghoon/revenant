@@ -1,7 +1,8 @@
 # Devpost submission (Kiroween 2026)
 
-Every field of the Devpost form, ready to paste. Placeholders in `ANGLE_CAPS` are filled in
-after the AWS run; the judge URL and account go only in the private testing field.
+Every field of the Devpost form, ready to paste. The judge URL and accounts go only in the
+private testing field. Still open: `VIDEO_URL`, `BLOG_URL` and `SOCIAL_URL_*` are filled in
+after Janghoon uploads the video and publishes the posts.
 
 ## Project name
 
@@ -14,10 +15,18 @@ your account, and fixes it when a deploy dies.
 
 ## Thumbnail and gallery
 
-- Thumbnail: the Pulse logo on a rounded square (`design/mockups/logos.html`, option A)
-- Gallery: `docs/img/light-03-home.jpg`, `light-04-spec.jpg`, `light-05-studio.jpg`,
-  `light-06-code.jpg`, `haunted-07-repair.jpg`, `haunted-09-app.jpg`, `light-12-policy.jpg`
-  (replace with screenshots of the real install after the AWS run)
+- Thumbnail: `docs/img/thumb.png` (the Pulse logo on a rounded square)
+- Gallery, in order (screenshots of the live install, 1440x810):
+  1. `docs/img/light-03-home.jpg`: Home, ask for an app in plain words
+  2. `docs/img/light-04-spec.jpg`: the spec, with AWS parts and the monthly cost
+  3. `docs/img/light-08-look.jpg`: Look tab, pick a DESIGN.md before the build
+  4. `docs/img/light-05-studio.jpg`: studio, Select shows the file and line
+  5. `docs/img/light-06-code.jpg`: Code tab, edit and commit to the preview branch
+  6. `docs/img/light-10-design.jpg`: Design tab, restyle every screen
+  7. `docs/img/haunted-07-repair.jpg`: Haunted, the deploy died and the repair runs
+  8. `docs/img/haunted-09-app.jpg`: timeline after the repair, with the time to recover
+  9. `docs/img/light-11-app.jpg`: the generated app, FinePrint, live on its preview URL
+  10. `docs/img/light-12-policy.jpg`: admin policy, every change audited
 
 ## Video demo link
 
@@ -72,6 +81,9 @@ one CloudFormation stack (a Kiro API key, an admin email, a monthly budget).
   Amplify Gen 2 preview with its own URL and its own data.
 - **Edit** like Lovable or v0: chat, Select any element in the preview to see its file and
   line, or edit and commit in the Code tab.
+- **Looks.** Pick a look before the build or restyle later: each look is a `DESIGN.md` in
+  Google's format, checked by its linter, and every app gets Anthropic's frontend-design skill.
+  Admins can set a company design as the default or make it required.
 - **Publish** to production; a replace or delete waits for approval.
 - **Fix itself.** When a run, build, deploy or health check fails, a repair run reads the
   logs, states the cause, fixes it on a branch, checks it and redeploys, up to 3 tries.
@@ -141,18 +153,21 @@ pushed branch, not its report, caught the joins that did not fit.
 
 ## Testing instructions (private field)
 
-- Demo install: `JUDGE_URL` (for example `https://revenant.example.com`)
-- Account: `JUDGE_EMAIL` with password `JUDGE_PASSWORD` (one account per judge). On the sign-in
-  page press **Have a password? Sign in with it**. No email is needed.
+- Demo install: https://revenant.janghoonlee.com
+- Accounts (one per judge): `judge-1@revenant.janghoonlee.com`, `judge-2@revenant.janghoonlee.com`,
+  `judge-3@revenant.janghoonlee.com`. Passwords are pasted here in the Devpost form only, never
+  in the repository. On the sign-in page press **Have a password? Sign in with it**. No email
+  is needed.
 - What to try:
-  1. Open **Apps -> FinePrint** (prebuilt). Open its preview and the live URL.
+  1. Open **Apps -> fineprint-4**, the prebuilt sample (view only for judges). Open its preview.
   2. Open the **Timeline** tab to see a repaired deploy: the failure, the cause, the fix and
      the time to recover.
   3. Switch the header from **Light** to **Haunted** (turn Sound on for rain and thunder).
   4. Build your own: on Home, ask for a small app, read the spec, press **Build it**. A build
      takes about 15 minutes (FinePrint: 13 tasks, 15 minutes, 18 Kiro credits).
   5. In the studio, turn on **Select** and click an element to see its file and line.
-- Limits on this install: SQL is off (Amplify Data only), you see only your own projects,
-  and apps you build are deleted automatically 24 hours after creation.
+  6. On your own app, open the studio's **Design** tab, pick a look and press **Apply look**.
+- Limits on this install: SQL is off (Amplify Data only), you see your own projects plus the
+  view-only sample, and apps you build are deleted automatically 24 hours after creation.
 - Self-install: README "Install", one CloudFormation stack in your own AWS account.
 - Kiro Crew app: `crew-app/README.md` (needs a token from Settings -> Kiro Crew on the demo install).

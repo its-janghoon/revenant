@@ -1,0 +1,21 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+html,body{margin:0;height:100%;background:#0b0b0c;color:#f4f2ec;font-family:Inter,system-ui,sans-serif}
+.wrap{height:100%;display:grid;place-items:center;text-align:center}
+.mark{width:150px;height:150px;border-radius:34px;background:#f4f2ec;display:grid;place-items:center;margin:0 auto 34px}
+svg path{fill:none;stroke:#0b0b0c;stroke-width:7;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:240;stroke-dashoffset:240;animation:d 1.4s .4s ease-out forwards}
+@keyframes d{to{stroke-dashoffset:0}}
+h1{font-size:92px;letter-spacing:-.04em;margin:0;font-weight:750;opacity:0;animation:f .8s 1.4s forwards}
+p{font-size:30px;color:#a9a59b;margin:18px 0 0;opacity:0;animation:f .8s 1.9s forwards}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:26px;color:#d9d4c7}
+@keyframes f{to{opacity:1}}
+</style></head><body><div class="wrap"><div>
+<div class="mark"><svg width="110" height="70" viewBox="0 0 110 70"><path d="M6 38 H38 L46 14 L58 58 L66 38 H104"/></svg></div>
+<h1 id="t">Revenant</h1>
+<p id="s">Lovable-style building, in your own AWS account</p>
+</div></div>
+<script>
+const q=new URLSearchParams(location.search);
+if(q.get('t'))document.getElementById('t').textContent=q.get('t');
+if(q.get('s')){const s=document.getElementById('s');s.innerHTML=q.get('s');if(q.get('mono'))s.className='mono'}
+</script></body></html>
