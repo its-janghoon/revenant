@@ -101,7 +101,7 @@ export function Preview(p: PreviewProps) {
             </div>
           </div>
         )}
-        {p.state === "dead" && p.url ? (
+        {(p.state === "dead" || p.state === "repair") && p.url ? (
           <div className="status-over" style={{ position: "absolute" }}>
             <div style={{ position: "relative", width: 320, height: 300 }}>
               <Tombstone title={word(mode, "tomb", { n: p.deployNo })} number={`#${p.deployNo}`} code={p.reason ?? undefined} />

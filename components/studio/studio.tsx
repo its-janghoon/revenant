@@ -49,8 +49,11 @@ export function Studio({ initial, events: ev0, tab: tab0 = "preview" }: { initia
   useEffect(() => {
     const was = prev.current;
     prev.current = state;
-    if (was !== "dead" && state === "dead") void die();
-    if (was === "dead" && (state === "alive" || state === "repair")) rise();
+    // A failed deploy often goes straight to "repair" (the loop starts at once), so dying is
+    // entering dead or repair from a living state; it rises only when it is alive again.
+    const grave = (s: string) => s === "dead" || s === "repair";
+    if (!grave(was) && grave(state)) void die();
+    if (grave(was) && state === "alive") rise();
   }, [state, die, rise]);
 
   useEffect(() => { if (selectOn) setTab("preview"); }, [selectOn]);
