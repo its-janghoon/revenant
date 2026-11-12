@@ -1,7 +1,7 @@
 "use client";
-// Studio (flow2.js S.studio / S.code): chat on the left; Preview, Code, Spec, Data and Timeline
+// Studio (flow2.js S.studio / S.code): chat on the left; Preview, Code, Spec, Design, Data and Timeline
 // on the right. Live data by polling; a deploy that dies calls die(), one that comes back rise().
-import { Activity, BookOpen, Code2, Database, Eye, GitBranch, Monitor, Rocket, Smartphone } from "lucide-react";
+import { Activity, BookOpen, Code2, Database, Eye, GitBranch, Monitor, Palette, Rocket, Smartphone } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { TimelineEvent } from "@/lib/contracts";
@@ -14,14 +14,15 @@ import { usePoll, useTimeline } from "../poll";
 import { W } from "../words";
 import { Chat } from "./chat";
 import { Code } from "./code";
+import { DesignPane } from "./design";
 import { DataPane, SpecPane, TimelinePane } from "./panes";
 import { Preview } from "./preview";
 import { deployNo, fast, previewNo, pulse } from "./state";
 
-export type Tab = "preview" | "code" | "spec" | "data" | "timeline";
+export type Tab = "preview" | "code" | "spec" | "design" | "data" | "timeline";
 // Preview, Spec and Timeline have Haunted words in the copy map (lib/theme/copy.ts); Code and Data stay plain.
 const TABS: [Tab, ReactNode, typeof Eye][] = [
-  ["preview", <Word key="p" k="preview" />, Eye], ["code", "Code", Code2], ["spec", <Word key="s" k="spec" />, BookOpen],
+  ["preview", <Word key="p" k="preview" />, Eye], ["code", "Code", Code2], ["spec", <Word key="s" k="spec" />, BookOpen], ["design", "Design", Palette],
   ["data", "Data", Database], ["timeline", <Word key="t" k="timeline" />, Activity],
 ];
 
@@ -109,6 +110,7 @@ export function Studio({ initial, events: ev0, tab: tab0 = "preview" }: { initia
         ) : tab === "code" ? (
           <Code projectId={id} repo={d.project.repo} region={d.region} branch={branch} openPath={openPath} onOpened={() => setOpenPath(null)} />
         ) : tab === "spec" ? <SpecPane d={d} />
+          : tab === "design" ? <DesignPane projectId={id} app={d.project.name} url={d.previewUrl} onApplied={refreshAll} />
           : tab === "data" ? <DataPane d={d} branch={branch} />
           : <TimelinePane d={d} events={events} state={state} />}
       </div>
