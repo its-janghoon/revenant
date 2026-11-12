@@ -154,5 +154,17 @@ One row per Kiro turn (chat message, loop cycle or subagent turn). Rebuilt by `s
 | 148 | 2026-11-12 20:01 | chat | claude-opus-5.5 | 10.66 | 2841.96 | 102s |
 | 149 | 2026-11-12 20:04 | chat | claude-opus-5.5 | 2.14 | 2844.10 | 29s |
 | 150 | 2026-11-12 20:06 | chat | claude-opus-5.5 | 2.12 | 2846.23 | 18s |
+| 151 | 2026-11-12 20:17 | chat | claude-opus-5.5 | 45.92 | 2892.15 | 584s |
+| 152 | 2026-11-12 20:17 | chat | claude-opus-5.5 | 2.21 | 2894.36 | 19s |
+| 153 | 2026-11-12 20:23 | chat | claude-opus-5.5 | 7.90 | 2902.26 | 195s |
+| 154 | 2026-11-12 20:26 | chat | claude-opus-5.5 | 4.55 | 2906.80 | 38s |
+| 155 | 2026-11-12 20:30 | chat | claude-opus-5.5 | 6.45 | 2913.25 | 61s |
+| 156 | 2026-11-12 20:32 | chat | claude-opus-5.5 | 6.46 | 2919.72 | 47s |
+| 157 | 2026-11-12 20:33 | chat | claude-opus-5.5 | 4.56 | 2924.28 | 38s |
+| 158 | 2026-11-12 20:41 | chat | claude-opus-5.5 | 14.35 | 2938.62 | 87s |
+| 159 | 2026-11-12 20:44 | chat | claude-opus-5.5 | 8.94 | 2947.56 | 109s |
+| 160 | 2026-11-12 20:46 | chat | claude-opus-5.5 | 2.25 | 2949.81 | 14s |
+| 161 | 2026-11-12 20:53 | chat | claude-opus-5.5 | 7.75 | 2957.56 | 30s |
+| 162 | 2026-11-12 21:04 | chat | claude-opus-5.5 | 9.95 | 2967.52 | 48s |
 
-**Total: 2846.23 credits over 150 turns.**
+**Total: 2967.52 credits over 162 turns.**
