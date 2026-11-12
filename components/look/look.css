@@ -22,3 +22,28 @@
 .lookdrop { border: 1.5px dashed var(--line); border-radius: calc(var(--r) + 2px); padding: 14px; text-align: center; color: var(--muted); cursor: pointer }
 .lookdrop.on { border-color: var(--fg); color: var(--fg) }
 .lookedit { width: 100%; min-height: 220px; font: 11.5px/1.6 var(--mono); background: var(--sunk); color: var(--fg); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; resize: vertical }
+
+/* C: studio design panel */
+.lookstudio { flex: 1; min-height: 0; display: grid; grid-template-columns: 360px 1fr }
+.lookstudio .left { border-right: 1px solid var(--line); padding: 14px 16px; overflow: auto; background: var(--bg) }
+.lookstudio .left.drag { outline: 1.5px dashed var(--fg); outline-offset: -6px }
+.lookstudio .right { padding: 16px; background: var(--sunk); min-width: 0; overflow: auto }
+.lookstudio .warnbar { border: 0; border-radius: var(--r); padding: 7px 10px; margin-bottom: 10px; display: flex; gap: 6px; align-items: center }
+.lookstudio .err { margin: 0 0 10px }
+.lookbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px }
+.lookbar .mono { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.okline { background: var(--okbg); color: var(--ok); border-radius: var(--r); padding: 7px 10px; font-size: 12px; font-weight: 500; margin-bottom: 10px }
+.lookpills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px }
+.lookpills .pill:disabled { opacity: .5; cursor: default }
+.tok { display: flex; align-items: center; gap: 10px; padding: 5px 0 }
+.tok .sq { width: 22px; height: 22px; border-radius: 6px; border: 1px solid #0002; padding: 0; flex: none; background: none; cursor: pointer }
+.tok input.sq::-webkit-color-swatch-wrapper { padding: 0 }
+.tok input.sq::-webkit-color-swatch { border: 0; border-radius: 5px }
+.tok input.sq::-moz-color-swatch { border: 0; border-radius: 5px }
+.tok input.sq:disabled { cursor: default }
+.tok .v { margin-left: auto; font: 11px var(--mono); color: var(--muted) }
+.tok input[type=range] { accent-color: var(--fg) }
+.lookbrowser { background: #fff; border: 1px solid var(--line); border-radius: 10px; overflow: hidden }
+.lookbrowser .bar { height: 30px; border-bottom: 1px solid var(--line); display: flex; align-items: center; padding: 0 10px; gap: 6px; background: var(--panel) }
+.lookbrowser .bar i { width: 8px; height: 8px; border-radius: 50%; background: var(--line) }
+.lookbrowser .mini.big { min-height: 320px }
