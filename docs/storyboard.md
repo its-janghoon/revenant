@@ -3,7 +3,7 @@
 ## Recorded cut (2026-11-12)
 
 `video/revenant-demo.mp4` is not in git (36 MB); upload it to YouTube and put the link in
-`docs/devpost.md`. Length 2:21. How it was made: `video/README.md`.
+`docs/devpost.md`. Length 2:41. How it was made: `video/README.md`.
 
 Changes from the draft below, decided while recording:
 
@@ -11,9 +11,9 @@ Changes from the draft below, decided while recording:
 - The install scenes show the README's install section, not a live CloudFormation run in a
   fresh account.
 - The planted break on camera is the missing `RV_APP` variable (a deploy failure, fixed by a
-  rule in 5m 58s with no Kiro credits). The project went straight from failed to repairing,
-  so the tombstone never showed; the chat shows the ritual and the timeline says "It has risen".
-- No app sound (Playwright records video only).
+  rule in 6m 9s with no Kiro credits). The death (strike, blood, tombstone) and the rise play at
+  real speed; the waits around them are sped up with a real-time clock.
+- App sound (rain, thunder, the strike) is recorded from the page's Web Audio output.
 
 | # | Scene | Caption | Voice-over |
 |---|---|---|---|

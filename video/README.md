@@ -1,7 +1,9 @@
 # Demo video
 
-How `revenant-demo.mp4` (2:21, 1920x1080) was made. Everything on screen is the live demo
-install; the long repair is sped up 70x with the real elapsed time in the corner.
+How `revenant-demo.mp4` (2:41, 1920x1080) was made. Everything on screen is the live demo
+install. The waits before the death and during the repair are sped up with the real elapsed
+time in the corner; the death and the rise play at real speed with the app's own sound, which
+is recorded from the page's Web Audio output.
 
 1. `node login.cjs` signs the demo account in with its password (Secrets Manager
    `rv-revenant-demo`) and saves the session to `state.json` (gitignored, never committed).

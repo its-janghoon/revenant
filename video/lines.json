@@ -10,5 +10,7 @@
  "v09": "Now we break a deploy on purpose, by removing an environment variable the app needs. The deploy dies. Revenant reads the logs, names the cause, sets the variable, and redeploys. Nobody touches it.",
  "v10": "It has risen. Time to recover: six minutes, and not one Kiro credit.",
  "v11": "Admins set one policy for everyone: SQL on or off, the Kiro model, who pays for Kiro, the budget, and a company design. Every change is audited.",
- "v12": "Revenant. Open source, and built with Kiro."
+ "v12": "Revenant. Open source, and built with Kiro.",
+ "v09a": "Now we break a deploy on purpose: we remove an environment variable the app needs.",
+ "v09b": "Revenant reads the logs, names the cause, sets the variable, and redeploys. Nobody touches it."
 }

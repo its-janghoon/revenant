@@ -1,7 +1,7 @@
 // Records one scene: node rec.cjs <scene>. Writes clips/<scene>.webm and clips/<scene>.json (marks in seconds).
 const fs = require("node:fs");
 const path = require("node:path");
-const { open, glide, to, click, press, park, SITE, DIR } = require("./lib.cjs");
+const { open, glide, to, click, press, park, takeAudio, SITE, DIR } = require("./lib.cjs");
 
 const P = "942a984f-767f-4646-b870-4b69a4e0dbb3";
 const CARD = "file://" + path.join(DIR, "card.html");
@@ -24,10 +24,17 @@ const scenes = {
     await page.mouse.wheel(0, -80);
     await park(page);
     mark("ready");
-    await wait(page, 1.5);
-    const link = page.getByRole("link", { name: /Launch the install stack/i }).first();
-    await to(page, link, 1400);
-    await wait(page, 7);
+    await wait(page, 1);
+    await to(page, page.getByRole("link", { name: /Launch the install stack/i }).first(), 1100);
+    await wait(page, 1.2);
+    await click(page, page.locator("article a", { hasText: "infra/install.yaml" }).first(), 900);
+    await page.waitForURL(/install\.yaml/, { timeout: 20000 });
+    await page.goto("https://github.com/its-janghoon/revenant/blob/develop/infra/install.yaml#L16-L30", { waitUntil: "domcontentloaded" });
+    await wait(page, 2.5); await park(page);
+    mark("template");
+    await glide(page, 520, 330, 900); await wait(page, 1.2);
+    await glide(page, 560, 420, 900); await wait(page, 1.2);
+    await glide(page, 560, 500, 900); await wait(page, 3);
   },
 
   async ask(page, mark) {
@@ -147,6 +154,10 @@ const scenes = {
     await page.goto(SITE + `/p/${P}`, { waitUntil: "networkidle" });
     await wait(page, 2); await park(page);
     await click(page, page.getByRole("button", { name: /^Haunted$/ }), 900);
+    await wait(page, 1);
+    await click(page, page.getByRole("button", { name: /^Sound$/ }), 700);
+    await wait(page, 1);
+    await glide(page, 760, 470, 900);
     await wait(page, 2); mark("ready");
     for (const [scope, get, set] of [["app", ["get-app", "--app-id", APP, "--query", "app.environmentVariables"], ["update-app", "--app-id", APP]],
       ["branch", ["get-branch", "--app-id", APP, "--branch-name", BR, "--query", "branch.environmentVariables"], ["update-branch", "--app-id", APP, "--branch-name", BR]]]) {
@@ -163,8 +174,7 @@ const scenes = {
       const dead = await page.locator(".status-over").count();
       if (dead && !died) { died = true; mark("dead"); }
       if (died && !dead) { rose = true; mark("rose"); break; }
-      const k = (Date.now() - t0) / 1000;
-      await glide(page, 200 + 140 * Math.sin(k / 2), 380 + 200 * Math.cos(k / 3), 1500);
+      await wait(page, 0.5); // the cursor stays still: this part is sped up later
     }
     mark(rose ? "done" : "timeout");
     await wait(page, 6);
@@ -177,6 +187,8 @@ const scenes = {
     await page.goto(SITE + `/p/${P}`, { waitUntil: "networkidle" });
     await wait(page, 1.5); await park(page);
     await click(page, page.getByRole("button", { name: /^Haunted$/ }), 700);
+    await wait(page, 0.8);
+    await click(page, page.getByRole("button", { name: /^Sound$/ }), 700);
     await wait(page, 1.2);
     await click(page, page.getByRole("tab", { name: /^(Timeline|The chronicle)/ }).first(), 800);
     await wait(page, 1.5); mark("ready");
@@ -209,6 +221,9 @@ const scenes = {
   const mark = (k) => { marks[k] = (Date.now() - start) / 1000; console.log("mark", k, marks[k].toFixed(1)); };
   try { await scenes[name](page, mark); } finally {
     mark("end");
+    const audio = await takeAudio(page);
+    audio.forEach((a, k) => fs.writeFileSync(path.join(DIR, "clips", `${name}.audio${k}.webm`), Buffer.from(a.b64, "base64")));
+    marks.audio = audio.map((a) => (a.t0 - start) / 1000);
     const v = page.video();
     await ctx.close(); await browser.close();
     if (v) fs.renameSync(await v.path(), path.join(DIR, "clips", name + ".webm"));

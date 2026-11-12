@@ -38,14 +38,53 @@ const CURSOR = `
   if (document.documentElement) add(); else addEventListener('DOMContentLoaded', add);
 })();`;
 
+// Records whatever the page plays through Web Audio (the app's rain and thunder) next to the video.
+const AUDIO = `
+(() => {
+  if (window.top !== window || window.__rvAudioHook) return; window.__rvAudioHook = 1;
+  const orig = AudioNode.prototype.connect;
+  AudioNode.prototype.connect = function (dest, ...rest) {
+    const out = orig.call(this, dest, ...rest);
+    if (dest instanceof AudioDestinationNode) {
+      const ac = dest.context;
+      if (!ac.__rv) {
+        const md = ac.createMediaStreamDestination();
+        const rec = new MediaRecorder(md.stream, { mimeType: 'audio/webm;codecs=opus', audioBitsPerSecond: 128000 });
+        const chunks = [];
+        rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+        rec.start(1000);
+        ac.__rv = { md, rec, chunks, t0: Date.now() };
+        (window.__rvAudio = window.__rvAudio || []).push(ac.__rv);
+      }
+      try { orig.call(this, ac.__rv.md); } catch {}
+    }
+    return out;
+  };
+})();`;
+
+// Stops the page's audio recorders; returns [{ t0, b64 }] (t0 = epoch ms the recording began).
+async function takeAudio(page) {
+  return page.evaluate(async () => {
+    const out = [];
+    for (const r of window.__rvAudio || []) {
+      await new Promise((ok) => { r.rec.onstop = ok; r.rec.stop(); });
+      const buf = new Uint8Array(await new Blob(r.chunks, { type: 'audio/webm' }).arrayBuffer());
+      let s = ''; for (let i = 0; i < buf.length; i += 32768) s += String.fromCharCode.apply(null, buf.subarray(i, i + 32768));
+      out.push({ t0: r.t0, b64: btoa(s) });
+    }
+    return out;
+  }).catch(() => []);
+}
+
 async function open({ video, state = path.join(DIR, "state.json") } = {}) {
-  const browser = await chromium.launch({ executablePath: CHROME, headless: true, args: [`--window-size=${W},${H}`, "--force-device-scale-factor=1", "--hide-scrollbars"] });
+  const browser = await chromium.launch({ executablePath: CHROME, headless: true, args: [`--window-size=${W},${H}`, "--force-device-scale-factor=1", "--hide-scrollbars", "--autoplay-policy=no-user-gesture-required"] });
   const ctx = await browser.newContext({
     viewport: { width: W, height: H }, deviceScaleFactor: 1,
     ...(require("node:fs").existsSync(state) ? { storageState: state } : {}),
     ...(video ? { recordVideo: { dir: video, size: { width: W, height: H } } } : {}),
   });
   await ctx.addInitScript(CURSOR);
+  await ctx.addInitScript(AUDIO);
   const page = await ctx.newPage();
   page.__x = W / 2; page.__y = H / 2;
   return { browser, ctx, page };
@@ -77,4 +116,4 @@ async function click(page, loc, ms = 700) { await to(page, loc, ms); await page.
 // Puts the cursor back after a navigation (the new page draws it at the saved spot).
 async function park(page) { await page.evaluate(([a, b]) => window.__rvMove && window.__rvMove(a, b), [page.__x, page.__y]).catch(() => {}); }
 
-module.exports = { open, glide, to, click, press, park, center, demoPassword, SITE, DIR, W, H };
+module.exports = { takeAudio, open, glide, to, click, press, park, center, demoPassword, SITE, DIR, W, H };
