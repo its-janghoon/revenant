@@ -5,8 +5,9 @@ approved (Requirement 15.5).
 
 ## Open questions for Janghoon
 
-- Keep the video silent apart from app sound, or add his own voice-over?
 - Scene 2: show a seat-price mock at all, or only the AWS console?
+
+Decided: Janghoon records an English voice-over (script below). Captions stay as written.
 
 ## Format
 
@@ -15,9 +16,11 @@ approved (Requirement 15.5).
 - Source: Playwright recordings of the real app on the demo install, composed in Remotion.
   Install and builds take minutes in real life; those shots are sped up and always show the
   real elapsed time in a corner clock, so no step looks faster than it is.
-- Sound: only what the app makes itself (rain, thunder, the close crack, the breath),
-  captured from the browser tab with Sound on. UI clicks are the app's own. No music, no
-  stock audio, no voice-over. Silence is used on purpose.
+- Sound: the app's own sound (rain, thunder, the close crack, the breath), captured from the
+  browser tab with Sound on, plus Janghoon's voice-over. UI clicks are the app's own. No
+  music, no stock audio. The voice stops for the death in scene 17: silence is used on purpose.
+- Voice-over: recorded by Janghoon in English, one take per block below, about 2.3 words a
+  second. App sound ducks to about -12 dB under the voice and comes back up between blocks.
 - Captions: burned in, white on a dark bar in Light scenes, bone `#e9e2d2` in Haunted.
   One line at a time, at most about 10 words.
 - Trademarks: other products are named in caption text only, never with their logos.
@@ -49,6 +52,29 @@ approved (Requirement 15.5).
 | 19 | 2:21-2:26 | The live Blood Oath site at its production URL | Hold | "It has risen. Live on your AWS." | Rain |
 | 20 | 2:26-2:37 | Switch back to Light. **Admin policy** `/admin/policy`: SQL off for the install, on for one user; Kiro payer: company key, bring your own Kiro, or both; model Auto; budget; auto-delete. The audit log row appears | Pan down the policy page, end on the audit row | "One policy for everyone. Every change audited." | Silence |
 | 21 | 2:37-2:42 | Pulse logo, "Revenant", repo URL, "Open source, MIT. Built with Kiro." | Static; the line beats once | (on-screen text only) | One far thunder roll, fade out |
+
+## Voice-over script
+
+Each block starts at the scene's first second. Word counts fit the scene at about 2.3 words a
+second; a block may run into the next scene by at most one second.
+
+| Scenes | Time | Voice-over | Words |
+|---|---|---|---|
+| 1 | 0:00-0:03 | (silence) | 0 |
+| 2-3 | 0:03-0:10 | "Teams pay per seat for app builders, and hand over their code and data. Revenant runs in your own AWS account." | 22 |
+| 4-5 | 0:10-0:18 | "Kiro writes a spec first. It builds the app. And when a deploy dies, it fixes it." | 17 |
+| 6-7 | 0:18-0:30 | "Install is one CloudFormation stack. A Kiro key, an admin email and a budget. No GitHub token, no mail domain." | 20 |
+| 8-9 | 0:30-0:41 | "You sign in with an email code. One screen checks the account, Kiro and the budget." | 16 |
+| 10-11 | 0:41-0:59 | "Ask for an app in plain words. Kiro writes requirements, design and tasks, with the AWS parts and the monthly cost. Nothing is built until you press Build." | 28 |
+| 12-13 | 0:59-1:17 | "Kiro CLI builds it in CodeBuild, in your account, one commit per task. Every change gets its own preview, with its own data." | 23 |
+| 14 | 1:17-1:32 | "Turn on Select and click anything. You see its file and line. Change it yourself, or ask Kiro." | 18 |
+| 15 | 1:32-1:45 | "Or edit the code and commit. The next run starts from your commit. One codebase for you and the agent." | 20 |
+| 16 | 1:45-1:50 | "This is Haunted mode." | 4 |
+| 17 | 1:50-2:01 | (silence; the app's sound only) | 0 |
+| 18 | 2:01-2:21 | "The deploy died. Revenant read the logs, named the cause, fixed it on a branch, checked it and redeployed. Time to recover: <measured>." | 23 |
+| 19 | 2:21-2:26 | "It has risen. Live, on your AWS." | 7 |
+| 20 | 2:26-2:37 | "Admins set one policy: SQL on or off, the Kiro model, who pays for Kiro, the budget. Every change is audited." | 20 |
+| 21 | 2:37-2:42 | "Revenant. Open source. Built with Kiro." | 6 |
 
 ## Notes for recording
 

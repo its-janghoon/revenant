@@ -142,8 +142,8 @@ pushed branch, not its report, caught the joins that did not fit.
 ## Testing instructions (private field)
 
 - Demo install: `JUDGE_URL` (for example `https://revenant.example.com`)
-- Account: `JUDGE_EMAIL` (for example `judge-1@example.com`). Sign in with the email code sent
-  to that address, or the code below if you cannot receive mail: `JUDGE_CODE_OR_NOTE`
+- Account: `JUDGE_EMAIL` with password `JUDGE_PASSWORD` (one account per judge). On the sign-in
+  page press **Have a password? Sign in with it**. No email is needed.
 - What to try:
   1. Open **Apps -> FinePrint** (prebuilt). Open its preview and the live URL.
   2. Open the **Timeline** tab to see a repaired deploy: the failure, the cause, the fix and
