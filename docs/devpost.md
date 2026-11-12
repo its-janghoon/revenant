@@ -57,8 +57,8 @@ https://github.com/its-janghoon/revenant (public, MIT in the About section, `/.k
 
 kiro, kiro-cli, kiro-crew, aws, aws-amplify, amplify-gen-2, aws-cloudformation, aws-cdk,
 aws-codebuild, aws-codecommit, amazon-cognito, amazon-eventbridge, aws-lambda,
-amazon-aurora, aws-secrets-manager, aws-cost-explorer, aws-resource-groups, next.js, react,
-typescript, drizzle, zod, fast-check, python, mcp
+amazon-aurora, aws-secrets-manager, amazon-polly, next.js, react, typescript, drizzle, zod,
+fast-check, playwright, tailscale, mcp
 
 ## About the project
 
@@ -99,23 +99,36 @@ and a monitor reports when a build, deploy or repair finishes.
 
 ### How we built it
 
-Spec first, with Kiro. `.kiro/specs/revenant/` (17 requirement sections in EARS style, a
-design and a task list) came first, and every big change (two renames, a move to all-AWS, a
-new default database) was a spec edit before any code. Four steering files kept every agent
-on the same rules. Kiro Crew ran the build as parallel lanes: each lane a subagent in its own
-git worktree and branch, owning its own folders, merged into `develop` only after the parent
-read its pushed branch. An hourly Kiro Crew cron kept the Kiro credits log current.
-Property-based tests (fast-check) cover the guardrail rules, the change classifier, the
-data-model guard and the runner log format. Full write-up: `docs/kiro-usage.md`.
+One person and Kiro, in 31 hours from first commit to the demo video (178 commits, 2,737 Kiro
+credits, logged per message in [docs/credits.md](https://github.com/its-janghoon/revenant/blob/develop/docs/credits.md)).
 
-Inside Revenant, Kiro CLI is the engine: `kiro-cli chat --no-interactive` in CodeBuild, with
-four modes (spec, build, change, repair) and Revenant's own steering copied into every app.
+**Spec first.** `.kiro/specs/revenant/` (17 requirement sections in EARS style, a design and a
+task list) came first, and every big change (two renames, a move to all-AWS, a new default
+database) was a spec edit before any code. Four steering files kept every agent on the same rules.
+
+**Kiro Crew as the control plane.** Kiro Crew runs on a build server and reaches my other
+machines over Tailscale, so the whole loop ran from one chat:
+
+- **Parallel lanes.** Each lane was a subagent in its own git worktree and branch, owning its own
+  folders, merged into `develop` only after the parent read its pushed branch.
+- **Deploys and AWS.** Kiro Crew ran the CloudFormation install, the Amplify and CodeBuild
+  deploys, quota requests, Cognito judge accounts and database checks in the AWS account.
+- **Testing.** Unit and property tests (fast-check) on every change, then the browser tool
+  clicked through the live install, and planted breaks were run for real and timed.
+- **Demo.** Kiro Crew recorded the video with Playwright, voiced it with Amazon Polly, cut it
+  with ffmpeg, and checked the upload from my MacBook over Tailscale.
+- **Bookkeeping.** A Kiro Crew cron kept the Kiro credit log current.
+
+**Kiro CLI as the engine.** Inside Revenant, `kiro-cli chat --no-interactive` runs in CodeBuild
+with four modes (spec, build, change, repair), and Revenant's own steering and the
+frontend-design skill are copied into every app. Full write-up:
+[docs/kiro-usage.md](https://github.com/its-janghoon/revenant/blob/develop/docs/kiro-usage.md).
 
 ### Challenges we ran into
 
 - Stitching parts that were never meant to meet: a builder UI, a headless agent in
   CodeBuild, a CloudFormation installer and EventBridge-driven repairs. One log-line format,
-  shared through `lib/contracts.ts`, ties the runner to the timeline.
+  shared through [lib/contracts.ts](https://github.com/its-janghoon/revenant/blob/develop/lib/contracts.ts), ties the runner to the timeline.
 - Making a self-healing agent safe in a customer's account: guardrails reject `"Action": "*"`,
   data without retain or snapshot, and secrets in plain environment variables before deploy;
   destructive changes wait for a human.
@@ -136,7 +149,8 @@ four modes (spec, build, change, repair) and Revenant's own steering copied into
   | Code tab commit adds a required field to an existing model with no backfill | guard stopped it before deploy, Kiro repair run made it optional | 579 s | 0.6 |
 
   The first FinePrint deploy also failed on its own (the seed step had no table access);
-  repair found and fixed that unprompted in 847 s.
+  repair found and fixed that unprompted in 847 s. In the demo video the env var break is run
+  again on camera: back in 6 min 9 s with 0 Kiro credits.
 - A Haunted theme built from horror-film grammar instead of Halloween clip art.
 
 ### What we learned
@@ -149,7 +163,7 @@ pushed branch, not its report, caught the joins that did not fit.
 
 - Generated-app hooks that run the guardrail check on save.
 - More rule-based repairs, so fewer failures need an agent run.
-- Hosting for outside customers (`docs/platforms.md`).
+- Hosting for outside customers ([docs/platforms.md](https://github.com/its-janghoon/revenant/blob/develop/docs/platforms.md)).
 
 ## Testing instructions (private field)
 
