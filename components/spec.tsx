@@ -1,5 +1,5 @@
 "use client";
-// Spec screen (flow.html S.spec): tabs, plain summary, AWS parts, estimated cost, Build it.
+// Spec screen (flow.html S.spec): tabs (incl. Look), plain summary, AWS parts, estimated cost, Build it.
 import { ArrowUp, Loader, Pencil, RotateCcw, Save, Square } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,11 +8,13 @@ import type { Detail, SpecView } from "@/app/_lib/types";
 import { Heartbeat } from "@/lib/haunt";
 import { useTheme } from "@/lib/theme";
 import { api } from "./api";
+import { BuildWith, LookTab, useSpecLook } from "./look/spec-look";
 import { Markdown } from "./markdown";
 import { usePoll } from "./poll";
 import { W, pick } from "./words";
 
 type File = "requirements" | "design" | "tasks";
+type Tab = File | "look";
 
 export function Spec({ initial, spec: spec0 }: { initial: Detail; spec: SpecView }) {
   const router = useRouter();
@@ -22,7 +24,7 @@ export function Spec({ initial, spec: spec0 }: { initial: Detail; spec: SpecView
   const sp = usePoll<SpecView>(`/api/projects/${id}/spec`, spec0, () => (running(det.data) ? 5000 : 30000));
   const d = det.data;
   const s = sp.data;
-  const [tab, setTab] = useState<File>("requirements");
+  const [tab, setTab] = useState<Tab>("requirements");
   const [edit, setEdit] = useState<string | null>(null);
   const [ask, setAsk] = useState("");
   const [busy, setBusy] = useState<"" | "build" | "save" | "ask" | "stop">("");
@@ -31,7 +33,9 @@ export function Spec({ initial, spec: spec0 }: { initial: Detail; spec: SpecView
   const run = d.runs[0];
   const writing = running(d);
   const tasks = (s.tasks ?? "").split("\n").filter((l) => /^\s*[-*]\s+\[[ xX-]\]\s+\d+\.?\s/.test(l)).length;
-  const body = s[tab];
+  const body = tab === "look" ? null : s[tab];
+  const look = useSpecLook(id);
+  const app = d.project.name.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
   const hasSpec = Boolean(s.requirements || s.design || s.tasks);
 
   async function act<T>(k: typeof busy, fn: () => Promise<T>) {
@@ -51,6 +55,7 @@ export function Spec({ initial, spec: spec0 }: { initial: Detail; spec: SpecView
     router.push(`/p/${id}`);
   });
   const save = () => act("save", async () => {
+    if (tab === "look") return;
     await api(`/api/projects/${id}/spec`, { method: "PUT", body: { file: tab, markdown: edit ?? "" } });
     setEdit(null);
     await sp.refresh();
@@ -87,12 +92,13 @@ export function Spec({ initial, spec: spec0 }: { initial: Detail; spec: SpecView
             </div>
           ) : null}
           <div className="tabs" role="tablist">
-            {(["requirements", "design", "tasks"] as const).map((f) => (
+            {(["requirements", "design", "tasks", "look"] as const).map((f) => (
               <button key={f} type="button" role="tab" aria-selected={tab === f} onClick={() => { setTab(f); setEdit(null); }}>
-                {f === "requirements" ? "Requirements" : f === "design" ? "Design" : `Tasks${tasks ? ` · ${tasks}` : ""}`}
+                {f === "requirements" ? "Requirements" : f === "design" ? "Design" : f === "look" ? "Look" : `Tasks${tasks ? ` · ${tasks}` : ""}`}
               </button>
             ))}
           </div>
+          {tab === "look" ? <LookTab s={look} app={app} /> : (
           <div className="card">
             {s.summary.length && tab === "requirements" && edit === null ? (
               <>
@@ -115,6 +121,7 @@ export function Spec({ initial, spec: spec0 }: { initial: Detail; spec: SpecView
               <textarea className="mdedit" value={edit} onChange={(e) => setEdit(e.target.value)} aria-label={`${tab}.md`} spellCheck={false} />
             ) : body ? <Markdown text={body} /> : <div className="empty">{writing ? "Being written…" : "Empty"}</div>}
           </div>
+          )}
           <form className="card" style={{ marginTop: 14, display: "flex", gap: 10, alignItems: "center", padding: "10px 12px" }} onSubmit={(e) => { e.preventDefault(); void send(); }}>
             <input className="input" style={{ border: 0, padding: 4 }} value={ask} onChange={(e) => setAsk(e.target.value)} placeholder={pick("askPlan", t.mode === "haunted")} aria-label="Ask for a change to the plan" disabled={writing} />
             <button type="submit" className="ghost" disabled={busy !== "" || writing || !ask.trim()}>{busy === "ask" ? <Loader size={13} className="spin" aria-hidden /> : <ArrowUp size={13} aria-hidden />} Send</button>
@@ -136,12 +143,14 @@ export function Spec({ initial, spec: spec0 }: { initial: Detail; spec: SpecView
             <div className="label"><W k="estCost" /></div>
             <div className="kpi"><div className="n">{s.totalUsd ? `~${s.totalUsd} / mo` : "--"}</div><div className="t">from your AWS credits first</div></div>
           </div>
+          <BuildWith s={look} />
           <button type="button" className="btn wide" style={{ padding: 12 }} onClick={build} disabled={busy !== "" || writing || !s.tasks}>
             {busy === "build" ? <Loader size={15} className="spin" aria-hidden /> : null}<W k="buildIt" />
           </button>
           <div className="muted" style={{ fontSize: 11.5, marginTop: 8, textAlign: "center" }}>
             Kiro {run?.model === "auto" || !run ? "Auto" : run.model} · {tasks ? `${tasks} tasks` : "tasks pending"}
           </div>
+          <div className="muted" style={{ fontSize: 12, marginTop: 10 }}>Change the look later from the studio: Kiro applies the new DESIGN.md to every screen.</div>
         </div>
       </div>
     </div>
