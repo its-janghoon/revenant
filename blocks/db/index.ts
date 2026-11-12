@@ -14,8 +14,9 @@
 // server call the Data API on that cluster only, and writes it to amplify_outputs.json as custom.db.
 // Run `npx tsx blocks/db/migrate.ts` in amplify.yml right after `ampx pipeline-deploy`.
 import { Annotations, Stack } from 'aws-cdk-lib';
-import { PolicyStatement, Role } from 'aws-cdk-lib/aws-iam';
+import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import type { Fn } from '../fn';
+import { grant } from '../grant';
 import { app, env, sandbox, type Env } from '../name';
 
 export type DbConfig = { clusterArn: string; secretArn: string; database: string };
@@ -60,10 +61,7 @@ export function db(backend: { stack: Stack; addOutput(o: { custom: Record<string
   }
 
   const compute = process.env.RV_COMPUTE_ROLE_ARN?.trim();
-  if (compute) {
-    const role = Role.fromRoleArn(backend.stack, 'RvDbComputeRole', compute);
-    for (const s of grants) role.addToPrincipalPolicy(s);
-  }
+  if (compute) grant(backend.stack, 'db', compute, grants);
 
   backend.addOutput({ custom: { db: c } });
   return c;

@@ -6,8 +6,9 @@
 // RV_COMPUTE_ROLE_ARN on the Amplify app. Ids with a geography prefix (us., eu., apac., global.)
 // are cross-region inference profiles.
 import { Stack } from 'aws-cdk-lib';
-import { PolicyStatement, Role } from 'aws-cdk-lib/aws-iam';
+import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import type { Fn } from './fn';
+import { grant } from './grant';
 
 const PROFILE = /^(us|eu|apac|global|us-gov|jp|au|ca)\./;
 
@@ -38,5 +39,5 @@ export function ai(backend: { stack: Stack }, opts: { models: string[]; function
   }
 
   const compute = process.env.RV_COMPUTE_ROLE_ARN?.trim();
-  if (compute) Role.fromRoleArn(backend.stack, 'RvComputeRole', compute).addToPrincipalPolicy(statement);
+  if (compute) grant(backend.stack, 'ai', compute, [statement]);
 }

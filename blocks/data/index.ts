@@ -16,8 +16,9 @@
 // for the user's approval.
 import { RemovalPolicy, type Stack } from 'aws-cdk-lib';
 import type { ITable } from 'aws-cdk-lib/aws-dynamodb';
-import { PolicyStatement, Role } from 'aws-cdk-lib/aws-iam';
+import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
+import { grant } from '../grant';
 import { app, env } from '../name';
 
 type TableWrapper = {
@@ -57,10 +58,10 @@ export function data(backend: WithData): Record<string, string> {
   // The Amplify build role runs the seed script; it may write preview and dev tables, never prod.
   const build = process.env.RV_BUILD_ROLE_ARN?.trim();
   if (build && e !== 'prod' && Object.keys(tables).length) {
-    Role.fromRoleArn(backend.stack, 'RvSeedRole', build).addToPrincipalPolicy(new PolicyStatement({
+    grant(backend.stack, 'seed', build, [new PolicyStatement({
       actions: ['dynamodb:BatchWriteItem', 'dynamodb:Scan'],
       resources: Object.values(tables).map((t) => t.tableArn),
-    }));
+    })]);
   }
   return names;
 }
