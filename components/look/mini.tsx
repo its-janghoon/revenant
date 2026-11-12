@@ -20,8 +20,10 @@ export function miniVars(c: DesignCheck | null): CSSProperties {
   set("--m-badge", k.surface);
   set("--m-badgefg", k.success);
   set("--m-r", c?.rounded);
-  if (c?.fonts.heading) v["--m-head"] = `${c.fonts.heading}, system-ui, sans-serif`;
-  if (c?.fonts.body) v["--m-body"] = `${c.fonts.body}, system-ui, sans-serif`;
+  // The font may be missing on this machine: fall back to the same kind (serif or sans).
+  const stack = (f: string) => `"${f}", ${/georgia|times|serif|garamond|playfair|merriweather|lora|baskerville/i.test(f) ? "Georgia, serif" : "system-ui, sans-serif"}`;
+  if (c?.fonts.heading) v["--m-head"] = stack(c.fonts.heading);
+  if (c?.fonts.body) v["--m-body"] = stack(c.fonts.body);
   return v as CSSProperties;
 }
 
