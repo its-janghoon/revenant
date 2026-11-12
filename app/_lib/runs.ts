@@ -16,7 +16,7 @@ import { kiroFor } from "./keys";
 import { head } from "./repo";
 import { getSettings, projectRuns, sqlAllowedFor, toProject, workBranch, type ProjectRow, type RunRow } from "./store";
 import { event, putEvents } from "./timeline";
-import { seedDesign } from "@/lib/looks";
+import { seedDesign } from "@/lib/looks/seed";
 
 const { runs, projects } = schema;
 

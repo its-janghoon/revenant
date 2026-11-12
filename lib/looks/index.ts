@@ -6,6 +6,7 @@ import { PRESETS } from "./presets";
 
 export { checkDesign } from "./check";
 export { PRESETS, presetById } from "./presets";
+export { seedDesign } from "./seed";
 
 export const DESIGN_PATH = "DESIGN.md";
 
@@ -19,10 +20,6 @@ export function listLooks(s: Pick<Settings, "companyDesign" | "companyDesignMode
   return { presets: presetLooks, company };
 }
 
-/** The company DESIGN.md new apps start with, or null when the admin has none or it is off. */
-export function seedDesign(s: Pick<Settings, "companyDesign" | "companyDesignMode">): string | null {
-  return s.companyDesign?.trim() && s.companyDesignMode !== "off" ? s.companyDesign : null;
-}
 
 const norm = (t: string) => t.replace(/\r\n/g, "\n").trim();
 
