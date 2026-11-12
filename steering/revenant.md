@@ -13,3 +13,7 @@ inclusion: always
   `git commit -m "task <n>: <title>"`.
 - Never push, deploy, or run `ampx sandbox` or `ampx pipeline-deploy`. Revenant checks and pushes.
 - Never put secrets in code, `.env*` files or logs, and never commit `.env*`.
+- Look: when `DESIGN.md` is at the repo root, every screen follows it (its colors, fonts, corner
+  radius, spacing, components, and do and don't notes); put its tokens in one place, such as CSS
+  variables. Without it, use the `frontend-design` skill in `.kiro/skills/`. Never edit `.kiro/skills/`.
+  Edit `DESIGN.md` only when the user asks to change the look.

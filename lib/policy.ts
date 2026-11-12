@@ -17,7 +17,7 @@ export interface Policy extends Settings {
 export const policyBody = settingsBody.extend({ previewDays: z.number().int().min(1).max(90).optional() });
 export type PolicyPatch = z.infer<typeof policyBody>;
 
-const KEYS = ["sqlAllowed", "model", "kiroMode", "budgetUsd", "creditsPerBuild", "autoDeleteHours", "previewDays"] as const;
+const KEYS = ["sqlAllowed", "model", "kiroMode", "budgetUsd", "creditsPerBuild", "autoDeleteHours", "companyDesign", "companyDesignMode", "previewDays"] as const;
 type Key = (typeof KEYS)[number];
 
 function defaults(): Policy {
@@ -57,6 +57,8 @@ const ACTION: Record<Key, string> = {
   budgetUsd: "policy.budget",
   creditsPerBuild: "policy.credits_per_build",
   autoDeleteHours: "policy.auto_delete",
+  companyDesign: "policy.company_design",
+  companyDesignMode: "policy.company_design_mode",
   previewDays: "policy.preview_days",
 };
 
@@ -72,7 +74,9 @@ export async function putPolicy(patch: PolicyPatch, actor: string): Promise<Poli
       .insert(schema.settings)
       .values({ key: k, value, updatedBy: actor })
       .onConflictDoUpdate({ target: schema.settings.key, set: { value, updatedBy: actor, updatedAt: sql`now()` } });
-    await audit(actor, ACTION[k], { from: before[k], to: v });
+    await audit(actor, ACTION[k], k === "companyDesign"
+      ? { from: before[k] ? `${String(before[k]).length} chars` : null, to: v ? `${String(v).length} chars` : null }
+      : { from: before[k], to: v });
     Object.assign(next, { [k]: v });
   }
   return next;

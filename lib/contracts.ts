@@ -95,7 +95,11 @@ export interface Settings {
   budgetUsd: number;
   creditsPerBuild: number; // Kiro credit limit per run
   autoDeleteHours: number | null; // null = off; 24 on the demo install
+  companyDesign: string | null; // the company DESIGN.md (Google DESIGN.md format), set by the admin
+  companyDesignMode: CompanyDesignMode; // off | default (pre-picked) | required (every app uses it)
 }
+
+export type CompanyDesignMode = "off" | "default" | "required";
 
 export const DEFAULT_SETTINGS: Settings = {
   sqlAllowed: false,
@@ -104,6 +108,8 @@ export const DEFAULT_SETTINGS: Settings = {
   budgetUsd: 100,
   creditsPerBuild: 50,
   autoDeleteHours: null,
+  companyDesign: null,
+  companyDesignMode: "off",
 };
 
 export const MAX_REPAIR_ATTEMPTS = 3;
@@ -223,6 +229,8 @@ export const ROUTES = {
   projects: { path: "/api/projects", methods: ["GET", "POST"], owner: "L5" },
   project: { path: "/api/projects/:id", methods: ["GET", "DELETE"], owner: "L5" },
   spec: { path: "/api/projects/:id/spec", methods: ["GET", "PUT"], owner: "L1" },
+  looks: { path: "/api/looks", methods: ["GET"], owner: "L1" },
+  look: { path: "/api/projects/:id/look", methods: ["GET", "PUT"], owner: "L1" },
   build: { path: "/api/projects/:id/build", methods: ["POST"], owner: "L1" },
   change: { path: "/api/projects/:id/change", methods: ["POST"], owner: "L1" },
   runs: { path: "/api/projects/:id/runs", methods: ["GET"], owner: "L1" },
@@ -309,7 +317,40 @@ export const settingsBody = z.object({
   budgetUsd: z.number().positive(),
   creditsPerBuild: z.number().positive(),
   autoDeleteHours: z.number().int().positive().nullable(),
+  companyDesign: z.string().max(60_000).nullable(),
+  companyDesignMode: z.enum(["off", "default", "required"]),
 }).partial();
+
+// ---------- looks (DESIGN.md per app; lib/looks) ----------
+
+/** One finding of the DESIGN.md linter (@google/design.md). */
+export interface DesignFinding { severity: "error" | "warning" | "info"; path?: string; message: string }
+
+/** Result of checking a DESIGN.md: errors block saving, warnings are shown. */
+export interface DesignCheck {
+  ok: boolean;
+  name: string | null;
+  colors: Record<string, string>; // token name -> CSS color, for previews
+  fonts: { heading: string | null; body: string | null };
+  rounded: string | null; // the md (or first) corner radius
+  findings: DesignFinding[]; // errors and warnings only
+}
+
+/** A built-in look (lib/looks/presets.ts) or the company design. */
+export interface Look { id: string; name: string; blurb: string; markdown: string; check: DesignCheck }
+
+/** GET /api/looks */
+export interface LooksView { presets: Look[]; company: (Look & { mode: CompanyDesignMode }) | null }
+
+/** GET /api/projects/:id/look. `look` is a preset id, "company", "own", or null when the app has no DESIGN.md. */
+export interface ProjectLook { branch: string; look: string | null; markdown: string | null; check: DesignCheck | null; locked: boolean }
+
+/** PUT /api/projects/:id/look: writes DESIGN.md on the work branch. apply: also start a change run that restyles every screen. dry: check only. */
+export const lookBody = z.object({
+  markdown: z.string().min(1).max(60_000),
+  apply: z.boolean().default(false),
+  dry: z.boolean().default(false),
+});
 export const inviteBody = z.object({ email: z.string().email(), admin: z.boolean().default(false) });
 export const userPatchBody = z.object({ disabled: z.boolean().optional(), sqlAllowed: z.boolean().nullable().optional() });
 

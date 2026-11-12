@@ -2,7 +2,7 @@
 // clone -> (seed) -> steering -> kiro-cli -> checks (scripts) -> push. See runner/README.md.
 
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
-import { appendFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
+import { appendFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
@@ -223,6 +223,19 @@ function clone(): void {
 
 function steering(): void {
   cpSync(join(home, 'steering'), join(work, '.kiro', 'steering'), { recursive: true });
+  // Skills (skills/README.md) ride along with steering; README.md stays behind.
+  for (const name of readdirSync(join(home, 'skills'))) {
+    if (statSync(join(home, 'skills', name)).isDirectory()) cpSync(join(home, 'skills', name), join(work, '.kiro', 'skills', name), { recursive: true });
+  }
+}
+
+// The admin's company DESIGN.md (Settings.companyDesign), when set, is the new app's first look.
+function companyDesign(): void {
+  const bucket = env.PROMPT_BUCKET?.trim();
+  const key = env.DESIGN_S3_KEY?.trim();
+  if (!bucket || !key) return;
+  const r = sh('aws', ['s3', 'cp', `s3://${bucket}/${key}`, join(work, 'DESIGN.md'), '--quiet'], { cwd: '/', env });
+  if (!r.ok) throw new Step('prompt', 'could not read the company DESIGN.md from S3');
 }
 
 // blocks/ belongs to Revenant (agents may not edit it), so every run brings in its current copy.
@@ -238,6 +251,7 @@ function seed(): void {
   cpSync(join(home, 'templates', 'starter'), work, { recursive: true });
   blocks();
   steering();
+  companyDesign();
   commitAll('chore: start from the Revenant starter');
   must(git('push', '-q', 'origin', `HEAD:refs/heads/${base}`), 'seed');
   say(`new repo started from the starter on ${base}`);
@@ -248,7 +262,7 @@ function checkout(): void {
   else must(git('checkout', '-q', '-b', branch, `origin/${base}`), 'clone');
   steering();
   blocks();
-  if (git('status', '--porcelain', '.kiro/steering', 'blocks').out) commitAll('chore: update Revenant steering and blocks');
+  if (git('status', '--porcelain', '.kiro/steering', '.kiro/skills', 'blocks').out) commitAll('chore: update Revenant steering and blocks');
 }
 
 function attachments(): string {

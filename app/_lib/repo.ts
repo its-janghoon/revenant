@@ -1,7 +1,7 @@
 // The app's CodeCommit repository: read files and folders, commit, parse tasks.md.
 import "server-only";
 import {
-  CreateCommitCommand, CreateRepositoryCommand, GetBranchCommand, GetFileCommand, GetFolderCommand,
+  CreateBranchCommand, CreateCommitCommand, CreateRepositoryCommand, GetBranchCommand, GetFileCommand, GetFolderCommand,
   type CreateCommitCommandInput,
 } from "@aws-sdk/client-codecommit";
 import type { TaskState } from "@/lib/contracts";
@@ -53,6 +53,15 @@ export async function readFolder(repo: string, ref: string, path: string): Promi
   } catch (e) {
     if (missing(e)) return null;
     throw e;
+  }
+}
+
+/** Creates `branch` at `commitId` (no-op when it already exists). */
+export async function createBranch(repo: string, branch: string, commitId: string): Promise<void> {
+  try {
+    await codecommit.send(new CreateBranchCommand({ repositoryName: repo, branchName: branch, commitId }));
+  } catch (e) {
+    if ((e as Error).name !== "BranchNameExistsException") throw e;
   }
 }
 

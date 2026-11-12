@@ -13,7 +13,7 @@ RUN curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip" -
  && rm -rf /tmp/aws /tmp/aws.zip
 
 RUN pip3 install --no-cache-dir --break-system-packages cfn-lint \
- && npm install -g tsx@4
+ && npm install -g tsx@4 @google/design.md@0.4.0
 
 # Kiro CLI (headless with KIRO_API_KEY)
 RUN curl -fsSL https://cli.kiro.dev/install | bash
@@ -23,6 +23,7 @@ RUN kiro-cli --version
 WORKDIR /opt/revenant
 COPY runner/ runner/
 COPY steering/ steering/
+COPY skills/ skills/
 COPY blocks/ blocks/
 COPY templates/ templates/
 COPY lib/ lib/

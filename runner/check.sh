@@ -24,6 +24,11 @@ echo "RV-STEP lint"
 [ -f amplify_outputs.json ] || echo '{"version":"1.4"}' > amplify_outputs.json
 npm run lint --if-present
 
+# DESIGN.md (the app's look) is checked with Google's linter. Warn only: a look never blocks a deploy.
+if [ -f DESIGN.md ] && command -v designmd >/dev/null; then
+  designmd lint DESIGN.md || echo "RV-WARN DESIGN.md has lint findings (not blocking)"
+fi
+
 echo "RV-STEP synth"
 rm -rf "$out"
 export RV_PROJECT_ID="${RV_PROJECT_ID:-unknown}"

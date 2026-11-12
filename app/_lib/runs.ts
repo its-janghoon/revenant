@@ -16,6 +16,7 @@ import { kiroFor } from "./keys";
 import { head } from "./repo";
 import { getSettings, projectRuns, sqlAllowedFor, toProject, workBranch, type ProjectRow, type RunRow } from "./store";
 import { event, putEvents } from "./timeline";
+import { seedDesign } from "@/lib/looks";
 
 const { runs, projects } = schema;
 
@@ -88,6 +89,12 @@ export async function startRun(i: StartInput): Promise<RunRow> {
       await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: i.prompt ?? "", ContentType: "text/markdown" }));
       vars.PROMPT_BUCKET = bucket;
       vars.PROMPT_S3_KEY = key;
+      const design = i.mode === "spec" ? seedDesign(s) : null;
+      if (design) {
+        const dkey = `runs/${p.name}/${run.id}/DESIGN.md`;
+        await s3.send(new PutObjectCommand({ Bucket: bucket, Key: dkey, Body: design, ContentType: "text/markdown" }));
+        vars.DESIGN_S3_KEY = dkey;
+      }
       const attach = await copyAttachments(p.name, run.id, u, i.attachments ?? []);
       if (attach) vars.ATTACH_S3_PREFIX = attach;
     }

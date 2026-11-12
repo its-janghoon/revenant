@@ -1,0 +1,217 @@
+<!doctype html>
+<html data-mode="light">
+<head>
+<meta charset="utf-8">
+<title>Revenant · Look picker mockups</title>
+<style>
+/* Revenant Light tokens (lib/theme/tokens.css, components/ui.css) */
+:root { --r: 8px; --body: Inter, system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, monospace;
+  --bg: #fbfbfa; --panel: #fff; --sunk: #f4f4f2; --fg: #141414; --muted: #6c6c68; --line: #e7e6e2;
+  --accent: #141414; --onaccent: #fff; --ok: #127a45; --okbg: #e6f4ec; --warn: #9a6400; --warnbg: #fbf1dc; --sel: #3b82f6 }
+* { box-sizing: border-box; margin: 0; padding: 0 }
+body { background: #ecebe7; color: var(--fg); font: 13px/1.45 var(--body); padding: 28px }
+h1 { font: 650 20px var(--body); margin-bottom: 4px } .sub { color: var(--muted); margin-bottom: 22px }
+.opt { margin-bottom: 34px } .opt > .tag { font: 600 11px var(--mono); letter-spacing: .06em; color: var(--muted); margin-bottom: 8px; text-transform: uppercase }
+.opt > .tag b { color: var(--fg) }
+.frame { background: var(--bg); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px #0001 }
+.hdr { height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 18px; border-bottom: 1px solid var(--line); background: var(--bg) }
+.mark { width: 22px; height: 22px; border-radius: 6px; background: var(--fg) } .logo { font: 700 15px var(--body); letter-spacing: -.02em }
+.nav { display: flex; gap: 4px; margin-left: 8px; color: var(--muted) } .nav span { padding: 5px 10px; border-radius: var(--r) } .nav .on { color: var(--fg); background: var(--sunk) }
+.sp { flex: 1 }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px }
+.label { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 8px; display: block }
+.btn { display: inline-flex; align-items: center; gap: 6px; border-radius: var(--r); font-weight: 600; background: var(--accent); color: var(--onaccent); padding: 9px 16px; white-space: nowrap }
+.ghost { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: var(--r); padding: 7px 12px; font-weight: 500; background: var(--panel) }
+.pill { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 99px; padding: 4px 11px; font-size: 12px; color: var(--muted); background: var(--panel) }
+.pill.on { color: var(--fg); border-color: var(--fg) }
+.muted { color: var(--muted) } .mono { font: 11.5px var(--mono) }
+.chip { display: inline-block; font: 600 10px var(--mono); padding: 2px 7px; border-radius: 99px; text-transform: uppercase; letter-spacing: .03em; background: var(--sunk); color: var(--muted) }
+.chip.ok { background: var(--okbg); color: var(--ok) }
+
+/* mini app previews: each look sets its own variables on .mini */
+.mini { --m-bg: #fff; --m-fg: #141414; --m-mut: #6c6c68; --m-line: #e7e6e2; --m-acc: #141414; --m-on: #fff; --m-r: 6px; --m-head: var(--body); --m-hw: 650;
+  background: var(--m-bg); color: var(--m-fg); border-bottom: 1px solid var(--line); padding: 12px; height: 116px; overflow: hidden }
+.mini .mh { display: flex; gap: 6px; align-items: center; font: 700 10px var(--m-head); margin-bottom: 9px }
+.mini .mh i { width: 9px; height: 9px; border-radius: 3px; background: var(--m-acc) }
+.mini .mt { font: var(--m-hw) 13.5px/1.15 var(--m-head); letter-spacing: -.01em; margin-bottom: 6px; white-space: nowrap }
+.mini .ms { height: 5px; width: 78%; border-radius: 3px; background: var(--m-line); margin-bottom: 4px } .mini .ms.s { width: 55% }
+.mini .mb { display: inline-block; margin-top: 8px; padding: 4px 9px; border-radius: var(--m-r); background: var(--m-acc); color: var(--m-on); font: 600 9px var(--body) }
+.mini .mg { display: inline-block; margin-left: 4px; padding: 3px 7px; border-radius: 99px; font: 600 8px var(--mono); background: var(--m-badge, #e6f4ec); color: var(--m-badgefg, #127a45) }
+.l-plain { }
+.l-paper { --m-bg: #f8f5ee; --m-fg: #1b1a17; --m-line: #e3ddcf; --m-acc: #1f3a6e; --m-r: 4px; --m-head: Georgia, "Times New Roman", serif; --m-hw: 700 }
+.l-midnight { --m-bg: #0d1117; --m-fg: #e6edf3; --m-mut: #8b949e; --m-line: #222a33; --m-acc: #2dd4bf; --m-on: #04211d; --m-r: 8px; --m-badge: #0f2e2a; --m-badgefg: #5eead4 }
+.l-studio { --m-bg: #ffffff; --m-fg: #0b0b0b; --m-line: #e5e5e5; --m-acc: #1d4ed8; --m-r: 0px; --m-head: "Helvetica Neue", Arial, sans-serif; --m-hw: 800 }
+.l-soft { --m-bg: #f3f8f4; --m-fg: #1f2d27; --m-line: #d8e6dc; --m-acc: #2f7d5b; --m-r: 99px; --m-hw: 600 }
+.l-company { --m-bg: #fffdf8; --m-fg: #101828; --m-line: #e9e4d8; --m-acc: #b42318; --m-r: 6px; --m-head: Georgia, serif; --m-hw: 700 }
+.l-own { --m-bg: repeating-linear-gradient(135deg, #fafaf9 0 8px, #f2f2ef 8px 16px) }
+.l-own .own { height: 100%; display: grid; place-items: center; text-align: center; color: var(--muted); font: 600 11px var(--mono) }
+
+/* option A: pill + popover on Home */
+.home { padding: 380px 0 40px; display: grid; place-items: start center }
+.home h2 { font: 650 26px var(--body); letter-spacing: -.02em; margin-bottom: 18px; text-align: center }
+.ask { width: 640px; position: relative; padding: 16px 18px 58px; font-size: 15px }
+.ask .tools { position: absolute; left: 16px; bottom: 14px; display: flex; gap: 8px }
+.ask .go { position: absolute; right: 14px; bottom: 12px }
+.pop { position: absolute; left: 92px; bottom: 50px; width: 360px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 16px 40px #0002; padding: 12px; z-index: 2; font-size: 13px }
+.pop .sw { display: flex; gap: 10px; align-items: center; padding: 7px 8px; border-radius: 8px }
+.pop .sw.on { background: var(--sunk) }
+.pop .dots { display: flex; gap: 3px } .pop .dots i { width: 14px; height: 14px; border-radius: 4px; border: 1px solid #0001 }
+.pop .sw b { font-weight: 600 } .pop .sw span { color: var(--muted); font-size: 12px }
+.pop hr { border: 0; border-top: 1px solid var(--line); margin: 6px 0 }
+
+/* option B: Look tab on the spec screen */
+.spec { display: grid; grid-template-columns: 1fr 300px; gap: 18px; padding: 22px 26px }
+.tabs { display: flex; gap: 18px; border-bottom: 1px solid var(--line); margin: 14px 0 16px } .tabs span { padding: 8px 2px; color: var(--muted) } .tabs .on { color: var(--fg); border-bottom: 2px solid var(--fg); font-weight: 600 }
+.looks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px }
+.look { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel) }
+.look.on { outline: 2px solid var(--fg); outline-offset: -2px }
+.look .tx { padding: 9px 11px } .look .tx b { display: flex; justify-content: space-between; align-items: center; font-weight: 600 } .look .tx span { color: var(--muted); font-size: 11.5px }
+.code { font: 11px/1.6 var(--mono); background: var(--sunk); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; white-space: pre; color: #333; overflow: hidden }
+.side .row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--line) } .side .row:last-child { border: 0 }
+
+/* option C: Design panel in the studio */
+.studio { display: grid; grid-template-columns: 360px 1fr; height: 430px }
+.studio .left { border-right: 1px solid var(--line); padding: 14px 16px; overflow: hidden; background: var(--bg) }
+.studio .right { padding: 16px; background: var(--sunk) }
+.tok { display: flex; align-items: center; gap: 10px; padding: 6px 0 } .tok .sq { width: 22px; height: 22px; border-radius: 6px; border: 1px solid #0001 } .tok .v { margin-left: auto; font: 11px var(--mono); color: var(--muted) }
+.slider { height: 4px; background: var(--line); border-radius: 99px; position: relative; margin: 10px 0 4px } .slider i { position: absolute; left: 30%; top: -5px; width: 14px; height: 14px; border-radius: 50%; background: var(--fg) }
+.browser { background: #fff; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; height: 100% }
+.browser .bar { height: 30px; border-bottom: 1px solid var(--line); display: flex; align-items: center; padding: 0 10px; gap: 6px } .browser .bar i { width: 8px; height: 8px; border-radius: 50%; background: var(--line) }
+.browser .mini { height: auto; border: 0; padding: 22px }
+.browser .mini .mt { font-size: 28px; white-space: normal } .browser .mini .ms { height: 8px } .browser .mini .mb { font-size: 12px; padding: 8px 14px }
+
+/* admin card (shared by all options) */
+.admin { display: grid; grid-template-columns: 1fr 1.2fr; gap: 18px; padding: 22px 26px }
+.drop { border: 1.5px dashed var(--line); border-radius: 10px; padding: 14px; text-align: center; color: var(--muted) }
+.toggle { width: 34px; height: 20px; border-radius: 99px; background: var(--fg); position: relative; flex: none } .toggle i { position: absolute; right: 3px; top: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff }
+.rec { background: var(--okbg); color: var(--ok); font: 600 10px var(--mono); padding: 2px 7px; border-radius: 99px; margin-left: 8px }
+</style>
+</head>
+<body>
+<h1>Look picker: three options</h1>
+<div class="sub">Every look is a DESIGN.md (Google's format) that Kiro follows, plus the frontend-design skill in every app. The admin card at the bottom is the same for all three.</div>
+
+<!-- A -->
+<div class="opt" id="a">
+  <div class="tag"><b>A</b> · a "Look" pill on the Home prompt · smallest change</div>
+  <div class="frame">
+    <div class="hdr"><div class="mark"></div><div class="logo">Revenant</div><div class="nav"><span class="on">Home</span><span>Apps</span><span>Cost</span></div><div class="sp"></div><span class="mono muted">$6.64 this month</span></div>
+    <div class="home">
+      <h2>What should we build?</h2>
+      <div class="card ask">
+        <div>Build me a contract signing site where an AI flags toxic clauses before you sign.</div>
+        <div class="tools"><span class="pill">📎 Attach</span><span class="pill on">◐ Look: Paper ▾</span></div>
+        <span class="btn go">Write the spec →</span>
+        <div class="pop">
+          <span class="label">Look</span>
+          <div class="sw"><div class="dots"><i style="background:#fffdf8"></i><i style="background:#101828"></i><i style="background:#b42318"></i></div><div><b>Company</b> <span class="chip ok">default</span><br><span>Set by your admin</span></div></div>
+          <hr>
+          <div class="sw"><div class="dots"><i style="background:#fff"></i><i style="background:#141414"></i><i style="background:#6c6c68"></i></div><div><b>Plain</b><br><span>Neutral, no extra style</span></div></div>
+          <div class="sw on"><div class="dots"><i style="background:#f8f5ee"></i><i style="background:#1b1a17"></i><i style="background:#1f3a6e"></i></div><div><b>Paper</b><br><span>Editorial serif, ink blue</span></div></div>
+          <div class="sw"><div class="dots"><i style="background:#0d1117"></i><i style="background:#e6edf3"></i><i style="background:#2dd4bf"></i></div><div><b>Midnight</b><br><span>Dark, one teal accent</span></div></div>
+          <div class="sw"><div class="dots"><i style="background:#fff"></i><i style="background:#0b0b0b"></i><i style="background:#1d4ed8"></i></div><div><b>Studio</b><br><span>Bold type, square edges</span></div></div>
+          <div class="sw"><div class="dots"><i style="background:#f3f8f4"></i><i style="background:#1f2d27"></i><i style="background:#2f7d5b"></i></div><div><b>Soft</b><br><span>Rounded, calm green</span></div></div>
+          <hr>
+          <div class="sw"><div class="dots"><i style="background:#fafaf9;border-style:dashed"></i></div><div><b>Upload DESIGN.md</b><br><span>Your own design system file</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- B -->
+<div class="opt" id="b">
+  <div class="tag"><b>B</b> · a "Look" tab on the spec screen, before Build it · recommended</div>
+  <div class="frame">
+    <div class="hdr"><div class="mark"></div><div class="logo">Revenant</div><div class="nav"><span>Home</span><span class="on">Apps</span><span>Cost</span></div></div>
+    <div class="spec">
+      <div>
+        <div class="muted">Apps / fineprint</div>
+        <div style="font:650 22px var(--body);letter-spacing:-.02em">Here is the plan</div>
+        <div class="tabs"><span>Requirements</span><span>Design</span><span>Tasks · 13</span><span class="on">Look</span></div>
+        <div class="looks">
+          <div class="look"><div class="mini l-company"><div class="mh"><i></i>FinePrint</div><div class="mt">Read before you sign</div><div class="ms"></div><div class="ms s"></div><span class="mb">Upload</span><span class="mg">SAFE</span></div><div class="tx"><b>Company <span class="chip ok">default</span></b><span>From your admin</span></div></div>
+          <div class="look on"><div class="mini l-paper"><div class="mh"><i></i>FinePrint</div><div class="mt">Read before you sign</div><div class="ms"></div><div class="ms s"></div><span class="mb">Upload</span><span class="mg">SAFE</span></div><div class="tx"><b>Paper <span>✓</span></b><span>Editorial serif, ink blue</span></div></div>
+          <div class="look"><div class="mini l-midnight"><div class="mh"><i></i>FinePrint</div><div class="mt">Read before you sign</div><div class="ms"></div><div class="ms s"></div><span class="mb">Upload</span><span class="mg">SAFE</span></div><div class="tx"><b>Midnight</b><span>Dark, one teal accent</span></div></div>
+          <div class="look"><div class="mini l-studio"><div class="mh"><i></i>FinePrint</div><div class="mt">Read before you sign</div><div class="ms"></div><div class="ms s"></div><span class="mb">Upload</span><span class="mg">SAFE</span></div><div class="tx"><b>Studio</b><span>Bold type, square edges</span></div></div>
+          <div class="look"><div class="mini l-soft"><div class="mh"><i></i>FinePrint</div><div class="mt">Read before you sign</div><div class="ms"></div><div class="ms s"></div><span class="mb">Upload</span><span class="mg">SAFE</span></div><div class="tx"><b>Soft</b><span>Rounded, calm green</span></div></div>
+          <div class="look"><div class="mini l-plain"><div class="mh"><i></i>FinePrint</div><div class="mt">Read before you sign</div><div class="ms"></div><div class="ms s"></div><span class="mb">Upload</span><span class="mg">SAFE</span></div><div class="tx"><b>Plain</b><span>Neutral, no extra style</span></div></div>
+          <div class="look"><div class="mini l-own"><div class="own">Drop DESIGN.md<br>or paste it</div></div><div class="tx"><b>Your own</b><span>Google DESIGN.md format</span></div></div>
+        </div>
+        <span class="label" style="margin-top:16px">DESIGN.md · Paper · edit to tweak</span>
+        <div class="code">---
+name: Paper
+colors:
+  primary: "#1f3a6e"
+  surface: "#f8f5ee"
+  ink: "#1b1a17"
+typography:
+  h1: { fontFamily: Georgia, fontSize: 40px, fontWeight: 700 }
+rounded: { md: 4px }
+---
+## Overview
+Calm and trustworthy, like a well set legal page…</div>
+      </div>
+      <div class="side">
+        <div class="card">
+          <span class="label">Build with</span>
+          <div class="row"><span>Look</span><b>Paper</b></div>
+          <div class="row"><span>Design skill</span><span class="mono">frontend-design</span></div>
+          <div class="row"><span>DESIGN.md check</span><span class="chip ok">valid</span></div>
+          <div class="row"><span>Est. cost</span><span class="mono">$4.10/mo</span></div>
+          <div style="margin-top:12px"><span class="btn" style="width:100%;justify-content:center">Build it</span></div>
+        </div>
+        <div class="muted" style="margin-top:10px;font-size:12px">Change the look later from the studio: Kiro applies the new DESIGN.md to every screen.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- C -->
+<div class="opt" id="c">
+  <div class="tag"><b>C</b> · a "Design" panel in the studio, after the build · most control</div>
+  <div class="frame">
+    <div class="hdr"><div class="mark"></div><div class="logo">Revenant</div><div class="nav"><span>Preview</span><span>Code</span><span>Spec</span><span class="on">Design</span><span>Timeline</span></div><div class="sp"></div><span class="btn">Apply look</span></div>
+    <div class="studio">
+      <div class="left">
+        <span class="label">Start from</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"><span class="pill">Company</span><span class="pill on">Paper</span><span class="pill">Midnight</span><span class="pill">Studio</span><span class="pill">Soft</span><span class="pill">Upload</span></div>
+        <span class="label">Colors</span>
+        <div class="tok"><div class="sq" style="background:#1f3a6e"></div>Primary<span class="v">#1f3a6e</span></div>
+        <div class="tok"><div class="sq" style="background:#f8f5ee"></div>Surface<span class="v">#f8f5ee</span></div>
+        <div class="tok"><div class="sq" style="background:#1b1a17"></div>Ink<span class="v">#1b1a17</span></div>
+        <span class="label" style="margin-top:12px">Type</span>
+        <div class="tok">Headings<span class="v">Georgia 700</span></div>
+        <div class="tok">Body<span class="v">Inter 400</span></div>
+        <span class="label" style="margin-top:12px">Corners</span>
+        <div class="slider"><i></i></div><div class="mono muted">4px</div>
+        <div class="mono muted" style="margin-top:14px">DESIGN.md · valid · 2 warnings</div>
+      </div>
+      <div class="right"><div class="browser"><div class="bar"><i></i><i></i><i></i><span class="mono muted" style="margin-left:8px">preview-3.fineprint</span></div>
+        <div class="mini l-paper"><div class="mh"><i></i>FinePrint</div><div class="mt">Read the fine print before you sign</div><div class="ms"></div><div class="ms s"></div><span class="mb">Upload a contract</span><span class="mg">SAFE</span><span class="mg" style="background:#fbf1dc;color:#9a6400">WATCH</span></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- admin, all options -->
+<div class="opt" id="admin">
+  <div class="tag"><b>All options</b> · admin → Policy → Company design (kit item 4)</div>
+  <div class="frame">
+    <div class="hdr"><div class="mark"></div><div class="logo">Revenant</div><div class="nav"><span>Overview</span><span>Apps</span><span>Users</span><span class="on">Policy</span><span>Audit</span></div></div>
+    <div class="admin">
+      <div class="card">
+        <span class="label">Company design</span>
+        <div class="drop">Drop your company DESIGN.md here<br><span class="mono">or paste it · Google DESIGN.md format</span></div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:12px"><span class="toggle"><i></i></span><div><b>Default for new apps</b><br><span class="muted">People can still pick another look</span></div></div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:10px"><span class="toggle" style="background:var(--line)"><i style="left:3px;right:auto"></i></span><div><b>Required</b><br><span class="muted">Every app must use it</span></div></div>
+      </div>
+      <div class="card">
+        <span class="label">Preview · Acme Legal</span>
+        <div class="mini l-company" style="border:1px solid var(--line);border-radius:8px;height:120px"><div class="mh"><i></i>Acme</div><div class="mt">Contracts, reviewed</div><div class="ms"></div><div class="ms s"></div><span class="mb">Upload</span></div>
+        <div class="mono muted" style="margin-top:10px">DESIGN.md · valid · contrast AA ✓ · audited when changed</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
