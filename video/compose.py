@@ -24,10 +24,10 @@ PLAN = [
     ("look", "ready", "end", 1, [("v06", 0.5)], "Restyle with a DESIGN.md", {}),
     ("code", "ready", 31.5, 1, [("v07", 8.0), ("v08", 18.6)], "Edit the code, commit", {}),
     # the planted break: wait (fast), the death (real time, the app's sound only), repair (fast), the rise
-    ("death", "ready", ("dead", -3), "auto:6", [("v09a", 0.4)], "A planted break", {"clock": 1, "app": 0.35}),
-    ("death", ("dead", -3), ("dead", 9), 1, [], "", {"app": 1.0}),
-    ("death", ("dead", 9), ("rose", -2), "auto:7", [("v09b", 0.3)], "Revenant repairs it", {"clock": 1, "app": 0.35}),
-    ("death", ("rose", -2), "end", 1, [("v10", 3.0)], "It has risen: 6m 9s to recover, 0 Kiro credits", {"app": 0.6}),
+    ("death", "ready", ("dead", -3), "auto:6", [("v09a", 0.4)], "A planted break", {"clock": 1, "app": 0.15}),
+    ("death", ("dead", -3), ("dead", 9), 1, [], "", {"app": 0.4}),
+    ("death", ("dead", 9), ("rose", -2), "auto:7", [("v09b", 0.3)], "Revenant repairs it", {"clock": 1, "app": 0.15}),
+    ("death", ("rose", -2), "end", 1, [("v10", 3.0)], "It has risen: 6m 9s to recover, 0 Kiro credits", {"app": 0.3}),
     ("admin", "ready", "end", 1, [("v11", 0.4)], "One policy. Every change audited.", {"extra": ACCT}),
     ("outro", 0, "end", 1, [("v12", 0.5)], "", {}),
 ]
@@ -71,7 +71,7 @@ for i, (clip, a, b, speed, voices, cap, o) in enumerate(PLAN):
         labels.append(f"[{k}:a]adelay={int(t*1000)}|{int(t*1000)},aformat=sample_rates=48000:channel_layouts=stereo[a{k}];")
         k += 1
     app = o.get("app", 0)
-    afile = f"{D}/clips/{clip}.audio0.webm"
+    afile = f"{D}/clips/{clip}.audio0.wav"  # decoded once; the webm has a bad packet that can stall amix
     if app and os.path.exists(afile) and m.get("audio"):
         # The app's sound at real speed from the segment start (fast parts get the ambience, not a chipmunk).
         off = s - m["audio"][0]
@@ -85,16 +85,16 @@ for i, (clip, a, b, speed, voices, cap, o) in enumerate(PLAN):
     else:
         mix = f"anullsrc=r=48000:cl=stereo,atrim=0:{dur:.3f}[a]"
     out = f"{D}/out/seg/{i:02d}-{clip}.mp4"
-    cmd = ["ffmpeg", "-v", "error", "-y", *inputs, "-filter_complex", f"[0:v]{','.join(f)},trim=0:{dur:.3f}[v];{mix}",
+    cmd = ["ffmpeg", "-nostdin", "-v", "error", "-y", *inputs, "-filter_complex", f"[0:v]{','.join(f)},trim=0:{dur:.3f}[v];{mix}",
            "-map", "[v]", "-map", "[a]", "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-c:a", "aac", "-b:a", "160k", "-ar", "48000", out]
-    subprocess.run(cmd, check=True)
+    subprocess.run(cmd, check=True, stdin=subprocess.DEVNULL, timeout=300)
     segs.append(out)
     print(f"{i:02d} {clip:8s} {dur:6.2f}s  speed {speed:.1f}")
 
 with open(f"{D}/out/list.txt", "w") as fh:
     for p in segs: fh.write(f"file '{p}'\n")
 raw = f"{D}/out/raw.mp4"
-subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", f"{D}/out/list.txt", "-c", "copy", raw], check=True)
+subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", f"{D}/out/list.txt", "-c", "copy", raw], check=True)
 final = f"{D}/out/revenant-demo.mp4"
-subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", raw, "-c:v", "copy", "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", "-c:a", "aac", "-b:a", "160k", "-ar", "48000", "-movflags", "+faststart", final], check=True)
+subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-i", raw, "-c:v", "copy", "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", "-c:a", "aac", "-b:a", "160k", "-ar", "48000", "-movflags", "+faststart", final], check=True)
 print("total", subprocess.check_output(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", final]).decode().strip())
