@@ -7,6 +7,6 @@ export const dynamic = "force-dynamic";
 
 export const GET = route<{ id: string }>(async (_req, { id }) => {
   const u = await needUser();
-  const p = await findProject(u, id);
+  const p = await findProject(u, id, { read: true });
   return { tasks: await syncTasks(p, await workBranch(p.id)) };
 });

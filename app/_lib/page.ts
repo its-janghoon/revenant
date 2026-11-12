@@ -8,7 +8,7 @@ import { findProject, type ProjectRow } from "./store";
 export async function pageProject(id: string): Promise<{ u: User; p: ProjectRow }> {
   const u = await needUser();
   try {
-    return { u, p: await findProject(u, id) };
+    return { u, p: await findProject(u, id, { read: true }) };
   } catch (e) {
     if (e instanceof HttpError && e.status === 404) notFound();
     throw e;

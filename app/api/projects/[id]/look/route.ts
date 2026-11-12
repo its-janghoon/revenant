@@ -18,7 +18,7 @@ const locked = (s: Awaited<ReturnType<typeof getSettings>>) => s.companyDesignMo
 // The app's DESIGN.md on its work branch (the latest preview, or rv/spec before the first build).
 export const GET = route<{ id: string }>(async (_req, { id }) => {
   const u = await needUser();
-  const p = await findProject(u, id);
+  const p = await findProject(u, id, { read: true });
   const s = await getSettings();
   const branch = await workBranch(p.id);
   const f = p.repo ? await readFile(p.repo, branch, DESIGN_PATH) : null;

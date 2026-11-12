@@ -12,7 +12,7 @@ const ref = /^[A-Za-z0-9._/-]{1,200}$/;
 // ?branch=&path=&against= also returns the file on another branch, for the chat's diff cards
 export const GET = route<{ id: string }>(async (req, { id }) => {
   const u = await needUser();
-  const p = await findProject(u, id);
+  const p = await findProject(u, id, { read: true });
   if (!p.repo) throw new HttpError(409, "This app has no repository yet", "no_repo");
   const q = new URL(req.url).searchParams;
   const branch = q.get("branch") || (await workBranch(p.id));

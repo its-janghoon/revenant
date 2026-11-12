@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 // ?since=<ISO time> returns only newer events, oldest first.
 export const GET = route<{ id: string }>(async (req, { id }) => {
   const u = await needUser();
-  const p = await findProject(u, id);
+  const p = await findProject(u, id, { read: true });
   const since = new URL(req.url).searchParams.get("since") ?? undefined;
   return { events: await listEvents(p.id, since && !Number.isNaN(Date.parse(since)) ? since : undefined) };
 });

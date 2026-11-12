@@ -1,12 +1,12 @@
 // Revenant's own data for the screens, always scoped to the owner.
 import "server-only";
-import { and, desc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, or, sql } from "drizzle-orm";
 import type { Project, Settings } from "@/lib/contracts";
 import { getSettings as policySettings, isSqlAllowed } from "@/lib/policy";
 import { db, schema } from "@/lib/db/client";
 import type { User } from "./auth";
 import { byNumber, head } from "./repo";
-import { notFound } from "./http";
+import { HttpError, notFound } from "./http";
 
 const { projects, runs, tasks, deploys, previews, costs, settings } = schema;
 
@@ -40,17 +40,31 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Projects the owner can see: not deleted, and not handed to the cleanup job (expires_at passed). */
 const visible = sql`${projects.status} <> 'deleted' and (${projects.expiresAt} is null or ${projects.expiresAt} > now())`;
 
-/** By id or by name, only the owner's, never deleted or expired ones. */
-export async function findProject(u: User, idOrName: string): Promise<ProjectRow> {
+
+/** Sample apps every signed-in user may open but not change: settings key "showcase", a list of project ids. */
+export async function showcaseIds(): Promise<string[]> {
+  const [r] = await db.select().from(settings).where(eq(settings.key, "showcase"));
+  return Array.isArray(r?.value) ? (r.value as unknown[]).filter((v): v is string => typeof v === "string" && UUID.test(v)) : [];
+}
+
+/**
+ * By id or by name, only the owner's, never deleted or expired ones. With `read`, a showcase app
+ * opens for anyone; without it, a showcase app that is not yours answers 403 (view only).
+ */
+export async function findProject(u: User, idOrName: string, opts: { read?: boolean } = {}): Promise<ProjectRow> {
   const by = UUID.test(idOrName) ? eq(projects.id, idOrName) : eq(projects.name, idOrName);
-  const [p] = await db.select().from(projects).where(and(by, eq(projects.owner, u.sub), visible));
+  const [p] = await db.select().from(projects).where(and(by, visible));
   if (!p) throw notFound("No such app");
-  return p;
+  if (p.owner === u.sub) return p;
+  if (!(await showcaseIds()).includes(p.id)) throw notFound("No such app");
+  if (opts.read) return p;
+  throw new HttpError(403, "This sample app is view only. Build your own from Home.", "view_only");
 }
 
 export async function listProjects(u: User): Promise<ProjectRow[]> {
+  const ids = await showcaseIds();
   return db.select().from(projects)
-    .where(and(eq(projects.owner, u.sub), visible))
+    .where(and(ids.length ? or(eq(projects.owner, u.sub), inArray(projects.id, ids)) : eq(projects.owner, u.sub), visible))
     .orderBy(desc(projects.createdAt));
 }
 
