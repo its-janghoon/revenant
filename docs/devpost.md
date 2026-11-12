@@ -1,8 +1,8 @@
 # Devpost submission (Kiroween 2026)
 
 Every field of the Devpost form, ready to paste. The judge URL and accounts go only in the
-private testing field. Still open: `BLOG_URL` and `SOCIAL_URL_*`, filled in after the posts are
-published; drop those bonus lines if they are not.
+private testing field.
+Not entered: Bonus Blog Prize and Social Blitz (decided 2026-11-12).
 
 ## Project name
 
@@ -40,8 +40,6 @@ Frankenstein
 
 - Best Startup Project
 - Best Kiro Crew App
-- Bonus Blog Prize (post: `BLOG_URL`, draft in `docs/blog.md`)
-- Social Blitz (posts: `SOCIAL_URL_1`, `SOCIAL_URL_2`, `SOCIAL_URL_3`, drafts in `docs/social.md`)
 
 ## Repository
 
