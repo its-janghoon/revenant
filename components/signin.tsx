@@ -6,7 +6,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { PulseMark } from "@/lib/theme";
 import { W } from "./words";
 
-type Stage = "email" | "code" | "password";
+type Stage = "email" | "code" | "password" | "login";
 
 export function SignIn() {
   const [email, setEmail] = useState("");
@@ -42,6 +42,7 @@ export function SignIn() {
     const m = (e as Error).message ?? "";
     setErr(
       n === "NotAuthorizedException" && /session/i.test(m) ? "This sign-in timed out (15 minutes). Send a new code."
+        : n === "NotAuthorizedException" && stage === "login" ? "That email and password do not match."
         : n === "UserNotFoundException" || n === "NotAuthorizedException" ? "No invite for this email. Revenant is invite only: ask your admin."
         : n === "CodeMismatchException" ? "That code is wrong. Check the latest email."
         : n === "ExpiredCodeException" ? "That code expired. Send a new one."
@@ -64,6 +65,14 @@ export function SignIn() {
     setErr(""); setBusy("passkey");
     try {
       await step(await signIn({ username: email.trim(), options: { authFlowType: "USER_AUTH", preferredChallenge: "WEB_AUTHN" } }));
+    } catch (x) { fail(x); } finally { setBusy(""); }
+  }
+
+  async function withPassword(e: FormEvent) {
+    e.preventDefault();
+    setErr(""); setBusy("confirm");
+    try {
+      await step(await signIn({ username: email.trim(), password, options: { authFlowType: "USER_AUTH", preferredChallenge: "PASSWORD" } }));
     } catch (x) { fail(x); } finally { setBusy(""); }
   }
 
@@ -96,6 +105,29 @@ export function SignIn() {
               <button className="ghost wide" type="button" onClick={passkey} disabled={busy !== ""}>
                 {busy === "passkey" ? <Loader size={15} className="spin" aria-hidden /> : <KeyRound size={15} aria-hidden />} Use a passkey
               </button>
+              <div style={{ marginTop: 12, textAlign: "center" }}>
+                <button type="button" className="link muted" onClick={() => { setStage("login"); setPassword(""); setErr(""); }}>
+                  Have a password? Sign in with it
+                </button>
+              </div>
+            </form>
+          ) : stage === "login" ? (
+            <form onSubmit={withPassword}>
+              <div className="muted" style={{ marginBottom: 18 }}>For accounts your admin gave a password, such as judge accounts.</div>
+              <label className="label" htmlFor="email" style={{ marginBottom: 6 }}>Work email</label>
+              <input id="email" className="input" type="email" autoComplete="username" placeholder="you@example.com" value={email}
+                onChange={(e) => setEmail(e.target.value)} style={{ marginBottom: 14 }} autoFocus />
+              <label className="label" htmlFor="pw" style={{ marginBottom: 6 }}>Password</label>
+              <input id="pw" className="input" type="password" autoComplete="current-password" value={password}
+                onChange={(e) => setPassword(e.target.value)} style={{ marginBottom: 14 }} />
+              <button className="btn wide" type="submit" disabled={busy !== "" || !email.includes("@") || password.length < 8}>
+                {busy === "confirm" ? <Loader size={15} className="spin" aria-hidden /> : null} Sign in
+              </button>
+              <div style={{ marginTop: 12 }}>
+                <button type="button" className="link muted" onClick={() => { setStage("email"); setPassword(""); setErr(""); }}>
+                  <ArrowLeft size={12} aria-hidden /> Email me a code instead
+                </button>
+              </div>
             </form>
           ) : (
             <form onSubmit={confirm}>

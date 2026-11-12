@@ -4,6 +4,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import type { z } from "zod";
 import type { Deploy, Preview, Repair, Run, Task, createProjectBody } from "@/lib/contracts";
 import { db, schema } from "@/lib/db/client";
+import { expiryFor } from "@/lib/cleanup";
 import { previewsOf, settleAll } from "@/lib/deploy";
 import { repairsFor } from "@/lib/repair/store";
 import { region } from "./aws";
@@ -14,7 +15,7 @@ import { byNumber, createRepo, head, parseTasks, readFile, specPath } from "./re
 import { ensureRunnerRole, startRun, stopRun, syncRuns } from "./runs";
 import { parseParts, summarize } from "./spec";
 import {
-  SPEC_BRANCH, listProjects, livePreviews, monthCosts, monthCredits, projectDeploys,
+  SPEC_BRANCH, getSettings, listProjects, livePreviews, monthCosts, monthCredits, projectDeploys,
   projectRuns, sqlAllowedFor, toProject, workBranch, type ProjectRow,
 } from "./store";
 import { listEvents } from "./timeline";
@@ -53,7 +54,10 @@ export async function createProject(u: User, b: z.infer<typeof createProjectBody
     if (clash) throw new HttpError(409, `The name ${b.name} is taken`, "name_taken");
   }
   const repo = `rv-${name}`;
-  const [p] = await db.insert(projects).values({ owner: u.sub, name, request, repo, status: "spec" }).returning();
+  // Non-admin apps follow the install's auto-delete (24 h for judges); the cleanup job removes them.
+  const hours = u.admin ? null : (await getSettings()).autoDeleteHours;
+  const expiresAt = expiryFor(new Date(), hours);
+  const [p] = await db.insert(projects).values({ owner: u.sub, name, request, repo, status: "spec", expiresAt }).returning();
   if (!p) throw new Error("project insert failed");
   await createRepo(repo, { "revenant:project": p.id, "revenant:app": name, "revenant:owner": u.sub });
   await ensureRunnerRole(name, u.sub);
