@@ -3,11 +3,10 @@
 **DRAFT, awaiting Janghoon's approval.** Nothing is recorded or rendered until this is
 approved (Requirement 15.5).
 
-## Open questions for Janghoon
+## Decisions
 
-- Scene 2: show a seat-price mock at all, or only the AWS console?
-
-Decided: Janghoon records an English voice-over (script below). Captions stay as written.
+- Janghoon records an English voice-over (script below). Captions stay as written.
+- Scene 2 shows only the AWS console; no seat-price mock.
 
 ## Format
 
@@ -32,7 +31,7 @@ Decided: Janghoon records an English voice-over (script below). Captions stay as
 | # | Time | On screen | Camera / motion | Caption | Sound |
 |---|---|---|---|---|---|
 | 1 | 0:00-0:03 | Black. The Pulse line is flat, then beats once and the Revenant wordmark appears | Static; the beat draws left to right | "Revenant" | Silence, then one soft thunder roll far away |
-| 2 | 0:03-0:07 | Split screen. Left: a generic hosted builder with a seat-count pricing table (mock, no brand). Right: the AWS console sign-in to the user's own account | Slow push-in on the right half | "Lovable-style building. In your AWS account." | Rain starts, quiet |
+| 2 | 0:03-0:07 | The AWS console sign-in to the user's own account | Slow push-in | "Lovable-style building. In your AWS account." | Rain starts, quiet |
 | 3 | 0:07-0:10 | Revenant home: "AWS credits left" and "This month" figures | Zoom to the credits tile | "No seats. Your AWS bill and credits." | Rain |
 | 4 | 0:10-0:13 | FinePrint spec screen: requirements, design, tasks tabs | Pan across the three tabs | "Spec first. You edit the plan, not prompts." | Rain |
 | 5 | 0:13-0:18 | Timeline row: a deploy died, then rose, with cause and time to recover | Hold, the heartbeat goes flat then beats | "When a deploy dies, it fixes itself." | One thunder crack on the flat line |
@@ -83,7 +82,6 @@ second; a block may run into the next scene by at most one second.
   that run's timeline, not a typed number.
 - Scenes 7 and 8 are recorded on a fresh dedicated AWS account. Account ids are blurred;
   any visible id is replaced with `111122223333`. Only `example.com` addresses appear.
-- Scene 2's left half is a plain mock built for the video, with no real product's name,
-  logo or prices.
+- Scene 2 is the real AWS console sign-in page; the account id is blurred.
 - Scenes 16-19 run in Haunted Full; record once more in Calm to check nothing in the
   story depends on the effects.
