@@ -1,0 +1,24 @@
+/* Look pieces (design/mockups/look.html). .mini reads its own variables, set by miniVars(). */
+.mini { --m-bg: #fff; --m-fg: #141414; --m-mut: #6c6c68; --m-line: #e7e6e2; --m-acc: #141414; --m-on: #fff; --m-r: 6px;
+  --m-head: var(--body); --m-body: var(--body); --m-badge: #e6f4ec; --m-badgefg: #127a45;
+  background: var(--m-bg); color: var(--m-fg); padding: 12px; height: 116px; overflow: hidden; font-family: var(--m-body) }
+.mini .mh { display: flex; gap: 6px; align-items: center; font: 700 10px var(--m-head); margin-bottom: 9px }
+.mini .mh i { width: 9px; height: 9px; border-radius: min(var(--m-r), 3px); background: var(--m-acc) }
+.mini .mt { font: 650 13.5px/1.15 var(--m-head); letter-spacing: -.01em; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.mini .ms { height: 5px; width: 78%; border-radius: 3px; background: var(--m-line); margin-bottom: 4px }
+.mini .ms.s { width: 55% }
+.mini .mb { display: inline-block; margin-top: 8px; padding: 4px 9px; border-radius: var(--m-r); background: var(--m-acc); color: var(--m-on); font: 600 9px var(--m-body) }
+.mini .mg { display: inline-block; margin-left: 4px; padding: 3px 7px; border-radius: 99px; font: 600 8px var(--mono); background: var(--m-badge); color: var(--m-badgefg) }
+.mini.big { height: auto; padding: 24px }
+.mini.big .mh { font-size: 13px; margin-bottom: 18px }
+.mini.big .mt { font-size: 28px; white-space: normal; margin-bottom: 12px }
+.mini.big .ms { height: 8px; margin-bottom: 8px }
+.mini.big .mb { font-size: 12px; padding: 8px 14px; margin-top: 14px }
+.mini.big .mg { font-size: 10px }
+
+.dots { display: inline-flex; gap: 3px }
+.dots i { width: 14px; height: 14px; border-radius: 4px; border: 1px solid #0002 }
+
+.lookdrop { border: 1.5px dashed var(--line); border-radius: calc(var(--r) + 2px); padding: 14px; text-align: center; color: var(--muted); cursor: pointer }
+.lookdrop.on { border-color: var(--fg); color: var(--fg) }
+.lookedit { width: 100%; min-height: 220px; font: 11.5px/1.6 var(--mono); background: var(--sunk); color: var(--fg); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; resize: vertical }
