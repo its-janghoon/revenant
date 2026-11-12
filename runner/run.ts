@@ -335,8 +335,11 @@ function kiro(text: string, key: string, deadline: number): Promise<'time' | 'cr
   const after = () => {
     for (const line of git('status', '--porcelain', '-uall').out.split('\n')) {
       if (!line) continue;
-      const code = line.slice(0, 2);
-      const path = line.slice(3).split(' -> ').pop()!.replace(/^"|"$/g, '');
+      // sh() trims the output, so the first line may have lost its leading space (" M a" -> "M a").
+      const m = /^([ MADRCUT?!]{1,2}) (.+)$/.exec(line);
+      if (!m) continue;
+      const code = m[1]!;
+      const path = m[2]!.split(' -> ').pop()!.replace(/^"|"$/g, '');
       if (seen.has(path)) continue;
       seen.add(path);
       emit({ t: 'file_changed', path, change: code.includes('?') || code.includes('A') ? 'add' : code.includes('D') ? 'delete' : 'modify' });
