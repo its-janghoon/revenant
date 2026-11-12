@@ -33,7 +33,8 @@ export async function readFile(repo: string, ref: string, path: string): Promise
     const r = await codecommit.send(new GetFileCommand({ repositoryName: repo, commitSpecifier: ref, filePath: path }));
     return { content: new TextDecoder().decode(r.fileContent), commit: r.commitId ?? "" };
   } catch (e) {
-    if (missing(e)) return null;
+    // A folder path is not a file: let the caller list it as a folder.
+    if (missing(e) || ((e as Error).name === "InvalidPathException" && /directory/i.test((e as Error).message))) return null;
     throw e;
   }
 }
