@@ -1,8 +1,8 @@
 # Devpost submission (Kiroween 2026)
 
 Every field of the Devpost form, ready to paste. The judge URL and accounts go only in the
-private testing field. Still open: `VIDEO_URL`, `BLOG_URL` and `SOCIAL_URL_*` are filled in
-after Janghoon uploads the video and publishes the posts.
+private testing field. Still open: `BLOG_URL` and `SOCIAL_URL_*`, filled in after the posts are
+published; drop those bonus lines if they are not.
 
 ## Project name
 
@@ -30,7 +30,7 @@ your account, and fixes it when a deploy dies.
 
 ## Video demo link
 
-`VIDEO_URL` (YouTube, public, under 3 minutes; storyboard in `docs/storyboard.md`)
+https://youtu.be/qFphr8FWpfE (YouTube, public, 2:42; English and Korean subtitles; how it was made: `video/README.md`)
 
 ## Category
 

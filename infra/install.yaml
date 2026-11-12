@@ -34,7 +34,7 @@ Parameters:
     Description: Public Git repository to install from.
   SourceBranch:
     Type: String
-    Default: main
+    Default: develop
   Demo:
     Type: String
     Default: "off"
