@@ -10,7 +10,7 @@ Revenant
 
 ## Elevator pitch (tagline, 200 characters max)
 
-Lovable on your own AWS account. Kiro writes the spec, builds the app on Amplify Gen 2 in
+An AI app builder on your own AWS account. Kiro writes the spec, builds the app on Amplify Gen 2 in
 your account, and fixes it when a deploy dies.
 
 ## Thumbnail and gallery
@@ -77,7 +77,7 @@ one CloudFormation stack (a Kiro API key, an admin email, a monthly budget).
   estimated monthly cost. Nothing is built until you press "Build it".
 - **Build.** Kiro CLI runs headless in CodeBuild, one commit per task. Every change gets an
   Amplify Gen 2 preview with its own URL and its own data.
-- **Edit** like Lovable or v0: chat, Select any element in the preview to see its file and
+- **Edit** with prompts or by hand: chat, Select any element in the preview to see its file and
   line, or edit and commit in the Code tab.
 - **Looks.** Pick a look before the build or restyle later: each look is a `DESIGN.md` in
   Google's format, checked by its linter, and every app gets Anthropic's frontend-design skill.
