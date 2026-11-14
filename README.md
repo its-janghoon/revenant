@@ -1,6 +1,6 @@
 # Revenant
 
-**Lovable on your own AWS account.** Say what you want. A Kiro agent writes the spec, builds
+**An AI app builder on your own AWS account.** Say what you want. A Kiro agent writes the spec, builds
 the app on Amplify Gen 2 and deploys it into your AWS account, paid from your own AWS bill
 and credits. When a build or deploy dies, the agent reads the logs, fixes it and brings it back.
 
@@ -14,11 +14,11 @@ Built for Kiroween 2026 (Frankenstein category). Open source, MIT.
 
 A self-hosted app builder. You install it once into your AWS account with one CloudFormation
 stack. After that, anyone you invite signs in with an email code, asks for an app in plain
-words, edits it like Lovable or v0, and publishes it. Every generated app is a normal
+words, edits it with prompts or by hand, and publishes it. Every generated app is a normal
 Amplify Gen 2 app with its code in CodeCommit, so it keeps running if Revenant is removed.
 
 Revenant is stitched together from parts that were never meant to meet, which is why it is
-a Frankenstein entry: a Lovable-style builder, Kiro CLI running headless in CodeBuild,
+a Frankenstein entry: a prompt-to-app builder, Kiro CLI running headless in CodeBuild,
 a CloudFormation installer and a self-healing repair agent.
 
 ## Why
