@@ -30,7 +30,7 @@ your account, and fixes it when a deploy dies.
 
 ## Video demo link
 
-https://youtu.be/qFphr8FWpfE (YouTube, public, 2:42; English and Korean subtitles; how it was made: `video/README.md`)
+https://youtu.be/3vtu9w0ruTI (YouTube, public, 2:42; English and Korean subtitles; how it was made: `video/README.md`)
 
 ## Category
 
