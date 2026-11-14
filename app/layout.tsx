@@ -12,7 +12,7 @@ const type = Special_Elite({ subsets: ["latin"], weight: "400", variable: "--fon
 
 export const metadata: Metadata = {
   title: "Revenant",
-  description: "Lovable on your own AWS account.",
+  description: "An AI app builder on your own AWS account.",
   icons: { icon: "/icon.svg" },
 };
 
