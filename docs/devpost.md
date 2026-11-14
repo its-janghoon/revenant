@@ -139,12 +139,10 @@ frontend-design skill are copied into every app. Full write-up:
 - A repair loop with the cause, the fix and the time to recover on record.
   Time to recover on the planted breaks (FinePrint preview, 2026-11-11, measured from the
   failed deploy or check to the live redeploy):
-
-  | Planted break | Fixed by | Time to recover | Kiro credits |
-  |---|---|---|---|
-  | Required env var `RV_APP` removed from the Amplify app | rule (no agent) | 342 s | 0 |
-  | Lambda pinned to Node 16, a runtime AWS retired | Kiro repair run | 478 s | 0.9 |
-  | Code tab commit adds a required field to an existing model with no backfill | guard stopped it before deploy, Kiro repair run made it optional | 579 s | 0.6 |
+  - Required env var `RV_APP` removed from the Amplify app: fixed by a rule (no agent), 342 s, 0 Kiro credits.
+  - Lambda pinned to Node 16, a runtime AWS retired: fixed by a Kiro repair run, 478 s, 0.9 Kiro credits.
+  - Code tab commit adds a required field to an existing model with no backfill: the guard
+    stopped it before deploy and a Kiro repair run made it optional, 579 s, 0.6 Kiro credits.
 
   The first FinePrint deploy also failed on its own (the seed step had no table access);
   repair found and fixed that unprompted in 847 s. In the demo video the env var break is run
